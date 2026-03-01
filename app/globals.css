@@ -1,0 +1,31 @@
+@config "../tailwind.config.ts";
+@import "tailwindcss";
+
+:root {
+  --background: #f5f2ee;
+  --foreground: #2c3a2e;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f5f2ee;
+  color: #2c3a2e;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(74, 124, 89, 0.22);
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    @apply font-serif;
+  }
+}
