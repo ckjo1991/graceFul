@@ -11,6 +11,7 @@ type UiCopy = {
     tagline: string;
     share: string;
     allEmotion: string;
+    myPosts: string;
     allTopics: string;
     noPostsTitle: string;
     noPostsBody: string;
@@ -121,11 +122,7 @@ type UiCopy = {
 const TRANSLATABLE_LANGUAGES: Array<Exclude<LanguageCode, "en">> = [
   "tl",
   "ceb",
-  "ilo",
   "hil",
-  "war",
-  "pam",
-  "bcl",
   "es",
 ];
 
@@ -133,150 +130,339 @@ const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   en: "English",
   tl: "Tagalog",
   ceb: "Bisaya",
-  ilo: "Ilocano",
   hil: "Hiligaynon",
-  war: "Waray",
-  pam: "Kapampangan",
-  bcl: "Bicol",
   es: "Spanish",
 };
 
-const TRANSLATION_PREFIXES: Record<Exclude<LanguageCode, "en">, string> = {
-  tl: "Pagsasalin sa Tagalog: ",
-  ceb: "Hubad sa Binisaya: ",
-  ilo: "Patarus iti Ilocano: ",
-  hil: "Hubad sa Hiligaynon: ",
-  war: "Hubad ha Waray: ",
-  pam: "Salin king Kapampangan: ",
-  bcl: "Salin sa Bikol: ",
-  es: "Traduccion al Espanol: ",
+type TranslationScenarioId =
+  | "gratefulFamily"
+  | "gratefulRecovery"
+  | "gratefulFinancial"
+  | "strugglingFinancial"
+  | "strugglingWork"
+  | "strugglingHealth"
+  | "strugglingPersonal"
+  | "strugglingRelationships"
+  | "prayerRequest"
+  | "hopefulExpression";
+
+type TranslationScenario = {
+  id: TranslationScenarioId;
+  source: string;
+  anchors: string[];
+  keywords: string[];
+  minScore: number;
 };
 
-const LANGUAGE_REPLACEMENTS: Record<
-  Exclude<LanguageCode, "en">,
-  Array<[RegExp, string]>
-> = {
-  tl: [
-    [/\bI am grateful for\b/gi, "Nagpapasalamat ako para sa"],
-    [/\bI am grateful\b/gi, "Nagpapasalamat ako"],
-    [/\bI am struggling with\b/gi, "Nahihirapan ako sa"],
-    [/\bPlease pray\b/gi, "Pakiusap, ipanalangin"],
-    [/\bpray for\b/gi, "ipanalangin ang"],
-    [/\bpeace\b/gi, "kapayapaan"],
-    [/\bstrength\b/gi, "lakas"],
-    [/\bwisdom\b/gi, "karunungan"],
-    [/\bfamily\b/gi, "pamilya"],
-    [/\bwork\b/gi, "trabaho"],
-    [/\bhealth\b/gi, "kalusugan"],
-    [/\bgrateful\b/gi, "mapagpasalamat"],
-    [/\bstruggling\b/gi, "nahihirapan"],
-  ],
-  ceb: [
-    [/\bI am grateful for\b/gi, "Mapasalamaton ko alang sa"],
-    [/\bI am grateful\b/gi, "Mapasalamaton ko"],
-    [/\bI am struggling with\b/gi, "Nalisdan ko sa"],
-    [/\bPlease pray\b/gi, "Palihug pag-ampo"],
-    [/\bpray for\b/gi, "iampo ang"],
-    [/\bpeace\b/gi, "kalinaw"],
-    [/\bstrength\b/gi, "kusog"],
-    [/\bwisdom\b/gi, "kaalam"],
-    [/\bfamily\b/gi, "pamilya"],
-    [/\bwork\b/gi, "trabaho"],
-    [/\bhealth\b/gi, "panglawas"],
-    [/\bgrateful\b/gi, "mapasalamaton"],
-    [/\bstruggling\b/gi, "nalisdan"],
-  ],
-  ilo: [
-    [/\bI am grateful for\b/gi, "Agyamanak iti"],
-    [/\bI am grateful\b/gi, "Agyamanak"],
-    [/\bI am struggling with\b/gi, "Makibalbalakadak iti"],
-    [/\bPlease pray\b/gi, "Pangngaasim ta ikararagyo"],
-    [/\bpray for\b/gi, "ikararag ti"],
-    [/\bpeace\b/gi, "talna"],
-    [/\bstrength\b/gi, "pigsa"],
-    [/\bwisdom\b/gi, "sirib"],
-    [/\bfamily\b/gi, "pamilia"],
-    [/\bwork\b/gi, "trabaho"],
-    [/\bhealth\b/gi, "salun-at"],
-    [/\bgrateful\b/gi, "agyaman"],
-    [/\bstruggling\b/gi, "makikadkadua iti rigat"],
-  ],
-  hil: [
-    [/\bI am grateful for\b/gi, "Mapasalamaton ako para sa"],
-    [/\bI am grateful\b/gi, "Mapasalamaton ako"],
-    [/\bI am struggling with\b/gi, "Nagapangabudlay ako sa"],
-    [/\bPlease pray\b/gi, "Palihog, ipangamuyo"],
-    [/\bpray for\b/gi, "ipangamuyo ang"],
-    [/\bpeace\b/gi, "kalinong"],
-    [/\bstrength\b/gi, "kusog"],
-    [/\bwisdom\b/gi, "kaalam"],
-    [/\bfamily\b/gi, "pamilya"],
-    [/\bwork\b/gi, "ubra"],
-    [/\bhealth\b/gi, "lawas"],
-    [/\bgrateful\b/gi, "mapasalamaton"],
-    [/\bstruggling\b/gi, "nagapangabudlay"],
-  ],
-  war: [
-    [/\bI am grateful for\b/gi, "Mapasalamaton ako para han"],
-    [/\bI am grateful\b/gi, "Mapasalamaton ako"],
-    [/\bI am struggling with\b/gi, "Nakurian ako ha"],
-    [/\bPlease pray\b/gi, "Alayon pag-ampo"],
-    [/\bpray for\b/gi, "iampo an"],
-    [/\bpeace\b/gi, "kamurayawan"],
-    [/\bstrength\b/gi, "kusog"],
-    [/\bwisdom\b/gi, "kinaadman"],
-    [/\bfamily\b/gi, "pamilya"],
-    [/\bwork\b/gi, "trabaho"],
-    [/\bhealth\b/gi, "lawas"],
-    [/\bgrateful\b/gi, "mapasalamaton"],
-    [/\bstruggling\b/gi, "nakukurian"],
-  ],
-  pam: [
-    [/\bI am grateful for\b/gi, "Mapasalamat ku king"],
-    [/\bI am grateful\b/gi, "Mapasalamat ku"],
-    [/\bI am struggling with\b/gi, "Makasakit kung lub king"],
-    [/\bPlease pray\b/gi, "Pakisabi yung manalangin"],
-    [/\bpray for\b/gi, "ipanalangin ya ing"],
-    [/\bpeace\b/gi, "kapayapan"],
-    [/\bstrength\b/gi, "lakas"],
-    [/\bwisdom\b/gi, "karunungan"],
-    [/\bfamily\b/gi, "pamilya"],
-    [/\bwork\b/gi, "obra"],
-    [/\bhealth\b/gi, "kalusugan"],
-    [/\bgrateful\b/gi, "mapasalamat"],
-    [/\bstruggling\b/gi, "makasakit lub"],
-  ],
-  bcl: [
-    [/\bI am grateful for\b/gi, "Nagpapasalamat ako para sa"],
-    [/\bI am grateful\b/gi, "Nagpapasalamat ako"],
-    [/\bI am struggling with\b/gi, "Nahihirapan ako sa"],
-    [/\bPlease pray\b/gi, "Pakisuyo, ipag-ampo"],
-    [/\bpray for\b/gi, "ipag-ampo an"],
-    [/\bpeace\b/gi, "katoninongan"],
-    [/\bstrength\b/gi, "kusog"],
-    [/\bwisdom\b/gi, "karahayan na isip"],
-    [/\bfamily\b/gi, "pamilya"],
-    [/\bwork\b/gi, "trabaho"],
-    [/\bhealth\b/gi, "salud"],
-    [/\bgrateful\b/gi, "mapasalamaton"],
-    [/\bstruggling\b/gi, "nahihirapan"],
-  ],
-  es: [
-    [/\bI am grateful for\b/gi, "Estoy agradecido por"],
-    [/\bI am grateful\b/gi, "Estoy agradecido"],
-    [/\bI am struggling with\b/gi, "Estoy luchando con"],
-    [/\bPlease pray\b/gi, "Por favor oren"],
-    [/\bpray for\b/gi, "oren por"],
-    [/\bpeace\b/gi, "paz"],
-    [/\bstrength\b/gi, "fortaleza"],
-    [/\bwisdom\b/gi, "sabiduria"],
-    [/\bfamily\b/gi, "familia"],
-    [/\bwork\b/gi, "trabajo"],
-    [/\bhealth\b/gi, "salud"],
-    [/\bgrateful\b/gi, "agradecido"],
-    [/\bstruggling\b/gi, "luchando"],
-  ],
+type LanguageReferenceLibrary = Record<TranslationScenarioId, string>;
+
+const TRANSLATION_SCENARIOS: TranslationScenario[] = [
+  {
+    id: "gratefulFamily",
+    source:
+      "I am grateful for the peace in our home and for the way God is caring for my family.",
+    anchors: [
+      "peace in our home",
+      "our home",
+      "our family",
+      "my family",
+      "family",
+      "home",
+    ],
+    keywords: ["grateful", "thankful", "family", "home", "peace", "caring"],
+    minScore: 7,
+  },
+  {
+    id: "gratefulRecovery",
+    source:
+      "I am so grateful for my mother's recovery. The past few months have been hard, but she is getting stronger now.",
+    anchors: [
+      "mothers recovery",
+      "my mother",
+      "my mom",
+      "recover",
+      "recovery",
+      "healing",
+      "test results",
+      "tests",
+    ],
+    keywords: ["grateful", "thankful", "mother", "mom", "recovery", "healing"],
+    minScore: 7,
+  },
+  {
+    id: "gratefulFinancial",
+    source:
+      "God provided for us right on time. I am thankful and still asking for wisdom as we steward what has been placed in our hands.",
+    anchors: [
+      "provided for us",
+      "right on time",
+      "provision",
+      "entrusted",
+      "placed in our hands",
+      "financial",
+      "money",
+    ],
+    keywords: ["grateful", "thankful", "wisdom", "provide", "provided", "need"],
+    minScore: 7,
+  },
+  {
+    id: "strugglingFinancial",
+    source:
+      "We are going through a hard season financially. I am trying to stay hopeful, but some days feel very heavy.",
+    anchors: [
+      "financially",
+      "financial",
+      "bills",
+      "rent",
+      "debt",
+      "hard season",
+      "stay hopeful",
+    ],
+    keywords: ["hard", "heavy", "money", "hopeful", "struggling", "provide"],
+    minScore: 7,
+  },
+  {
+    id: "strugglingWork",
+    source:
+      "Work has been heavy lately. I feel tired and discouraged, and I need prayer for strength and wisdom.",
+    anchors: [
+      "work has been heavy",
+      "about work",
+      "at work",
+      "my job",
+      "work",
+      "job",
+      "career",
+    ],
+    keywords: [
+      "tired",
+      "discouraged",
+      "exhausted",
+      "strength",
+      "wisdom",
+      "endurance",
+      "anxiety",
+    ],
+    minScore: 7,
+  },
+  {
+    id: "strugglingHealth",
+    source:
+      "I am waiting on test results and trying not to let fear take over. Please pray for peace and strength.",
+    anchors: [
+      "test results",
+      "waiting on",
+      "doctor",
+      "hospital",
+      "healing",
+      "recovery",
+      "health",
+      "tests",
+    ],
+    keywords: ["fear", "anxious", "peace", "strength", "wait", "results"],
+    minScore: 7,
+  },
+  {
+    id: "strugglingPersonal",
+    source:
+      "I am trying to rebuild my life after a hard season. I am asking God for grace for small and faithful steps.",
+    anchors: [
+      "rebuild",
+      "hard season",
+      "small steps",
+      "starting again",
+      "healthy routines",
+      "routines",
+      "routine",
+    ],
+    keywords: ["steadiness", "grace", "healing", "again", "personal", "steps"],
+    minScore: 7,
+  },
+  {
+    id: "strugglingRelationships",
+    source:
+      "There is tension in our relationships right now, and it hurts deeply. Please pray for healing, humility, and peace between us.",
+    anchors: [
+      "relationship",
+      "relationships",
+      "marriage",
+      "husband",
+      "wife",
+      "family tension",
+      "conflict",
+      "between us",
+    ],
+    keywords: ["hurts", "healing", "humility", "peace", "forgive", "forgiveness"],
+    minScore: 7,
+  },
+  {
+    id: "prayerRequest",
+    source:
+      "Please pray for me. I need God's guidance, peace, and strength for what I am facing.",
+    anchors: [
+      "please pray",
+      "pray for me",
+      "keep me in prayer",
+      "cover me in prayer",
+      "i need prayer",
+    ],
+    keywords: ["guidance", "peace", "strength", "wisdom", "facing", "prayer"],
+    minScore: 7,
+  },
+  {
+    id: "hopefulExpression",
+    source:
+      "I am still holding on to hope. God has not left me, and I am trusting Him one day at a time.",
+    anchors: [
+      "holding on to hope",
+      "holding on",
+      "stay hopeful",
+      "still hopeful",
+      "one day at a time",
+      "trusting him",
+      "god has not left me",
+      "god hasnt left me",
+    ],
+    keywords: ["hope", "hopeful", "trust", "trusting", "faith", "faithful"],
+    minScore: 7,
+  },
+];
+
+const TL_REFERENCE_TRANSLATIONS: LanguageReferenceLibrary = {
+  gratefulFamily:
+    "Nagpapasalamat ako sa kapayapaang ibinibigay ng Diyos sa aming tahanan. Ramdam ko ang Kanyang pag-aalaga sa aming pamilya.",
+  gratefulRecovery:
+    "Napakalaking biyaya para sa amin na gumagaling na ang nanay ko. Salamat sa Diyos sa Kanyang kabutihan sa aming pamilya.",
+  gratefulFinancial:
+    "Dumating ang probisyon ng Diyos sa tamang panahon. Taos-puso akong nagpapasalamat at hinihingi ko pa rin ang Kanyang karunungan sa paghawak nito.",
+  strugglingFinancial:
+    "Mabigat ang pinansyal naming kalagayan ngayon, pero kumakapit pa rin ako sa pag-asa. Pakiusap, isama ninyo kami sa panalangin.",
+  strugglingWork:
+    "Mabigat ang dinadala ko sa trabaho nitong mga araw. Pagod na ako, pero humihingi pa rin ako ng lakas at karunungan sa Diyos.",
+  strugglingHealth:
+    "Naghihintay ako ng resulta ng mga pagsusuri at minsan nilalamon ako ng kaba. Pakiusap, ipanalangin ninyo na bigyan ako ng Diyos ng kapayapaan at lakas.",
+  strugglingPersonal:
+    "Sinusubukan kong buuin muli ang sarili ko pagkatapos ng isang mabigat na yugto. Hinihingi ko sa Diyos ang biyaya para sa maliliit pero tapat na hakbang.",
+  strugglingRelationships:
+    "May bigat sa relasyon namin ngayon at masakit itong dalhin. Ipanalangin ninyo sana ang paggaling, pagpapakumbaba, at kapayapaan sa pagitan namin.",
+  prayerRequest:
+    "Pakiusap, isama ninyo ako sa panalangin. Kailangan ko ng gabay, kapayapaan, at lakas mula sa Diyos.",
+  hopefulExpression:
+    "Hindi ko pa rin binibitawan ang pag-asa. Tapat ang Diyos, at nagtitiwala akong sasamahan Niya ako araw-araw.",
 };
+
+const CEB_REFERENCE_TRANSLATIONS: LanguageReferenceLibrary = {
+  gratefulFamily:
+    "Mapasalamaton ko sa kalinaw nga gihatag sa Diyos sa among panimalay. Klaro gyud ang Iyang pag-atiman sa among pamilya.",
+  gratefulRecovery:
+    "Dako kaayo akong pasalamat sa pagkaayo sa akong inahan. Salamat sa Diyos kay padayon Niyang gipalig-on ang among pamilya.",
+  gratefulFinancial:
+    "Miabot ang panalangin sa hustong panahon. Nagpasalamat ko sa Diyos ug nangayo gihapon ko og kaalam sa pagdumala sa gisalig Niya kanamo.",
+  strugglingFinancial:
+    "Lisod karon ang among kahimtang sa pinansyal, pero nagkupot gihapon ko sa paglaum. Palihug iapil mi ninyo sa pag-ampo.",
+  strugglingWork:
+    "Bug-at na kaayo ang trabaho karong mga adlawa. Kapoy na ko, pero nangayo gihapon ko sa Diyos og kusog ug kaalam.",
+  strugglingHealth:
+    "Naghulat ko sa resulta sa akong mga test ug usahay madaog ko sa kahadlok. Palihug iampo nga hatagan ko sa Diyos og kalinaw ug kusog.",
+  strugglingPersonal:
+    "Naningkamot ko nga motindog pag-usab human sa lisod nga panahon. Nangayo ko sa Diyos og grasya para sa gagmay pero matinud-anong mga lakang.",
+  strugglingRelationships:
+    "Naay kasakit ug tensiyon sa among relasyon karon. Palihug iampo ang kaayohan, pagpaubos, ug kalinaw sa among taliwala.",
+  prayerRequest:
+    "Palihug iampo ko ninyo. Kinahanglan ko karon ang giya, kalinaw, ug kusog nga gikan sa Diyos.",
+  hopefulExpression:
+    "Wala pa ko mobiya sa paglaum. Matinumanon ang Diyos, ug nagsalig ko nga ubanan Niya ko matag adlaw.",
+};
+
+const HIL_REFERENCE_TRANSLATIONS: LanguageReferenceLibrary = {
+  gratefulFamily:
+    "Mapasalamaton ako sa kalinong nga ginhatag sang Diyos sa amon balay. Mabatyagan gid ang Iya nga pag-atipan sa amon pamilya.",
+  gratefulRecovery:
+    "Daku gid ang akon pagpasalamat sa pag-ayo sang akon iloy. Salamat sa Diyos kay padayon Niya kami nga ginapalig-on bilang pamilya.",
+  gratefulFinancial:
+    "Nag-abot ang bulig sang Diyos sa husto nga tion. Nagapasalamat gid ako kag nagapangayo man sang kaalam sa pagdumala sang iya ginsalig sa amon.",
+  strugglingFinancial:
+    "Budlay gid subong ang amon kahimtangan sa pinansyal, pero nagakapit gihapon ako sa paglaum. Palihog updan ninyo kami sa pangamuyo.",
+  strugglingWork:
+    "Mabug-at ang akon ginadala sa obra subong nga mga inadlaw. Kapoy na ako, pero nagapangayo gihapon ako sang kusog kag kaalam sa Diyos.",
+  strugglingHealth:
+    "Naghulat ako sang resulta sang akon mga test kag usahay nagadamo ang kahadlok ko. Palihog ipangamuyo nga hatagan ako sang Diyos sang kalinong kag kusog.",
+  strugglingPersonal:
+    "Ginatinguhaan ko nga magbangon liwat pagkatapos sang mabudlay nga tion. Nagapangayo ako sang grasya sang Diyos para sa gamay pero matutom nga mga tikang.",
+  strugglingRelationships:
+    "May kasakit kag tensiyon sa amon relasyon subong, kag mabug-at gid ini sa tagipusuon. Palihog ipangamuyo ang pag-ayo, pagpaubos, kag kalinong sa amon.",
+  prayerRequest:
+    "Palihog, ipangamuyo ninyo ako. Kinahanglan ko subong ang giya, kalinong, kag kusog halin sa Diyos.",
+  hopefulExpression:
+    "Wala ko ginabayaan ang paglaum. Matutom ang Diyos, kag nagasalig ako nga updan Niya ako adlaw-adlaw.",
+};
+
+const ES_REFERENCE_TRANSLATIONS: LanguageReferenceLibrary = {
+  gratefulFamily:
+    "Estoy agradecido por la paz que Dios ha traido a nuestro hogar. Su cuidado sobre nuestra familia se siente muy real.",
+  gratefulRecovery:
+    "Estoy profundamente agradecido por la recuperacion de mi madre. Le doy gracias a Dios porque nos ha sostenido como familia.",
+  gratefulFinancial:
+    "La provision de Dios llego justo a tiempo. Le doy gracias de todo corazon y sigo pidiendo sabiduria para administrar bien lo que recibimos.",
+  strugglingFinancial:
+    "Estamos pasando por un tiempo dificil en lo economico, pero sigo aferrandome a la esperanza. Por favor, oren por nosotros.",
+  strugglingWork:
+    "El trabajo ha sido muy pesado estos dias. Me siento cansado, pero sigo pidiendole a Dios fuerzas y sabiduria.",
+  strugglingHealth:
+    "Estoy esperando los resultados de unos estudios y a veces el miedo me gana. Por favor, oren para que Dios me de paz y fortaleza.",
+  strugglingPersonal:
+    "He estado tratando de reconstruirme despues de una temporada muy dura. Le pido a Dios gracia para dar pasos pequenos pero firmes.",
+  strugglingRelationships:
+    "Hay dolor y tension en nuestras relaciones en este momento. Oren, por favor, por sanidad, humildad y paz entre nosotros.",
+  prayerRequest:
+    "Por favor, oren por mi. Necesito la guia, la paz y la fortaleza que solo Dios puede dar.",
+  hopefulExpression:
+    "Todavia me aferro a la esperanza. Dios no me ha dejado, y sigo confiando en El dia tras dia.",
+};
+
+const REFERENCE_TRANSLATIONS: Record<
+  Exclude<LanguageCode, "en">,
+  LanguageReferenceLibrary
+> = {
+  tl: TL_REFERENCE_TRANSLATIONS,
+  ceb: CEB_REFERENCE_TRANSLATIONS,
+  hil: HIL_REFERENCE_TRANSLATIONS,
+  es: ES_REFERENCE_TRANSLATIONS,
+};
+
+const MATCH_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "been",
+  "but",
+  "for",
+  "from",
+  "has",
+  "have",
+  "i",
+  "in",
+  "is",
+  "it",
+  "me",
+  "my",
+  "of",
+  "on",
+  "or",
+  "our",
+  "that",
+  "the",
+  "their",
+  "this",
+  "to",
+  "us",
+  "we",
+  "with",
+]);
 
 const CATEGORY_LABELS: Record<LanguageCode, Record<Category, string>> = {
   en: {
@@ -303,14 +489,6 @@ const CATEGORY_LABELS: Record<LanguageCode, Record<Category, string>> = {
     Work: "Trabaho",
     Other: "Uban pa",
   },
-  ilo: {
-    Financial: "Pinansyal",
-    Family: "Pamilia",
-    Health: "Salun-at",
-    Personal: "Personal",
-    Work: "Trabaho",
-    Other: "Dadduma pay",
-  },
   hil: {
     Financial: "Pinansyal",
     Family: "Pamilya",
@@ -318,30 +496,6 @@ const CATEGORY_LABELS: Record<LanguageCode, Record<Category, string>> = {
     Personal: "Personal",
     Work: "Ubra",
     Other: "Iban pa",
-  },
-  war: {
-    Financial: "Pinansyal",
-    Family: "Pamilya",
-    Health: "Panglawas",
-    Personal: "Personal",
-    Work: "Trabaho",
-    Other: "Iba pa",
-  },
-  pam: {
-    Financial: "Pinansyal",
-    Family: "Pamilya",
-    Health: "Kalusugan",
-    Personal: "Personal",
-    Work: "Obra",
-    Other: "Aliwa pa",
-  },
-  bcl: {
-    Financial: "Pinansyal",
-    Family: "Pamilya",
-    Health: "Salud",
-    Personal: "Personal",
-    Work: "Trabaho",
-    Other: "Iba pa",
   },
   es: {
     Financial: "Finanzas",
@@ -369,30 +523,10 @@ const SUPPORT_LABELS: Record<LanguageCode, Record<SupportType, string>> = {
     "Just sharing": "Nagpaambit lang",
     "Both prayer and encouragement": "Pag-ampo ug pagdasig",
   },
-  ilo: {
-    "A prayer would be nice": "Nasayaat ti kararag",
-    "Just sharing": "Agibagak laeng",
-    "Both prayer and encouragement": "Kararag ken pammabileg",
-  },
   hil: {
     "A prayer would be nice": "Mayo ang isa ka pangamuyo",
     "Just sharing": "Nagapaambit lang",
     "Both prayer and encouragement": "Pangamuyo kag pagdasig",
-  },
-  war: {
-    "A prayer would be nice": "Maopay an pag-ampo",
-    "Just sharing": "Nagpapasumat la",
-    "Both prayer and encouragement": "Pag-ampo ngan pagdasig",
-  },
-  pam: {
-    "A prayer would be nice": "Masanting ing panalangin",
-    "Just sharing": "Mikweku lang",
-    "Both prayer and encouragement": "Panalangin ampong pamagpalakas lub",
-  },
-  bcl: {
-    "A prayer would be nice": "Magayon an pag-ampo",
-    "Just sharing": "Nagpapahiling lang",
-    "Both prayer and encouragement": "Pag-ampo asin pagdasig",
   },
   es: {
     "A prayer would be nice": "Una oracion seria buena",
@@ -414,25 +548,9 @@ const EMOTION_LABELS: Record<LanguageCode, Record<Emotion, string>> = {
     grateful: "🙏 Mapasalamaton",
     struggling: "💙 Nalisdan",
   },
-  ilo: {
-    grateful: "🙏 Agyaman",
-    struggling: "💙 Nakarikna iti rigat",
-  },
   hil: {
     grateful: "🙏 Mapasalamaton",
     struggling: "💙 Nagapangabudlay",
-  },
-  war: {
-    grateful: "🙏 Mapasalamaton",
-    struggling: "💙 Nakukurian",
-  },
-  pam: {
-    grateful: "🙏 Mapasalamat",
-    struggling: "💙 Makasakit lub",
-  },
-  bcl: {
-    grateful: "🙏 Mapasalamaton",
-    struggling: "💙 Nahihirapan",
   },
   es: {
     grateful: "🙏 Agradecido",
@@ -445,6 +563,7 @@ const EN_UI_COPY: UiCopy = {
     tagline: "Anonymous sharing & prayer",
     share: "+ Share",
     allEmotion: "All",
+    myPosts: "My Posts",
     allTopics: "All Topics",
     noPostsTitle: "No posts match these filters",
     noPostsBody:
@@ -575,6 +694,7 @@ const TL_UI_COPY: UiCopy = {
     tagline: "Anonymous na pagbabahagi at panalangin",
     share: "+ Magbahagi",
     allEmotion: "Lahat",
+    myPosts: "Aking Mga Post",
     allTopics: "Lahat ng Paksa",
     noPostsTitle: "Walang tugmang post sa mga filter na ito",
     noPostsBody:
@@ -708,6 +828,7 @@ const CEB_UI_COPY: UiCopy = {
     tagline: "Anonymous nga pagpaambit ug pag-ampo",
     share: "+ Moambit",
     allEmotion: "Tanan",
+    myPosts: "Akong Mga Post",
     allTopics: "Tanang Hilisgutan",
     noPostsTitle: "Walay post nga mohaom niini nga mga filter",
     noPostsBody:
@@ -873,24 +994,8 @@ export function getPrayerCountLabel(count: number, language: LanguageCode) {
     return `${count} ${count === 1 ? "pag-ampo" : "mga pag-ampo"}`;
   }
 
-  if (language === "ilo") {
-    return `${count} ${count === 1 ? "kararag" : "dagiti kararag"}`;
-  }
-
   if (language === "hil") {
     return `${count} ${count === 1 ? "pangamuyo" : "mga pangamuyo"}`;
-  }
-
-  if (language === "war") {
-    return `${count} ${count === 1 ? "pag-ampo" : "mga pag-ampo"}`;
-  }
-
-  if (language === "pam") {
-    return `${count} ${count === 1 ? "panalangin" : "malawe pang panalangin"}`;
-  }
-
-  if (language === "bcl") {
-    return `${count} ${count === 1 ? "pag-ampo" : "mga pag-ampo"}`;
   }
 
   if (language === "es") {
@@ -909,31 +1014,15 @@ export function getViewPrayerLabel(count: number, language: LanguageCode) {
     return `Tan-awa ang pag-ampo (${count})`;
   }
 
-  if (language === "ilo") {
-    return `Kitaen ti kararag (${count})`;
-  }
-
   if (language === "hil") {
     return `Tan-awa ang pangamuyo (${count})`;
-  }
-
-  if (language === "war") {
-    return `Kitaa an pag-ampo (${count})`;
-  }
-
-  if (language === "pam") {
-    return `Ikit ya ing panalangin (${count})`;
-  }
-
-  if (language === "bcl") {
-    return `Hilingon an pag-ampo (${count})`;
   }
 
   if (language === "es") {
     return `Ver oracion (${count})`;
   }
 
-  return `View prayer (${count})`;
+  return `View ${count === 1 ? "prayer" : "prayers"} (${count})`;
 }
 
 export function generateTranslations(message: string): TranslationMap {
@@ -958,6 +1047,14 @@ export function getTranslatedMessage(
     translations[targetLanguage] ??
     localizeMessage(originalMessage, targetLanguage)
   );
+}
+
+export function getDisplayTranslatedMessage(
+  originalMessage: string,
+  translations: TranslationMap,
+  targetLanguage: LanguageCode,
+) {
+  return getTranslatedMessage(originalMessage, translations, targetLanguage);
 }
 
 export function localizeGuardianFeedback(
@@ -1062,15 +1159,73 @@ function localizeMessage(
   message: string,
   targetLanguage: Exclude<LanguageCode, "en">,
 ) {
-  let translated = normalizeSpacing(message);
+  const normalizedMessage = normalizeSpacing(message);
+  const scenario = findClosestTranslationScenario(normalizedMessage);
 
-  for (const [pattern, replacement] of LANGUAGE_REPLACEMENTS[targetLanguage]) {
-    translated = translated.replace(pattern, replacement);
+  if (!scenario) {
+    return normalizedMessage;
   }
 
-  return `${TRANSLATION_PREFIXES[targetLanguage]}${translated}`;
+  return REFERENCE_TRANSLATIONS[targetLanguage][scenario.id];
 }
 
 function normalizeSpacing(message: string) {
   return message.replace(/\s+/g, " ").trim();
+}
+
+function findClosestTranslationScenario(message: string) {
+  const normalizedMessage = normalizeForMatching(message);
+  const messageTokens = tokenizeForMatching(normalizedMessage);
+
+  let bestMatch: TranslationScenario | null = null;
+  let bestScore = 0;
+
+  for (const scenario of TRANSLATION_SCENARIOS) {
+    const score = scoreTranslationScenario(normalizedMessage, messageTokens, scenario);
+
+    if (score < scenario.minScore) {
+      continue;
+    }
+
+    if (score > bestScore) {
+      bestMatch = scenario;
+      bestScore = score;
+    }
+  }
+
+  return bestMatch;
+}
+
+function scoreTranslationScenario(
+  normalizedMessage: string,
+  messageTokens: Set<string>,
+  scenario: TranslationScenario,
+) {
+  const anchorHits = scenario.anchors.filter((anchor) =>
+    normalizedMessage.includes(anchor),
+  ).length;
+  const keywordHits = scenario.keywords.filter(
+    (keyword) =>
+      normalizedMessage.includes(keyword) || messageTokens.has(keyword),
+  ).length;
+  const sourceOverlap = [...tokenizeForMatching(scenario.source)].filter((token) =>
+    messageTokens.has(token),
+  ).length;
+
+  return anchorHits * 4 + keywordHits * 2 + Math.min(sourceOverlap, 4);
+}
+
+function normalizeForMatching(message: string) {
+  return normalizeSpacing(message)
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9\s]/g, " ");
+}
+
+function tokenizeForMatching(message: string) {
+  return new Set(
+    message
+      .split(/\s+/)
+      .filter((token) => token.length > 1 && !MATCH_STOP_WORDS.has(token)),
+  );
 }

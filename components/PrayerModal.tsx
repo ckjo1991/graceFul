@@ -5,7 +5,7 @@ import { AlertTriangle, HandHeart as HandsPraying, Send, X } from "lucide-react"
 
 import { validatePrayerSubmission } from "@/lib/prayer";
 import {
-  getTranslatedMessage,
+  getDisplayTranslatedMessage,
   getUiCopy,
 } from "@/lib/translation";
 import type { FeedPost, LanguageCode } from "@/types";
@@ -89,7 +89,7 @@ export default function PrayerModal({
 
   const postMessage =
     language !== "en"
-      ? getTranslatedMessage(post.message, postTranslations, language)
+      ? getDisplayTranslatedMessage(post.message, postTranslations, language)
       : post.message;
 
   return (

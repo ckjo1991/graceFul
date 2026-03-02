@@ -4,8 +4,8 @@ import React from "react";
 import { HandHeart, X } from "lucide-react";
 
 import {
+  getDisplayTranslatedMessage,
   getPrayerCountLabel,
-  getTranslatedMessage,
   getUiCopy,
 } from "@/lib/translation";
 import type { FeedPost, LanguageCode } from "@/types";
@@ -30,7 +30,7 @@ export default function PrayerListModal({
   const copy = getUiCopy(language);
   const postMessage =
     language !== "en"
-      ? getTranslatedMessage(post.message, post.translations, language)
+      ? getDisplayTranslatedMessage(post.message, post.translations, language)
       : post.message;
 
   return (

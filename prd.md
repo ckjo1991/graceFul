@@ -13,6 +13,8 @@ The current repository ships a working local prototype in `app/page.tsx`.
 Today it includes:
 
 - A feed-first entry point with a `+ Share` action
+- A feed header with a styled native language selector, a `My Posts`
+  shortcut, and a direct share action
 - A first-session onboarding modal that frames anonymity, prayer, and real-world community
 - A multi-step posting flow built from dedicated UI step components
 - Local Guardian checks for crisis, PII, profanity, and violent intent
@@ -51,6 +53,15 @@ Users currently land on a feed of anonymous posts. Each post shows:
 - Relative post time
 - Prayer count
 - Optional translation toggle when the post allows it and the viewer selects a supported language
+
+The feed shell currently includes:
+
+- A language selector in the header using `SUPPORTED_LANGUAGES`
+- A `My Posts` header action that filters by the current device ID
+- Emotion pills for `All`, `Grateful`, and `Struggling`
+- Topic/category pills as a secondary filter row
+- A dedicated empty state for `My Posts` with a `+ Share something` CTA when
+  the current device has not posted yet
 
 The feed should remain free of likes, rankings, public profiles, or threaded
 discussion.
@@ -130,6 +141,8 @@ Guardian checks pass.
 - Prayer interactions must remain supportive rather than conversational or
   argumentative.
 - Translation must remain optional.
+- Feed filtering must preserve a single mutually exclusive state for `all`,
+  `grateful`, `struggling`, and `my_posts`.
 - Posting must not introduce social metrics beyond prayer count.
 
 ## Technical Requirements

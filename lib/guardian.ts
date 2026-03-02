@@ -1,4 +1,4 @@
-import { checkLexicon } from "@/lib/lexicon";
+import { checkLexiconCrisis, checkLexiconViolentIntent } from "@/lib/lexicon";
 import { MAX_CHARS, MIN_CHARS } from "@/lib/constants";
 import type { GuardianResult } from "@/types";
 
@@ -113,6 +113,11 @@ export function validateMessageLength(message: string) {
 
 export const checkCrisis = (text: string): boolean => {
   const lowerText = text.toLowerCase();
+
+  // Gate 1: lexicon crisis signal (covers implied crisis, exhaustion, hopelessness)
+  if (checkLexiconCrisis(text)) return true;
+
+  // Gate 2: hardcoded keywords as fallback
   return CRISIS_KEYWORDS.some((keyword) => lowerText.includes(keyword));
 };
 
@@ -122,10 +127,8 @@ export const checkProfanity = (text: string): boolean => {
 };
 
 export function hasViolentIntent(text: string): boolean {
-  // Gate 1: lexicon (fast, no regex compilation cost per call)
-  const lexiconResult = checkLexicon(text);
-  if (lexiconResult.matched) {
-    console.debug("[Guardian] Lexicon match:", lexiconResult.lang, lexiconResult.term);
+  // Gate 1: lexicon violent_intent signal
+  if (checkLexiconViolentIntent(text)) {
     return true;
   }
 

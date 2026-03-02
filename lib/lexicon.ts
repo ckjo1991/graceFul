@@ -1,86 +1,173 @@
 // lib/lexicon.ts
 // Loads harm-lexicon.json and exposes checkLexicon().
-// Sits before regex and LLM checks in the guardian pipeline.
+// Returns signal type: violent_intent | crisis | profanity | none
+// Sits as Gate 1 before regex and LLM checks in the guardian pipeline.
 
 import lexiconData from "@/data/harm-lexicon.json";
 
-type LanguageEntry = {
+type SignalType = "violent_intent" | "crisis" | "profanity";
+
+type SignalEntry = {
   exact: string[];
   patterns: string[];
+};
+
+type LanguageEntry = {
+  violent_intent: SignalEntry;
+  crisis: SignalEntry;
+  profanity: SignalEntry;
+};
+
+type UniversalEntry = {
+  violent_intent: SignalEntry;
+  crisis: SignalEntry;
+  profanity: SignalEntry;
 };
 
 type LexiconData = {
   version: string;
   languages: Record<string, LanguageEntry>;
-  universal: LanguageEntry;
+  universal: UniversalEntry;
 };
 
 const lexicon = lexiconData as LexiconData;
 
-// Compile all regex patterns once at module load, not per call.
-const compiledPatterns: Record<string, RegExp[]> = {};
+// Compile all regex patterns once at module load
+type CompiledEntry = {
+  exact: string[];
+  patterns: RegExp[];
+};
+
+type CompiledLanguage = Record<SignalType, CompiledEntry>;
+
+const compiled: Record<string, CompiledLanguage> = {};
 
 for (const [lang, entry] of Object.entries(lexicon.languages)) {
-  compiledPatterns[lang] = entry.patterns.map(
-    (p) => new RegExp(p, "i"),
-  );
+  compiled[lang] = {
+    violent_intent: {
+      exact: entry.violent_intent.exact,
+      patterns: entry.violent_intent.patterns.map((p) => new RegExp(p, "i")),
+    },
+    crisis: {
+      exact: entry.crisis.exact,
+      patterns: entry.crisis.patterns.map((p) => new RegExp(p, "i")),
+    },
+    profanity: {
+      exact: entry.profanity.exact,
+      patterns: entry.profanity.patterns.map((p) => new RegExp(p, "i")),
+    },
+  };
 }
 
-compiledPatterns["universal"] = lexicon.universal.patterns.map(
-  (p) => new RegExp(p, "i"),
-);
-
-export type LexiconMatch = {
-  matched: true;
-  lang: string;
-  term: string;
-} | {
-  matched: false;
+// Universal
+compiled["universal"] = {
+  violent_intent: {
+    exact: lexicon.universal.violent_intent.exact,
+    patterns: lexicon.universal.violent_intent.patterns.map((p) => new RegExp(p, "i")),
+  },
+  crisis: {
+    exact: lexicon.universal.crisis.exact,
+    patterns: lexicon.universal.crisis.patterns.map((p) => new RegExp(p, "i")),
+  },
+  profanity: {
+    exact: lexicon.universal.profanity.exact,
+    patterns: lexicon.universal.profanity.patterns.map((p) => new RegExp(p, "i")),
+  },
 };
+
+export type LexiconMatch =
+  | { matched: true; signal: SignalType; lang: string; term: string }
+  | { matched: false };
+
+function checkEntry(text: string, lower: string, entry: CompiledEntry): string | null {
+  for (const term of entry.exact) {
+    if (lower.includes(term)) return term;
+  }
+  for (const pattern of entry.patterns) {
+    if (pattern.test(text)) return pattern.source;
+  }
+  return null;
+}
 
 /**
  * Check a message against the harm lexicon.
+ * Returns the first signal match found, in priority order:
+ * crisis > violent_intent > profanity
  *
- * @param text     Raw user input (not lowercased yet — we handle that internally)
- * @param langHint Optional BCP-47 language code hint ("tl", "ceb", "ilo", "en").
+ * @param text     Raw user input
+ * @param langHint Optional BCP-47 language code ("tl", "ceb", "ilo", "en")
  *                 If omitted, all languages are checked.
  */
 export function checkLexicon(text: string, langHint?: string): LexiconMatch {
   const lower = text.toLowerCase();
 
+  // Priority order: crisis first, then violent_intent, then profanity
+  const priority: SignalType[] = ["crisis", "violent_intent", "profanity"];
+
   // Always check universal first
-  for (const term of lexicon.universal.exact) {
-    if (lower.includes(term)) {
-      return { matched: true, lang: "universal", term };
-    }
-  }
-  for (const pattern of compiledPatterns["universal"] ?? []) {
-    if (pattern.test(lower)) {
-      return { matched: true, lang: "universal", term: pattern.source };
-    }
+  for (const signal of priority) {
+    const term = checkEntry(text, lower, compiled["universal"]![signal]!);
+    if (term) return { matched: true, signal, lang: "universal", term };
   }
 
   // Determine which languages to check
   const langsToCheck = langHint
-    ? [langHint, "en"] // always include English as fallback
+    ? Array.from(new Set([langHint, "en"]))
     : Object.keys(lexicon.languages);
 
   for (const lang of langsToCheck) {
-    const entry = lexicon.languages[lang];
-    if (!entry) continue;
+    const langEntry = compiled[lang];
+    if (!langEntry) continue;
 
-    for (const term of entry.exact) {
-      if (lower.includes(term)) {
-        return { matched: true, lang, term };
-      }
-    }
-
-    for (const pattern of compiledPatterns[lang] ?? []) {
-      if (pattern.test(lower)) {
-        return { matched: true, lang, term: pattern.source };
-      }
+    for (const signal of priority) {
+      const term = checkEntry(text, lower, langEntry[signal]!);
+      if (term) return { matched: true, signal, lang, term };
     }
   }
 
   return { matched: false };
+}
+
+/**
+ * Convenience: check only for crisis signals.
+ */
+export function checkLexiconCrisis(text: string, langHint?: string): boolean {
+  const lower = text.toLowerCase();
+  const langsToCheck = langHint
+    ? Array.from(new Set([langHint, "en"]))
+    : Object.keys(lexicon.languages);
+
+  const universalTerm = checkEntry(text, lower, compiled["universal"]!.crisis);
+  if (universalTerm) return true;
+
+  for (const lang of langsToCheck) {
+    const langEntry = compiled[lang];
+    if (!langEntry) continue;
+    const term = checkEntry(text, lower, langEntry.crisis);
+    if (term) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Convenience: check only for violent intent signals.
+ */
+export function checkLexiconViolentIntent(text: string, langHint?: string): boolean {
+  const lower = text.toLowerCase();
+  const langsToCheck = langHint
+    ? Array.from(new Set([langHint, "en"]))
+    : Object.keys(lexicon.languages);
+
+  const universalTerm = checkEntry(text, lower, compiled["universal"]!.violent_intent);
+  if (universalTerm) return true;
+
+  for (const lang of langsToCheck) {
+    const langEntry = compiled[lang];
+    if (!langEntry) continue;
+    const term = checkEntry(text, lower, langEntry.violent_intent);
+    if (term) return true;
+  }
+
+  return false;
 }

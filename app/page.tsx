@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Check, Globe2, Heart, Leaf, Sun } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown, Globe2, Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
 import CrisisScreen from "@/components/CrisisScreen";
 import GuardianWarning from "@/components/GuardianWarning";
@@ -14,7 +14,6 @@ import ReviewStep from "@/components/ReviewStep";
 import ShareStepShell from "@/components/ShareStepShell";
 import SupportStep from "@/components/SupportStep";
 import TestDashboard from "@/components/TestDashboard";
-import TranslateOptStep from "@/components/TranslateOptStep";
 import { analyzeIntent } from "@/lib/ai";
 import {
   addPrayerToPost,
@@ -26,7 +25,6 @@ import {
   selectCategory,
   selectEmotion,
   selectSupport,
-  selectTranslation,
   startShareFlow,
   submitMessage,
   type WarningReason,
@@ -34,12 +32,7 @@ import {
 import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
 import { checkCrisis, checkSafety } from "@/lib/guardian";
 import type { TestScenario } from "@/lib/testData";
-import {
-  getLanguageLabel,
-  getUiCopy,
-  localizeCategory,
-  localizeEmotion,
-} from "@/lib/translation";
+import { getUiCopy, localizeCategory, localizeEmotion } from "@/lib/translation";
 import type {
   AppFlowSelection,
   AppFlowStep,
@@ -49,17 +42,22 @@ import type {
   LanguageCode,
 } from "@/types";
 
-type EmotionFilter = "all" | Emotion;
 type TopicFilter = "all" | Category;
+type FeedFilter = "all" | Emotion | "my_posts";
+
+const DEVICE_ID_STORAGE_KEY = "graceful_device_id";
+const DEFAULT_FEED_FILTER: FeedFilter = "all";
 
 export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [posts, setPosts] = useState<FeedPost[]>(createInitialPosts);
-  const [emotionFilter, setEmotionFilter] = useState<EmotionFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<FeedFilter>(DEFAULT_FEED_FILTER);
   const [topicFilter, setTopicFilter] = useState<TopicFilter>("all");
+  const [deviceId, setDeviceId] = useState<string | null>(null);
   const [viewerLanguage, setViewerLanguage] = useState<LanguageCode>("en");
-  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [isPrayerModalOpen, setIsPrayerModalOpen] = useState(false);
   const [activePost, setActivePost] = useState<Pick<FeedPost, "id" | "message"> | null>(null);
   const [activePrayerListPostId, setActivePrayerListPostId] = useState<string | null>(null);
@@ -71,7 +69,7 @@ export default function GracefulFlow() {
 
   const emotionFilters: Array<{
     label: string;
-    value: EmotionFilter;
+    value: FeedFilter;
   }> = [
     { label: copy.feed.allEmotion, value: "all" },
     { label: localizeEmotion("grateful", viewerLanguage), value: "grateful" },
@@ -93,6 +91,37 @@ export default function GracefulFlow() {
 
   useEffect(() => {
     setShowOnboarding(!window.sessionStorage.getItem("graceful_onboarded"));
+
+    try {
+      const storedDeviceId = window.localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+
+      if (storedDeviceId) {
+        setDeviceId(storedDeviceId);
+        return;
+      }
+
+      const generatedDeviceId = window.crypto.randomUUID();
+      window.localStorage.setItem(DEVICE_ID_STORAGE_KEY, generatedDeviceId);
+      setDeviceId(generatedDeviceId);
+    } catch (error) {
+      console.error("Unable to initialize graceful device ID.", error);
+      setDeviceId(window.crypto.randomUUID());
+    }
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsCompact(!entry.isIntersecting);
+      },
+      { threshold: 0, rootMargin: "0px" },
+    );
+
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+
+    return () => observer.disconnect();
   }, []);
 
   const startFreshShare = () => {
@@ -116,7 +145,6 @@ export default function GracefulFlow() {
 
   const handleCategorySelect = (category: Category) => {
     const result = selectCategory(selection, category);
-    console.log("Current Selection:", result.selection);
     setSelection(result.selection);
     setStep(result.nextStep);
   };
@@ -134,18 +162,14 @@ export default function GracefulFlow() {
     setStep(result.nextStep);
   };
 
-  const handleTranslateSelect = (allow: boolean) => {
-    const result = selectTranslation(selection, allow);
-    setSelection(result.selection);
-    setStep(result.nextStep);
+  const handleViewerLanguageChange = (language: LanguageCode) => {
+    setViewerLanguage(language);
   };
 
   const handleFinalPost = async (finalMessage: string) => {
     if (!selection.emotion || !selection.category || !selection.support) {
       return;
     }
-
-    console.log("Guardian is checking:", finalMessage);
 
     const isCrisis = checkCrisis(finalMessage);
 
@@ -175,16 +199,18 @@ export default function GracefulFlow() {
       }
 
       const postedAt = Date.now();
-      const result = completeSuccessfulPost(posts, selection, finalMessage, postedAt);
+      const result = completeSuccessfulPost(
+        posts,
+        selection,
+        finalMessage,
+        postedAt,
+        deviceId ?? undefined,
+      );
 
       if (!result) {
         return;
       }
 
-      console.log("POSTING TO COMMUNITY:", {
-        ...result.posts[0],
-        createdAt: new Date(postedAt).toISOString(),
-      });
       setPosts(result.posts);
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
@@ -199,7 +225,13 @@ export default function GracefulFlow() {
       }
 
       const postedAt = Date.now();
-      const result = completeSuccessfulPost(posts, selection, finalMessage, postedAt);
+      const result = completeSuccessfulPost(
+        posts,
+        selection,
+        finalMessage,
+        postedAt,
+        deviceId ?? undefined,
+      );
 
       if (!result) {
         return;
@@ -235,7 +267,6 @@ export default function GracefulFlow() {
   };
 
   const handlePrayerSubmit = (postId: string, text: string) => {
-    console.log(`Submitting prayer for ${postId}:`, text);
     setPosts((current) => addPrayerToPost(current, postId, text, "Just now"));
     setIsPrayerModalOpen(false);
     setActivePost(null);
@@ -247,8 +278,18 @@ export default function GracefulFlow() {
     setStep(result.nextStep);
   };
 
+  const currentDeviceId =
+    deviceId ??
+    (typeof window !== "undefined"
+      ? window.localStorage.getItem(DEVICE_ID_STORAGE_KEY)
+      : null);
+
   const filteredPosts = posts.filter((post) => {
-    if (emotionFilter !== "all" && post.emotion !== emotionFilter) {
+    if (activeFilter === "my_posts") {
+      if (!currentDeviceId || post.deviceId !== currentDeviceId) {
+        return false;
+      }
+    } else if (activeFilter !== "all" && post.emotion !== activeFilter) {
       return false;
     }
 
@@ -268,115 +309,141 @@ export default function GracefulFlow() {
   if (step === "feed") {
     content = (
       <main className="min-h-screen bg-[var(--page-bg)] px-3 py-3 md:px-4 md:py-4">
-        <div className="mx-auto overflow-hidden rounded-[2.1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] shadow-[0_16px_44px_rgba(57,84,61,0.06)]">
-          <header className="border-b border-[var(--shell-border)]/90 px-5 py-5 md:px-7 md:py-6">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-3 text-[var(--brand)]">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-soft)]">
-                    <Leaf className="h-4.5 w-4.5" />
-                  </span>
-                  <h1 className="text-[2.45rem] font-semibold tracking-[-0.03em] text-[var(--brand)] md:text-[2.95rem]">
-                    GraceFul
-                  </h1>
-                </div>
-                <p className="text-[0.98rem] text-[var(--muted-ink)] md:text-[1rem]">
-                  {copy.feed.tagline}
-                </p>
-              </div>
-
-              <div className="relative flex items-center gap-3 self-start">
-                <button
-                  type="button"
-                  aria-label="Language settings"
-                  onClick={() => setIsLanguageMenuOpen((current) => !current)}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[0.95rem] border border-[var(--brand)] bg-[var(--shell-bg)] px-4 text-[var(--brand)] transition-colors hover:bg-[var(--brand-soft)]"
-                >
-                  <Globe2 className="h-5 w-5" />
-                  <span className="text-[0.94rem] font-medium">
-                    {getLanguageLabel(viewerLanguage)}
-                  </span>
-                </button>
-                {isLanguageMenuOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-[12rem] rounded-[1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] p-2 shadow-[0_12px_30px_rgba(57,84,61,0.14)]">
-                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, label]) => {
-                      const isActive = viewerLanguage === code;
-
-                      return (
-                        <button
-                          key={code}
-                          type="button"
-                          onClick={() => {
-                            setViewerLanguage(code as LanguageCode);
-                            setIsLanguageMenuOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-[0.75rem] px-3 py-2.5 text-left text-[0.92rem] transition-colors ${
-                            isActive
-                              ? "bg-[var(--brand-soft)] text-[var(--brand)]"
-                              : "text-[var(--muted-ink)] hover:bg-[var(--chip-bg)]"
-                          }`}
-                        >
-                          <span>{label}</span>
-                          {isActive ? <Check className="h-4 w-4" /> : null}
-                        </button>
-                      );
-                    })}
+        <div className="mx-auto rounded-[2.1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] shadow-[0_16px_44px_rgba(57,84,61,0.06)]">
+          <div ref={sentinelRef} className="h-0 w-full" />
+          <header
+            className={`sticky top-0 z-40 bg-white/95 backdrop-blur-sm transition-shadow duration-200 ${
+              isCompact ? "border-b border-[#d4e4cc] shadow-sm" : ""
+            }`}
+          >
+            <div
+              className={`px-5 transition-all duration-200 md:px-7 ${
+                isCompact ? "py-3" : "py-6"
+              }`}
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3 text-[var(--brand)]">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-soft)]">
+                      <Leaf className="h-4.5 w-4.5" />
+                    </span>
+                    <h1
+                      className={`font-serif font-bold text-[#2c3a2e] transition-all duration-200 ${
+                        isCompact ? "text-lg" : "text-3xl"
+                      }`}
+                    >
+                      GraceFul
+                    </h1>
                   </div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={startFreshShare}
-                  className="inline-flex h-12 items-center justify-center rounded-[0.95rem] bg-[var(--brand)] px-6 text-[0.98rem] font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
-                >
-                  {copy.feed.share}
-                </button>
+                  <p
+                    className={`text-[0.98rem] text-[var(--muted-ink)] md:text-[1rem] ${
+                      isCompact ? "hidden" : "block"
+                    }`}
+                  >
+                    {copy.feed.tagline}
+                  </p>
+                </div>
+
+                <div className="hidden flex-col gap-3 self-start sm:flex">
+                  {/* TODO: Language switcher parked — re-enable with translation */}
+                  <div className="relative ml-3 hidden min-w-[11rem]">
+                    <div className="flex items-center gap-2 rounded-xl border border-[#d4e4cc] bg-white px-4 py-2 hover:border-[#4a7c59]">
+                      <Globe2 className="h-4 w-4 shrink-0 text-[#2c3a2e]" />
+                      <select
+                        aria-label="Language"
+                        value={viewerLanguage}
+                        onChange={(event) =>
+                          handleViewerLanguageChange(event.target.value as LanguageCode)
+                        }
+                        className="min-w-0 flex-1 cursor-pointer appearance-none border-none bg-transparent text-sm font-semibold text-[#2c3a2e] outline-none"
+                      >
+                        {Object.entries(SUPPORTED_LANGUAGES).map(([code, label]) => (
+                          <option key={code} value={code}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none h-3.5 w-3.5 shrink-0 text-[#6b7c6d]" />
+                    </div>
+                  </div>
+                  <div className="hidden items-center gap-3 sm:flex">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilter("my_posts")}
+                      className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                        activeFilter === "my_posts"
+                          ? "bg-[#2c3a2e] text-white"
+                          : "border border-[#d4e4cc] bg-white text-[#2c3a2e] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                      }`}
+                    >
+                      {copy.feed.myPosts}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={startFreshShare}
+                      className="rounded-xl bg-[#4a7c59] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
+                    >
+                      {copy.feed.share}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </header>
 
-          <section className="px-5 py-7 md:px-7 lg:px-8 lg:py-8">
+          <section className="px-5 py-7 pb-24 sm:pb-0 md:px-7 lg:px-8 lg:py-8">
             <div className="mx-auto max-w-[50rem]">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-3">
-                  {emotionFilters.map((filter) => {
-                    const isActive = emotionFilter === filter.value;
+              <div
+                className={`relative z-30 flex flex-col gap-4 bg-transparent transition-opacity duration-200 ${
+                  activeFilter === "my_posts"
+                    ? "pointer-events-none h-0 opacity-0"
+                    : "opacity-100"
+                }`}
+              >
+                <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
+                  <div className="flex flex-nowrap gap-3 sm:flex-wrap">
+                    {emotionFilters.map((filter) => {
+                      const isActive = activeFilter === filter.value;
 
-                    return (
-                      <button
-                        key={filter.value}
-                        type="button"
-                        onClick={() => setEmotionFilter(filter.value)}
-                        className={`rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
-                          isActive
-                            ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
-                            : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                        }`}
-                      >
-                        {filter.label}
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          onClick={() => setActiveFilter(filter.value)}
+                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                            isActive
+                              ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
+                              : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                          }`}
+                        >
+                          {filter.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  {topicFilters.map((filter) => {
-                    const isActive = topicFilter === filter.value;
+                <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
+                  <div className="flex flex-nowrap gap-3 sm:flex-wrap">
+                    {topicFilters.map((filter) => {
+                      const isActive = topicFilter === filter.value;
 
-                    return (
-                      <button
-                        key={filter.value}
-                        type="button"
-                        onClick={() => setTopicFilter(filter.value)}
-                        className={`rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
-                          isActive
-                            ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
-                            : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                        }`}
-                      >
-                        {filter.label}
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          onClick={() => setTopicFilter(filter.value)}
+                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                            isActive
+                              ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
+                              : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                          }`}
+                        >
+                          {filter.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -391,6 +458,32 @@ export default function GracefulFlow() {
                       viewerLanguage={viewerLanguage}
                     />
                   ))
+                ) : activeFilter === "my_posts" ? (
+                  <div className="rounded-[1.85rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-10 text-center shadow-[0_10px_34px_rgba(57,84,61,0.05)]">
+                    <h2 className="text-3xl font-semibold text-[var(--ink)]">
+                      You haven&apos;t shared anything yet
+                    </h2>
+                    <p className="mt-3 text-lg leading-8 text-[var(--muted-ink)]">
+                      Your posts will appear here after you share something with the
+                      community.
+                    </p>
+                    <div className="mt-4 flex flex-col items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={startFreshShare}
+                        className="inline-flex h-12 items-center justify-center rounded-[0.95rem] bg-[var(--brand)] px-6 text-[0.98rem] font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
+                      >
+                        + Share something
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveFilter("all")}
+                        className="cursor-pointer text-sm text-[#4a7c59] underline"
+                      >
+                        Browse the feed
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="rounded-[1.85rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-10 text-center shadow-[0_10px_34px_rgba(57,84,61,0.05)]">
                     <h2 className="text-3xl font-semibold text-[var(--ink)]">
@@ -423,6 +516,30 @@ export default function GracefulFlow() {
             onClose={handleClosePrayerList}
             language={viewerLanguage}
           />
+        </div>
+
+        <div className="fixed bottom-6 left-1/2 z-50 block -translate-x-1/2 sm:hidden">
+          <div className="flex items-center gap-0 overflow-hidden rounded-full border border-[#d4e4cc] bg-white/95 shadow-lg shadow-black/10 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => setActiveFilter("my_posts")}
+              className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
+                activeFilter === "my_posts"
+                  ? "bg-[#2c3a2e] text-white"
+                  : "bg-transparent text-[#2c3a2e] hover:bg-[#f0f7f0]"
+              }`}
+            >
+              {copy.feed.myPosts}
+            </button>
+            <div className="h-5 w-px bg-[#d4e4cc]" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={startFreshShare}
+              className="bg-[#4a7c59] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3d6b4a]"
+            >
+              {copy.feed.share}
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -533,18 +650,6 @@ export default function GracefulFlow() {
         />
       </main>
     );
-  } else if (step === "translate_opt") {
-    content = (
-      <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
-        <TranslateOptStep
-          allowTranslation={selection.allowTranslation}
-          onClose={() => setStep(returnToFeed())}
-          onSelect={handleTranslateSelect}
-          onBack={() => setStep("support")}
-          language={viewerLanguage}
-        />
-      </main>
-    );
   } else if (step === "review") {
     content = (
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
@@ -553,7 +658,7 @@ export default function GracefulFlow() {
           isPosting={isPosting}
           message={selection.message}
           onClose={() => setStep(returnToFeed())}
-          onBack={() => setStep("translate_opt")}
+          onBack={() => setStep("support")}
           onCrisisDetected={() => setStep("crisis")}
           onPost={handleFinalPost}
           language={viewerLanguage}
@@ -565,7 +670,7 @@ export default function GracefulFlow() {
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6 text-center">
         <ShareStepShell
           onClose={() => setStep(returnToFeed())}
-          step={6}
+          step={5}
           title={copy.feed.successTitle}
           description={copy.feed.successBody}
         >

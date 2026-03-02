@@ -6,7 +6,9 @@ GraceFul is a client-heavy Next.js prototype with a working local feed,
 posting flow, onboarding modal, prayer composer and prayer viewer, local
 translation rendering, and Guardian safety logic. The app is usable as a
 demo, but all primary data is still in browser state and all review behavior is
-simulated.
+simulated. The mounted feed now includes a styled language selector, a header
+level `My Posts` shortcut, and a unified feed filter state for emotion and
+device-specific post views.
 
 ## Architecture Overview
 
@@ -51,6 +53,10 @@ simulated.
 7. **First-session framing**
    An onboarding modal sets expectations around anonymity, prayer, and staying
    connected to real community.
+8. **Unified feed controls**
+   The header and filter row share a single active feed filter state for
+   `all`, `grateful`, `struggling`, and `my_posts`, with a dedicated empty
+   state for device-scoped posts.
 
 ## Known Gaps
 
@@ -64,7 +70,7 @@ simulated.
   path.
 - Coverage now exists for Guardian rules, prayer submission safety, and the
   core share-flow state transitions, but browser-level UI coverage is still
-  absent.
+  absent, including feed header layout and filter rendering details.
 
 ## Active Flow Definition
 
@@ -113,4 +119,5 @@ Some transitions are conditional:
   prototype components.
 - Replace local-only posting and prayer updates with persistence-ready flows.
 - Add browser-level UI coverage if the team wants confidence in rendered
-  behavior rather than just flow-state logic.
+  behavior rather than just flow-state logic, especially around feed header
+  controls and empty states.

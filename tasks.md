@@ -33,6 +33,11 @@
 
 - [x] Seed the feed with local anonymous posts.
 - [x] Render post cards with emotion, category, time, and prayer count.
+- [x] Add a styled native language selector to the feed header.
+- [x] Move `My Posts` into the feed header next to the share action.
+- [x] Unify feed filter state across `All`, `Grateful`, `Struggling`, and
+  `My Posts`.
+- [x] Add a dedicated `My Posts` empty state with a share CTA.
 - [x] Add a prayer modal for eligible posts.
 - [x] Add a prayer viewer for posts with existing prayers.
 - [x] Update prayer counts locally after a prayer is submitted.

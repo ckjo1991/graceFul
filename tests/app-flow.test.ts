@@ -11,7 +11,6 @@ import {
   selectCategory,
   selectEmotion,
   selectSupport,
-  selectTranslation,
   startShareFlow,
   submitMessage,
 } from "../lib/app-flow";
@@ -45,14 +44,16 @@ test("share flow supports the happy path from feed to done and back to feed", ()
 
   const support = selectSupport(selection, "A prayer would be nice");
   selection = support.selection;
-  assert.equal(support.nextStep, "translate_opt");
-
-  const translation = selectTranslation(selection, true);
-  selection = translation.selection;
-  assert.equal(translation.nextStep, "review");
+  assert.equal(support.nextStep, "review");
 
   const posts = createInitialPosts();
-  const completed = completeSuccessfulPost(posts, selection, selection.message, 1_700_000_000_000);
+  const completed = completeSuccessfulPost(
+    posts,
+    selection,
+    selection.message,
+    1_700_000_000_000,
+    "device-123",
+  );
   assert.ok(completed);
   if (!completed) {
     assert.fail("Expected successful completion.");
@@ -69,14 +70,21 @@ test("share flow supports the happy path from feed to done and back to feed", ()
     createdPost.message,
     "I am grateful for a calm week with my family and I would love prayer for continued peace in our home.",
   );
+  assert.equal(createdPost.deviceId, "device-123");
   assert.equal(createdPost.supportType, "A prayer would be nice");
   assert.equal(createdPost.allowTranslation, true);
   assert.equal(createdPost.sourceLanguage, "en");
   assert.equal(createdPost.createdAt, "Just now");
   assert.equal(createdPost.prayerCount, 0);
   assert.deepEqual(createdPost.prayers, []);
-  assert.match(createdPost.translations.tl ?? "", /^Pagsasalin sa Tagalog:/);
-  assert.match(createdPost.translations.ceb ?? "", /^Hubad sa Binisaya:/);
+  assert.ok(
+    !(createdPost.translations.tl ?? "").startsWith("Pagsasalin sa Tagalog:"),
+  );
+  assert.ok(
+    !(createdPost.translations.ceb ?? "").startsWith("Hubad sa Binisaya:"),
+  );
+  assert.notEqual(createdPost.translations.tl, createdPost.message);
+  assert.notEqual(createdPost.translations.ceb, createdPost.message);
 
   assert.equal(returnToFeed(), "feed");
 });

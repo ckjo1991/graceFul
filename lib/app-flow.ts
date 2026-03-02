@@ -18,7 +18,7 @@ export const INITIAL_SELECTION: AppFlowSelection = {
   category: "",
   message: "",
   support: "",
-  allowTranslation: null,
+  wantsFollowUp: false,
 };
 
 export const INITIAL_POSTS: FeedPost[] = [
@@ -28,12 +28,13 @@ export const INITIAL_POSTS: FeedPost[] = [
     category: "Family",
     message:
       "So thankful for my mother's recovery. It's been a hard few months but she's doing so well now.",
+    wantsFollowUp: false,
     supportType: "A prayer would be nice",
     allowTranslation: true,
     sourceLanguage: "en",
     translations: {
-      tl: "Pagsasalin sa Tagalog: Labis akong nagpapasalamat sa paggaling ng aking nanay. Naging mahirap ang nakaraang mga buwan pero maayos na ang lagay niya ngayon.",
-      ceb: "Hubad sa Binisaya: Mapasalamaton kaayo ko sa pagkaayo sa akong inahan. Lisod ang milabay nga mga bulan pero maayo na gyud ang iyang kahimtang karon.",
+      tl: "Napakalaking biyaya para sa amin na gumagaling na ang nanay ko. Salamat sa Diyos sa Kanyang kabutihan sa aming pamilya.",
+      ceb: "Dako kaayo akong pasalamat sa pagkaayo sa akong inahan. Salamat sa Diyos kay padayon Niyang gipalig-on ang among pamilya.",
     },
     createdAt: "2h ago",
     prayerCount: 1,
@@ -53,10 +54,13 @@ export const INITIAL_POSTS: FeedPost[] = [
     category: "Financial",
     message:
       "Going through a tough time financially. Trying to stay hopeful but it's hard some days.",
+    wantsFollowUp: false,
     supportType: "Both prayer and encouragement",
-    allowTranslation: false,
+    allowTranslation: true,
     sourceLanguage: "en",
-    translations: {},
+    translations: generateTranslations(
+      "Going through a tough time financially. Trying to stay hopeful but it's hard some days.",
+    ),
     createdAt: "4h ago",
     prayerCount: 1,
     prayers: [
@@ -75,10 +79,13 @@ export const INITIAL_POSTS: FeedPost[] = [
     category: "Work",
     message:
       "A difficult conversation at work ended with more peace than I expected. I am grateful for the patience and clarity that showed up right on time.",
+    wantsFollowUp: false,
     supportType: "Just sharing",
-    allowTranslation: false,
+    allowTranslation: true,
     sourceLanguage: "en",
-    translations: {},
+    translations: generateTranslations(
+      "A difficult conversation at work ended with more peace than I expected. I am grateful for the patience and clarity that showed up right on time.",
+    ),
     createdAt: "7h ago",
     prayerCount: 0,
     prayers: [],
@@ -89,10 +96,13 @@ export const INITIAL_POSTS: FeedPost[] = [
     category: "Health",
     message:
       "Waiting on some test results this week and feeling more anxious than I expected. Praying for peace and strength while I wait.",
+    wantsFollowUp: false,
     supportType: "A prayer would be nice",
-    allowTranslation: false,
+    allowTranslation: true,
     sourceLanguage: "en",
-    translations: {},
+    translations: generateTranslations(
+      "Waiting on some test results this week and feeling more anxious than I expected. Praying for peace and strength while I wait.",
+    ),
     createdAt: "9h ago",
     prayerCount: 2,
     prayers: [
@@ -116,12 +126,13 @@ export const INITIAL_POSTS: FeedPost[] = [
     category: "Personal",
     message:
       "I have been trying to rebuild healthy routines again after a hard season. Asking for steadiness and grace for small steps.",
+    wantsFollowUp: false,
     supportType: "Both prayer and encouragement",
     allowTranslation: true,
     sourceLanguage: "en",
     translations: {
-      tl: "Pagsasalin sa Tagalog: Sinisikap kong buuin muli ang maayos na mga gawain matapos ang mahirap na panahon. Humihingi ako ng katatagan at biyaya para sa maliliit na hakbang.",
-      ceb: "Hubad sa Binisaya: Naningkamot ko sa pagtukod pag-usab sa maayong rutina human sa lisod nga panahon. Nangayo ko og kalig-on ug grasya alang sa gagmayng lakang.",
+      tl: "Sinusubukan kong buuin muli ang sarili ko pagkatapos ng isang mabigat na yugto. Hinihingi ko sa Diyos ang biyaya para sa maliliit pero tapat na hakbang.",
+      ceb: "Naningkamot ko nga motindog pag-usab human sa lisod nga panahon. Nangayo ko sa Diyos og grasya para sa gagmay pero matinud-anong mga lakang.",
     },
     createdAt: "11h ago",
     prayerCount: 1,
@@ -140,10 +151,13 @@ export const INITIAL_POSTS: FeedPost[] = [
     category: "Other",
     message:
       "A neighbor showed unexpected kindness today and it reminded me that quiet goodness still finds us in ordinary moments.",
+    wantsFollowUp: false,
     supportType: "Just sharing",
-    allowTranslation: false,
+    allowTranslation: true,
     sourceLanguage: "en",
-    translations: {},
+    translations: generateTranslations(
+      "A neighbor showed unexpected kindness today and it reminded me that quiet goodness still finds us in ordinary moments.",
+    ),
     createdAt: "13h ago",
     prayerCount: 0,
     prayers: [],
@@ -220,21 +234,33 @@ export function submitMessage(selection: AppFlowSelection, message: string) {
 export function selectSupport(selection: AppFlowSelection, support: SupportType) {
   return {
     selection: { ...selection, support },
-    nextStep: "translate_opt" as AppFlowStep,
+    nextStep: "review" as AppFlowStep,
   };
 }
 
-export function selectTranslation(selection: AppFlowSelection, allowTranslation: boolean) {
-  return {
-    selection: { ...selection, allowTranslation },
-    nextStep: "review" as AppFlowStep,
-  };
+export function handleEscalationRequest(post: FeedPost): void {
+  if (!post.wantsFollowUp) return;
+
+  // TODO: When prayer team integration is ready, replace this
+  // with a real notification - email, Slack, internal dashboard,
+  // or whatever delivery mechanism the church team decides on.
+  // The post.id and post.category are available for routing.
+  // The poster remains anonymous - no contact info is collected.
+  // The prayer team reaches out through existing church channels.
+  console.log("[GraceFul] Escalation requested for post:", {
+    postId: post.id,
+    category: post.category,
+    emotion: post.emotion,
+    wantsFollowUp: post.wantsFollowUp,
+    createdAt: post.createdAt,
+  });
 }
 
 export function createFeedPost(
   selection: AppFlowSelection,
   finalMessage: string,
   postedAt: number,
+  deviceId?: string,
 ): FeedPost | null {
   if (!selection.emotion || !selection.category || !selection.support) {
     return null;
@@ -247,10 +273,12 @@ export function createFeedPost(
     emotion: selection.emotion,
     category: selection.category,
     message: sanitizedMessage,
+    deviceId,
+    wantsFollowUp: selection.wantsFollowUp,
     supportType: selection.support,
-    allowTranslation: selection.allowTranslation || false,
+    allowTranslation: true,
     sourceLanguage: "en",
-    translations: selection.allowTranslation ? generateTranslations(sanitizedMessage) : {},
+    translations: generateTranslations(sanitizedMessage),
     createdAt: "Just now",
     prayerCount: 0,
     prayers: [],
@@ -262,12 +290,15 @@ export function completeSuccessfulPost(
   selection: AppFlowSelection,
   finalMessage: string,
   postedAt: number,
+  deviceId?: string,
 ) {
-  const newPost = createFeedPost(selection, finalMessage, postedAt);
+  const newPost = createFeedPost(selection, finalMessage, postedAt, deviceId);
 
   if (!newPost) {
     return null;
   }
+
+  handleEscalationRequest(newPost);
 
   return {
     posts: [newPost, ...posts],

@@ -1,12 +1,10 @@
 "use client";
 
 import React from "react";
-import { Globe2, HandHeart, Sparkles } from "lucide-react";
+import { HandHeart, Sparkles } from "lucide-react";
 
 import {
-  getLanguageLabel,
   getViewPrayerLabel,
-  getTranslatedMessage,
   getUiCopy,
   localizeCategory,
   localizeEmotion,
@@ -20,6 +18,15 @@ interface PostCardProps {
   onViewPrayers: (postId: string) => void;
   viewerLanguage: LanguageCode;
 }
+
+const TOPIC_CARD_TINTS: Record<string, string> = {
+  financial: "bg-[#fdf6e3]",
+  family: "bg-[#f0f7f0]",
+  health: "bg-[#eef4fb]",
+  personal: "bg-[#fdf0f8]",
+  work: "bg-[#f5f0fd]",
+  other: "bg-[#f5f5f5]",
+};
 
 export default function PostCard({
   post,
@@ -36,17 +43,14 @@ export default function PostCard({
   const railClass = isGrateful
     ? "bg-[var(--grateful-rail)]"
     : "bg-[var(--struggling-rail)]";
-  const canTranslate =
-    post.allowTranslation &&
-    viewerLanguage !== post.sourceLanguage &&
-    viewerLanguage !== "en";
-
-  const displayMessage = canTranslate
-    ? getTranslatedMessage(post.message, post.translations, viewerLanguage)
-    : post.message;
+  const cardBg = TOPIC_CARD_TINTS[post.category?.toLowerCase()] ?? "bg-white";
+  // TODO: Translation stays parked in feed cards until the language switcher returns.
+  const displayMessage = post.message;
 
   return (
-    <article className="relative mx-auto w-full max-w-[50rem] overflow-hidden rounded-[1.45rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-4 py-4 shadow-[0_8px_24px_rgba(57,84,61,0.04)] md:px-6 md:py-5">
+    <article
+      className={`relative z-0 mx-auto w-full max-w-[50rem] overflow-hidden rounded-[1.45rem] border border-[var(--card-border)] px-4 py-4 shadow-[0_8px_24px_rgba(57,84,61,0.04)] md:px-6 md:py-5 ${cardBg}`}
+    >
       <span className={`absolute inset-y-0 left-0 w-[7px] ${railClass}`} />
 
       <div className="flex flex-col gap-4">
@@ -71,18 +75,6 @@ export default function PostCard({
           {displayMessage}
         </p>
 
-        {canTranslate ? (
-          <div className="rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--brand-soft)]/30 px-4 py-3 text-[0.84rem] leading-6 text-[var(--muted-ink)]">
-            <p className="font-medium text-[var(--brand)]">
-              {copy.postCard.translated} {getLanguageLabel(viewerLanguage)}
-            </p>
-            <p className="mt-1">
-              <span className="font-medium">{copy.postCard.original}:</span>{" "}
-              {post.message}
-            </p>
-          </div>
-        ) : null}
-
         <div className="inline-flex items-center gap-2 text-[0.94rem] italic text-[var(--support-text)]">
           <Sparkles className="h-4 w-4 text-[var(--support-accent)]" />
           <span>{localizeSupportType(post.supportType, viewerLanguage)}</span>
@@ -106,13 +98,6 @@ export default function PostCard({
             >
               {getViewPrayerLabel(post.prayerCount, viewerLanguage)}
             </button>
-          ) : null}
-
-          {canTranslate ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.96rem] font-medium text-[var(--muted-ink)]">
-              <Globe2 className="h-4 w-4" />
-              {getLanguageLabel(viewerLanguage)}
-            </div>
           ) : null}
         </div>
       </div>

@@ -18,7 +18,7 @@ export default function ShareStepShell({
   onClose,
   step,
   title,
-  totalSteps = 6,
+  totalSteps = 5,
 }: ShareStepShellProps) {
   return (
     <div className="mx-auto w-full max-w-[32rem] animate-in fade-in slide-in-from-bottom-4 duration-500">

@@ -17,11 +17,7 @@ export type LanguageCode =
   | "en"
   | "tl"
   | "ceb"
-  | "ilo"
   | "hil"
-  | "war"
-  | "pam"
-  | "bcl"
   | "es";
 
 export type AppFlowStep =
@@ -32,7 +28,6 @@ export type AppFlowStep =
   | "crisis"
   | "warning"
   | "support"
-  | "translate_opt"
   | "review"
   | "done";
 
@@ -50,7 +45,7 @@ export interface AppFlowSelection {
   category: Category | "";
   message: string;
   support: SupportType | "";
-  allowTranslation: boolean | null;
+  wantsFollowUp: boolean;
 }
 
 export interface PrototypeShareDraft {
@@ -81,6 +76,8 @@ export interface FeedPost {
   emotion: Emotion;
   category: Category;
   message: string;
+  deviceId?: string;
+  wantsFollowUp: boolean;
   supportType: SupportType;
   allowTranslation: boolean;
   sourceLanguage: LanguageCode;

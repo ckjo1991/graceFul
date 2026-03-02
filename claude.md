@@ -18,6 +18,10 @@ product shell unless you intentionally migrate the architecture.
 - Guardian and privacy enforcement live in `lib/guardian.ts`.
 - Guardian intent detection also depends on the lexicon loader in `lib/lexicon.ts`.
 - Prayer submission is local-only and updates counts in client state.
+- The feed header currently uses a styled native language `select` above the
+  `My Posts` and `+ Share` buttons.
+- Feed filtering is driven by one `activeFilter` state that is shared by
+  `All`, `Grateful`, `Struggling`, and `My Posts`.
 - `components/reference/share-flow.reference.tsx` and
   `components/reference/prayer-feed.reference.tsx` are archived reference
   prototypes, not mounted product code.
@@ -68,6 +72,8 @@ If you change this state model, update the docs in the same pass.
   safety logic in multiple places.
 - Keep client-side product state understandable; this flow is already complex
   enough without hidden abstractions.
+- Preserve the unified feed-filter model. Do not reintroduce separate state
+  for `My Posts` versus emotion pills without a strong reason.
 - Preserve the current visual language defined by `tailwind.config.ts`,
   `app/globals.css`, and `lib/constants.ts`.
 - Avoid drifting shared models apart. The app currently has both typed shared
@@ -88,6 +94,8 @@ If you change this state model, update the docs in the same pass.
 - Add unit coverage for crisis, profanity, PII, and malicious-intent checks.
 - Verify the prayer modal uses the same protection standards as post creation.
 - Verify the `+ Share` path and return-to-feed path work end to end.
+- Verify feed filters default to `all` and preserve the dedicated `My Posts`
+  empty state behavior when the device has no posts.
 - Keep development-only helpers like `TestDashboard` gated out of production.
 
 ## Documentation Rule

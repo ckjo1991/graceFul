@@ -80,7 +80,7 @@ export default function ReviewStep({
   return (
     <ShareStepShell
       onClose={onClose}
-      step={6}
+      step={5}
       title={copy.reviewStep.title}
       description={copy.reviewStep.description}
     >

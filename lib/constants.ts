@@ -38,11 +38,7 @@ export const SUPPORTED_LANGUAGES: Readonly<Record<LanguageCode, string>> = {
   en: "English",
   tl: "Tagalog",
   ceb: "Bisaya",
-  ilo: "Ilocano",
   hil: "Hiligaynon",
-  war: "Waray",
-  pam: "Kapampangan",
-  bcl: "Bicol",
   es: "Spanish",
 };
 
@@ -54,7 +50,6 @@ export const FLOW_STEPS: readonly AppFlowStep[] = [
   "crisis",
   "warning",
   "support",
-  "translate_opt",
   "review",
   "done",
 ];
