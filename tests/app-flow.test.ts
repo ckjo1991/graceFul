@@ -76,7 +76,6 @@ test("share flow supports the happy path from feed to done and back to feed", ()
   assert.equal(createdPost.allowTranslation, true);
   assert.equal(createdPost.sourceLanguage, "en");
   assert.equal(createdPost.createdAt, "Just now");
-  assert.equal(createdPost.prayerCount, 0);
   assert.deepEqual(createdPost.prayers, []);
   assert.ok(
     !(createdPost.translations.tl ?? "").startsWith("Pagsasalin sa Tagalog:"),
@@ -135,9 +134,9 @@ test("prayer submissions append a prayer and increment only the targeted post", 
     "Just now",
   );
 
-  assert.equal(updated[0].prayerCount, posts[0].prayerCount);
-  assert.equal(updated[1].prayerCount, posts[1].prayerCount + 1);
-  assert.equal(updated[2].prayerCount, posts[2].prayerCount);
+  assert.equal(updated[0].prayers.length, posts[0].prayers.length);
+  assert.equal(updated[1].prayers.length, posts[1].prayers.length + 1);
+  assert.equal(updated[2].prayers.length, posts[2].prayers.length);
   assert.equal(updated[1].prayers.length, posts[1].prayers.length + 1);
   assert.equal(
     updated[1].prayers.at(-1)?.message,

@@ -15,7 +15,6 @@ export const samplePosts: FeedPostWithPrayers[] = [
       tl: "Napakalaking biyaya para sa amin na gumagaling na ang nanay ko. Salamat sa Diyos sa Kanyang kabutihan sa aming pamilya.",
       ceb: "Dako kaayo akong pasalamat sa pagkaayo sa akong inahan. Salamat sa Diyos kay padayon Niyang gipalig-on ang among pamilya.",
     },
-    prayerCount: 12,
     translationLabel: "English",
     createdAt: "2026-02-27T09:00:00.000Z",
     prayers: [
@@ -42,7 +41,6 @@ export const samplePosts: FeedPostWithPrayers[] = [
       tl: "Mabigat ang dinadala ko sa trabaho nitong mga araw. Pagod na ako, pero humihingi pa rin ako ng lakas at karunungan sa Diyos.",
       ceb: "Bug-at na kaayo ang trabaho karong mga adlawa. Kapoy na ko, pero nangayo gihapon ko sa Diyos og kusog ug kaalam.",
     },
-    prayerCount: 9,
     translationLabel: "Tagalog available",
     createdAt: "2026-02-26T13:15:00.000Z",
     prayers: [
@@ -69,7 +67,6 @@ export const samplePosts: FeedPostWithPrayers[] = [
       tl: "Dumating ang probisyon ng Diyos sa tamang panahon. Taos-puso akong nagpapasalamat at hinihingi ko pa rin ang Kanyang karunungan sa paghawak nito.",
       ceb: "Miabot ang panalangin sa hustong panahon. Nagpasalamat ko sa Diyos ug nangayo gihapon ko og kaalam sa pagdumala sa gisalig Niya kanamo.",
     },
-    prayerCount: 6,
     translationLabel: "Bisaya available",
     createdAt: "2026-02-25T07:45:00.000Z",
     prayers: [],

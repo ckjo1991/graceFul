@@ -4,12 +4,12 @@ import React from "react";
 import { HandHeart, Sparkles } from "lucide-react";
 
 import {
-  getViewPrayerLabel,
   getUiCopy,
   localizeCategory,
   localizeEmotion,
   localizeSupportType,
 } from "@/lib/translation";
+import { formatRelativeTime } from "@/lib/utils";
 import type { FeedPost, LanguageCode } from "@/types";
 
 interface PostCardProps {
@@ -67,7 +67,7 @@ export default function PostCard({
           </div>
 
           <span className="pt-1 text-[0.92rem] text-[var(--timestamp)]">
-            {post.createdAt}
+            {formatRelativeTime(post.createdAt)}
           </span>
         </div>
 
@@ -90,13 +90,13 @@ export default function PostCard({
             {copy.postCard.pray}
           </button>
 
-          {post.prayerCount > 0 ? (
+          {post.prayers.length > 0 ? (
             <button
               type="button"
               onClick={() => onViewPrayers(post.id)}
               className="inline-flex items-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.96rem] font-medium text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
             >
-              {getViewPrayerLabel(post.prayerCount, viewerLanguage)}
+              {`View prayer (${post.prayers.length})`}
             </button>
           ) : null}
         </div>

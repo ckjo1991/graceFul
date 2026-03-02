@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Globe2, Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
 import CrisisScreen from "@/components/CrisisScreen";
@@ -91,6 +91,7 @@ export default function GracefulFlow() {
   const [selection, setSelection] = useState<AppFlowSelection>(createInitialSelection);
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
   const [warningReason, setWarningReason] = useState<WarningReason>(null);
+  const isModalOpen = useRef(false);
   const copy = getUiCopy(viewerLanguage);
 
   const emotionFilters: Array<{
@@ -137,6 +138,10 @@ export default function GracefulFlow() {
 
   useEffect(() => {
     const handleIntersection = debounce(([entry]: IntersectionObserverEntry[]) => {
+      if (isModalOpen.current) {
+        return;
+      }
+
       setIsCompact(!entry.isIntersecting);
     }, 50);
 
@@ -155,6 +160,28 @@ export default function GracefulFlow() {
     };
   }, []);
 
+  const syncCompactState = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setIsCompact(window.scrollY > 120);
+  }, []);
+
+  const handleModalVisibilityChange = useCallback((isOpen: boolean) => {
+    isModalOpen.current = isOpen;
+
+    if (!isOpen) {
+      syncCompactState();
+    }
+  }, [syncCompactState]);
+
+  const closeShareFlow = useCallback(() => {
+    isModalOpen.current = false;
+    setStep(returnToFeed());
+    syncCompactState();
+  }, [syncCompactState]);
+
   const startFreshShare = () => {
     const result = startShareFlow(lastPostTime);
 
@@ -163,6 +190,7 @@ export default function GracefulFlow() {
       return;
     }
 
+    isModalOpen.current = true;
     setSelection(result.selection);
     setWarningReason(result.warningReason);
     setStep(result.nextStep);
@@ -330,11 +358,6 @@ export default function GracefulFlow() {
 
     return true;
   });
-  const activePrayerListPost =
-    activePrayerListPostId
-      ? posts.find((post) => post.id === activePrayerListPostId) ?? null
-      : null;
-
   let content: React.ReactNode;
 
   if (step === "feed") {
@@ -539,6 +562,7 @@ export default function GracefulFlow() {
             onClose={handleClosePrayer}
             onSubmit={handlePrayerSubmit}
             language={viewerLanguage}
+            onModalVisibilityChange={handleModalVisibilityChange}
             postTranslations={
               activePost
                 ? posts.find((entry) => entry.id === activePost.id)?.translations
@@ -546,10 +570,12 @@ export default function GracefulFlow() {
             }
           />
           <PrayerListModal
-            post={activePrayerListPost}
-            isOpen={Boolean(activePrayerListPost)}
+            postId={activePrayerListPostId}
+            posts={posts}
+            isOpen={Boolean(activePrayerListPostId)}
             onClose={handleClosePrayerList}
             language={viewerLanguage}
+            onModalVisibilityChange={handleModalVisibilityChange}
           />
         </div>
 
@@ -586,7 +612,7 @@ export default function GracefulFlow() {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6 text-center">
         <ShareStepShell
-          onClose={() => setStep(returnToFeed())}
+          onClose={closeShareFlow}
           step={1}
           title={copy.emotionStep.title}
           description={copy.emotionStep.description}
@@ -635,7 +661,7 @@ export default function GracefulFlow() {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6">
         <CategoryStep
-          onClose={() => setStep(returnToFeed())}
+          onClose={closeShareFlow}
           selectedEmotion={selection.emotion as Emotion}
           onSelect={handleCategorySelect}
           onBack={() => setStep("emotion")}
@@ -650,7 +676,7 @@ export default function GracefulFlow() {
           key={`${selection.emotion}:${selection.category}:${selection.message}`}
           category={selection.category as Category}
           initialMessage={selection.message}
-          onClose={() => setStep(returnToFeed())}
+          onClose={closeShareFlow}
           selectedEmotion={selection.emotion as Emotion}
           onNext={handleMessageSubmit}
           onBack={() => setStep("category")}
@@ -681,7 +707,7 @@ export default function GracefulFlow() {
     content = (
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
         <SupportStep
-          onClose={() => setStep(returnToFeed())}
+          onClose={closeShareFlow}
           supportOptions={SUPPORT_OPTIONS}
           onSelect={handleSupportSelect}
           onBack={() => setStep("message")}
@@ -696,7 +722,7 @@ export default function GracefulFlow() {
           key={selection.message}
           isPosting={isPosting}
           message={selection.message}
-          onClose={() => setStep(returnToFeed())}
+          onClose={closeShareFlow}
           onBack={() => setStep("support")}
           onCrisisDetected={() => setStep("crisis")}
           onPost={handleFinalPost}
@@ -708,7 +734,7 @@ export default function GracefulFlow() {
     content = (
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6 text-center">
         <ShareStepShell
-          onClose={() => setStep(returnToFeed())}
+          onClose={closeShareFlow}
           step={5}
           title={copy.feed.successTitle}
           description={copy.feed.successBody}
@@ -724,7 +750,7 @@ export default function GracefulFlow() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              onClick={() => setStep(returnToFeed())}
+              onClick={closeShareFlow}
               className="rounded-[0.55rem] bg-[var(--brand)] px-5 py-2.5 text-[0.92rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
             >
               {copy.feed.viewFeed}

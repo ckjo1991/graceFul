@@ -44,7 +44,7 @@ export function PrayerFeed() {
             </p>
             <div className="mt-4 flex items-center justify-between gap-4 text-sm text-[var(--muted-foreground)]">
               <span>{post.translationLabel}</span>
-              <span>{post.prayerCount} prayers</span>
+              <span>{post.prayers.length} prayers</span>
             </div>
             <div className="mt-4 rounded-[1.25rem] bg-[var(--muted)]/45 p-4">
               {post.prayers.length > 0 ? (

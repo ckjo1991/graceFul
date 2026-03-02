@@ -8,43 +8,54 @@ import {
   getPrayerCountLabel,
   getUiCopy,
 } from "@/lib/translation";
-import { lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
+import { formatRelativeTime, lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import type { FeedPost, LanguageCode } from "@/types";
 
 interface PrayerListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  post: FeedPost | null;
+  onModalVisibilityChange?: (isOpen: boolean) => void;
+  postId: string | null;
+  posts: FeedPost[];
   language: LanguageCode;
 }
 
 export default function PrayerListModal({
   isOpen,
   onClose,
-  post,
+  onModalVisibilityChange,
+  postId,
+  posts,
   language,
 }: PrayerListModalProps) {
   useEffect(() => {
     if (isOpen) {
+      onModalVisibilityChange?.(true);
       lockBodyScroll();
     } else {
       unlockBodyScroll();
+      onModalVisibilityChange?.(false);
     }
 
     return () => {
       unlockBodyScroll();
+      if (isOpen) {
+        onModalVisibilityChange?.(false);
+      }
     };
-  }, [isOpen]);
+  }, [isOpen, onModalVisibilityChange]);
 
-  if (!isOpen || !post) {
+  const currentPost = postId ? posts.find((post) => post.id === postId) ?? null : null;
+
+  if (!isOpen || !currentPost) {
     return null;
   }
 
   const copy = getUiCopy(language);
   const postMessage =
     language !== "en"
-      ? getDisplayTranslatedMessage(post.message, post.translations, language)
-      : post.message;
+      ? getDisplayTranslatedMessage(currentPost.message, currentPost.translations, language)
+      : currentPost.message;
 
   return (
     <div
@@ -59,7 +70,7 @@ export default function PrayerListModal({
         <div className="flex items-center justify-between border-b border-bg-warm p-4">
           <div className="flex items-center gap-2 font-bold text-primary">
             <HandHeart className="h-5 w-5" />
-            <span>{getPrayerCountLabel(post.prayerCount, language)}</span>
+            <span>{getPrayerCountLabel(currentPost.prayers.length, language)}</span>
           </div>
           <button
             type="button"
@@ -74,17 +85,17 @@ export default function PrayerListModal({
           <p className="line-clamp-4 text-sm italic leading-relaxed text-text-light">
             &ldquo;{postMessage}&rdquo;
           </p>
-          {language !== "en" && postMessage !== post.message ? (
+          {language !== "en" && postMessage !== currentPost.message ? (
             <p className="mt-2 text-xs leading-relaxed text-muted">
               <span className="font-medium">{copy.prayerList.original}:</span>{" "}
-              {post.message}
+              {currentPost.message}
             </p>
           ) : null}
         </div>
 
         <div className="max-h-[28rem] space-y-3 overflow-y-auto p-5">
-          {post.prayers.length > 0 ? (
-            post.prayers.map((prayer) => (
+          {currentPost.prayers.length > 0 ? (
+            currentPost.prayers.map((prayer) => (
               <article
                 key={prayer.id}
                 className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4"
@@ -93,7 +104,9 @@ export default function PrayerListModal({
                   <span className="text-sm font-semibold text-primary">
                     {prayer.authorLabel ?? copy.postCard.communityPrayer}
                   </span>
-                  <span className="text-xs text-muted">{prayer.createdAt}</span>
+                  <span className="text-xs text-muted">
+                    {formatRelativeTime(prayer.createdAt)}
+                  </span>
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-text">
                   {prayer.message}

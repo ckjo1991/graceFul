@@ -11,10 +11,15 @@ import {
 import { lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import type { FeedPost, LanguageCode } from "@/types";
 
+const MIN_WORDS = 10;
+const MAX_WORDS = 150;
+const INPUT_CAP_WORDS = 200;
+
 interface PrayerModalProps {
   post: Pick<FeedPost, "id" | "message"> | null;
   isOpen: boolean;
   onClose: () => void;
+  onModalVisibilityChange?: (isOpen: boolean) => void;
   onSubmit: (postId: string, prayerText: string) => void;
   language: LanguageCode;
   postTranslations?: FeedPost["translations"];
@@ -26,6 +31,7 @@ export default function PrayerModal({
   post,
   isOpen,
   onClose,
+  onModalVisibilityChange,
   onSubmit,
   language,
   postTranslations = {},
@@ -33,6 +39,9 @@ export default function PrayerModal({
   const copy = getUiCopy(language);
   const [prayerText, setPrayerText] = useState("");
   const [guardianReason, setGuardianReason] = useState<GuardianWarning>(null);
+  const wordCount =
+    prayerText.trim() === "" ? 0 : prayerText.trim().split(/\s+/).length;
+  const isSubmitDisabled = wordCount < MIN_WORDS || wordCount > MAX_WORDS;
 
   useEffect(() => {
     if (!isOpen) {
@@ -43,15 +52,20 @@ export default function PrayerModal({
 
   useEffect(() => {
     if (isOpen) {
+      onModalVisibilityChange?.(true);
       lockBodyScroll();
     } else {
       unlockBodyScroll();
+      onModalVisibilityChange?.(false);
     }
 
     return () => {
       unlockBodyScroll();
+      if (isOpen) {
+        onModalVisibilityChange?.(false);
+      }
     };
-  }, [isOpen]);
+  }, [isOpen, onModalVisibilityChange]);
 
   if (!isOpen || !post) return null;
 
@@ -104,6 +118,12 @@ export default function PrayerModal({
     language !== "en"
       ? getDisplayTranslatedMessage(post.message, postTranslations, language)
       : post.message;
+  const wordCountClassName =
+    wordCount >= MAX_WORDS
+      ? "text-[#dc2626]"
+      : wordCount >= 130
+        ? "text-[#b45309]"
+        : "text-[#6b7c6d]";
 
   return (
     <div
@@ -144,12 +164,22 @@ export default function PrayerModal({
             placeholder={copy.prayerModal.placeholder}
             value={prayerText}
             onChange={(event) => {
-              setPrayerText(event.target.value);
+              const nextValue = event.target.value;
+              const nextWords = nextValue.trim() === "" ? [] : nextValue.trim().split(/\s+/);
+              const cappedValue =
+                nextWords.length > INPUT_CAP_WORDS
+                  ? nextWords.slice(0, INPUT_CAP_WORDS).join(" ")
+                  : nextValue;
+
+              setPrayerText(cappedValue);
               if (guardianReason) {
                 setGuardianReason(null);
               }
             }}
           />
+          <p className={`mt-2 text-right text-xs ${wordCountClassName}`}>
+            {wordCount} / 150 words
+          </p>
 
           <p className="mt-3 text-[10px] leading-relaxed text-muted">
             {copy.prayerModal.helper}
@@ -163,10 +193,10 @@ export default function PrayerModal({
           ) : null}
 
           <button
-            disabled={prayerText.trim().length < 5}
+            disabled={isSubmitDisabled}
             onClick={handleSubmit}
             className={`mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold transition-all ${
-              prayerText.trim().length >= 5
+              !isSubmitDisabled
                 ? "bg-primary text-white shadow-md hover:bg-primary-dark active:scale-[0.98]"
                 : "cursor-not-allowed bg-border text-muted"
             }`}

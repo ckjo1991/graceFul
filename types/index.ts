@@ -83,7 +83,6 @@ export interface FeedPost {
   sourceLanguage: LanguageCode;
   translations: TranslationMap;
   createdAt: string;
-  prayerCount: number;
   prayers: PrayerResponse[];
 }
 

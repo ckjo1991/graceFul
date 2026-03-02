@@ -141,7 +141,6 @@ export function createFeedPost(
     sourceLanguage: "en",
     translations: generateTranslations(sanitizedMessage),
     createdAt: "Just now",
-    prayerCount: 0,
     prayers: [],
   };
 }
@@ -178,7 +177,6 @@ export function addPrayerToPost(
     post.id === postId
       ? {
           ...post,
-          prayerCount: post.prayerCount + 1,
           prayers: [
             ...post.prayers,
             createPrayerEntry(post, prayerText, createdAt),
@@ -206,7 +204,7 @@ export function injectScenario(selection: AppFlowSelection, scenario: TestScenar
 
 function createPrayerEntry(post: FeedPost, prayerText: string, createdAt: string): PrayerResponse {
   return {
-    id: `${post.id}-prayer-${post.prayerCount + 1}`,
+    id: `${post.id}-prayer-${post.prayers.length + 1}`,
     message: prayerText,
     createdAt,
     authorLabel: "Community prayer",
