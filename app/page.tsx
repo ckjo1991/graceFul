@@ -369,7 +369,11 @@ export default function GracefulFlow() {
                   <div className="hidden items-center gap-3 sm:flex">
                     <button
                       type="button"
-                      onClick={() => setActiveFilter("my_posts")}
+                      onClick={() =>
+                        setActiveFilter(
+                          activeFilter === "my_posts" ? "all" : "my_posts",
+                        )
+                      }
                       className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
                         activeFilter === "my_posts"
                           ? "bg-[#2c3a2e] text-white"
@@ -522,7 +526,11 @@ export default function GracefulFlow() {
           <div className="flex items-center gap-0 overflow-hidden rounded-full border border-[#d4e4cc] bg-white/95 shadow-lg shadow-black/10 backdrop-blur-sm">
             <button
               type="button"
-              onClick={() => setActiveFilter("my_posts")}
+              onClick={() =>
+                setActiveFilter(
+                  activeFilter === "my_posts" ? "all" : "my_posts",
+                )
+              }
               className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
                 activeFilter === "my_posts"
                   ? "bg-[#2c3a2e] text-white"
