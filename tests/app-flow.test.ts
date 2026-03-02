@@ -14,6 +14,7 @@ import {
   startShareFlow,
   submitMessage,
 } from "../lib/app-flow";
+import { samplePosts } from "../lib/sample-posts";
 import { TEST_SCENARIOS } from "../lib/testData";
 
 test("share flow supports the happy path from feed to done and back to feed", () => {
@@ -126,10 +127,10 @@ test("message submission routes unsafe content into the warning step", () => {
 });
 
 test("prayer submissions append a prayer and increment only the targeted post", () => {
-  const posts = createInitialPosts();
+  const posts = samplePosts.map((post) => ({ ...post, prayers: [...post.prayers] }));
   const updated = addPrayerToPost(
     posts,
-    "2",
+    "post-2",
     "Lord, please provide peace and daily provision for this person.",
     "Just now",
   );
@@ -142,6 +143,10 @@ test("prayer submissions append a prayer and increment only the targeted post", 
     updated[1].prayers.at(-1)?.message,
     "Lord, please provide peace and daily provision for this person.",
   );
+});
+
+test("createInitialPosts stays empty outside development", () => {
+  assert.deepEqual(createInitialPosts(), []);
 });
 
 test("scenario injection preloads the selection and returns to the message step", () => {

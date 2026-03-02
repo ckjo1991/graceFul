@@ -1,5 +1,6 @@
 import { generateTranslations } from "@/lib/translation";
 import { canPost, checkCrisis, checkSafety, scrubPII } from "@/lib/guardian";
+import { samplePosts } from "@/lib/sample-posts";
 import type { TestScenario } from "@/lib/testData";
 import type {
   AppFlowSelection,
@@ -21,155 +22,15 @@ export const INITIAL_SELECTION: AppFlowSelection = {
   wantsFollowUp: false,
 };
 
-export const INITIAL_POSTS: FeedPost[] = [
-  {
-    id: "1",
-    emotion: "grateful",
-    category: "Family",
-    message:
-      "So thankful for my mother's recovery. It's been a hard few months but she's doing so well now.",
-    wantsFollowUp: false,
-    supportType: "A prayer would be nice",
-    allowTranslation: true,
-    sourceLanguage: "en",
-    translations: {
-      tl: "Napakalaking biyaya para sa amin na gumagaling na ang nanay ko. Salamat sa Diyos sa Kanyang kabutihan sa aming pamilya.",
-      ceb: "Dako kaayo akong pasalamat sa pagkaayo sa akong inahan. Salamat sa Diyos kay padayon Niyang gipalig-on ang among pamilya.",
-    },
-    createdAt: "2h ago",
-    prayerCount: 1,
-    prayers: [
-      {
-        id: "prayer-1",
-        message:
-          "Lord, continue covering this family with peace and steady healing in the days ahead.",
-        createdAt: "1h ago",
-        authorLabel: "Community prayer",
-      },
-    ],
-  },
-  {
-    id: "2",
-    emotion: "struggling",
-    category: "Financial",
-    message:
-      "Going through a tough time financially. Trying to stay hopeful but it's hard some days.",
-    wantsFollowUp: false,
-    supportType: "Both prayer and encouragement",
-    allowTranslation: true,
-    sourceLanguage: "en",
-    translations: generateTranslations(
-      "Going through a tough time financially. Trying to stay hopeful but it's hard some days.",
-    ),
-    createdAt: "4h ago",
-    prayerCount: 1,
-    prayers: [
-      {
-        id: "prayer-2",
-        message:
-          "May provision, wisdom, and daily peace meet you right where you are today.",
-        createdAt: "3h ago",
-        authorLabel: "Shared prayer",
-      },
-    ],
-  },
-  {
-    id: "3",
-    emotion: "grateful",
-    category: "Work",
-    message:
-      "A difficult conversation at work ended with more peace than I expected. I am grateful for the patience and clarity that showed up right on time.",
-    wantsFollowUp: false,
-    supportType: "Just sharing",
-    allowTranslation: true,
-    sourceLanguage: "en",
-    translations: generateTranslations(
-      "A difficult conversation at work ended with more peace than I expected. I am grateful for the patience and clarity that showed up right on time.",
-    ),
-    createdAt: "7h ago",
-    prayerCount: 0,
-    prayers: [],
-  },
-  {
-    id: "4",
-    emotion: "struggling",
-    category: "Health",
-    message:
-      "Waiting on some test results this week and feeling more anxious than I expected. Praying for peace and strength while I wait.",
-    wantsFollowUp: false,
-    supportType: "A prayer would be nice",
-    allowTranslation: true,
-    sourceLanguage: "en",
-    translations: generateTranslations(
-      "Waiting on some test results this week and feeling more anxious than I expected. Praying for peace and strength while I wait.",
-    ),
-    createdAt: "9h ago",
-    prayerCount: 2,
-    prayers: [
-      {
-        id: "prayer-3",
-        message: "God, hold this person steady while they wait and bring calm to every thought.",
-        createdAt: "8h ago",
-        authorLabel: "Another prayer",
-      },
-      {
-        id: "prayer-4",
-        message: "Please surround them with peace, clear results, and caring support.",
-        createdAt: "7h ago",
-        authorLabel: "Community prayer",
-      },
-    ],
-  },
-  {
-    id: "5",
-    emotion: "struggling",
-    category: "Personal",
-    message:
-      "I have been trying to rebuild healthy routines again after a hard season. Asking for steadiness and grace for small steps.",
-    wantsFollowUp: false,
-    supportType: "Both prayer and encouragement",
-    allowTranslation: true,
-    sourceLanguage: "en",
-    translations: {
-      tl: "Sinusubukan kong buuin muli ang sarili ko pagkatapos ng isang mabigat na yugto. Hinihingi ko sa Diyos ang biyaya para sa maliliit pero tapat na hakbang.",
-      ceb: "Naningkamot ko nga motindog pag-usab human sa lisod nga panahon. Nangayo ko sa Diyos og grasya para sa gagmay pero matinud-anong mga lakang.",
-    },
-    createdAt: "11h ago",
-    prayerCount: 1,
-    prayers: [
-      {
-        id: "prayer-5",
-        message: "Lord, bless these small steps and turn them into steady healing over time.",
-        createdAt: "10h ago",
-        authorLabel: "Shared prayer",
-      },
-    ],
-  },
-  {
-    id: "6",
-    emotion: "grateful",
-    category: "Other",
-    message:
-      "A neighbor showed unexpected kindness today and it reminded me that quiet goodness still finds us in ordinary moments.",
-    wantsFollowUp: false,
-    supportType: "Just sharing",
-    allowTranslation: true,
-    sourceLanguage: "en",
-    translations: generateTranslations(
-      "A neighbor showed unexpected kindness today and it reminded me that quiet goodness still finds us in ordinary moments.",
-    ),
-    createdAt: "13h ago",
-    prayerCount: 0,
-    prayers: [],
-  },
-];
+const initialPosts: FeedPost[] =
+  process.env.NODE_ENV === "development" ? samplePosts : [];
 
 export function createInitialSelection(): AppFlowSelection {
   return { ...INITIAL_SELECTION };
 }
 
 export function createInitialPosts(): FeedPost[] {
-  return INITIAL_POSTS.map((post) => ({ ...post }));
+  return initialPosts.map((post) => ({ ...post, prayers: [...post.prayers] }));
 }
 
 export function startShareFlow(lastPostTime: number | null) {
