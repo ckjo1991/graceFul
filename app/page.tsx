@@ -1,156 +1,147 @@
 "use client";
 
-import React, { useState } from "react";
-import { Heart, Sun } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Check, Globe2, Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
 import CrisisScreen from "@/components/CrisisScreen";
 import GuardianWarning from "@/components/GuardianWarning";
 import MessageStep from "@/components/MessageStep";
+import OnboardingModal from "@/components/OnboardingModal";
 import PostCard from "@/components/PostCard";
+import PrayerListModal from "@/components/PrayerListModal";
 import PrayerModal from "@/components/PrayerModal";
 import ReviewStep from "@/components/ReviewStep";
+import ShareStepShell from "@/components/ShareStepShell";
 import SupportStep from "@/components/SupportStep";
 import TestDashboard from "@/components/TestDashboard";
 import TranslateOptStep from "@/components/TranslateOptStep";
 import { analyzeIntent } from "@/lib/ai";
-import { canPost, checkCrisis, checkSafety, scrubPII } from "@/lib/guardian";
+import {
+  addPrayerToPost,
+  completeSuccessfulPost,
+  createInitialPosts,
+  createInitialSelection,
+  injectScenario as applyScenarioInjection,
+  returnToFeed,
+  selectCategory,
+  selectEmotion,
+  selectSupport,
+  selectTranslation,
+  startShareFlow,
+  submitMessage,
+  type WarningReason,
+} from "@/lib/app-flow";
+import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
+import { checkCrisis, checkSafety } from "@/lib/guardian";
 import type { TestScenario } from "@/lib/testData";
+import {
+  getLanguageLabel,
+  getUiCopy,
+  localizeCategory,
+  localizeEmotion,
+} from "@/lib/translation";
+import type {
+  AppFlowSelection,
+  AppFlowStep,
+  Category,
+  Emotion,
+  FeedPost,
+  LanguageCode,
+} from "@/types";
 
-type FeedPost = {
-  id: string;
-  emotion: "grateful" | "struggling";
-  category: string;
-  message: string;
-  supportType: string;
-  allowTranslation: boolean;
-  createdAt: string;
-  prayerCount: number;
-};
-
-const initialPosts: FeedPost[] = [
-  {
-    id: "1",
-    emotion: "grateful" as const,
-    category: "Family",
-    message:
-      "So thankful for my mother's recovery. It's been a hard few months but she's doing so well now.",
-    supportType: "A prayer would be nice",
-    allowTranslation: true,
-    createdAt: "2h ago",
-    prayerCount: 5,
-  },
-  {
-    id: "2",
-    emotion: "struggling" as const,
-    category: "Work",
-    message:
-      "Feeling very overwhelmed with the new project. Asking for peace and wisdom.",
-    supportType: "Both prayer and encouragement",
-    allowTranslation: false,
-    createdAt: "4h ago",
-    prayerCount: 2,
-  },
-];
-
-const INITIAL_SELECTION = {
-  emotion: "" as "grateful" | "struggling" | "",
-  category: "",
-  message: "",
-  support: "",
-  allowTranslation: null as boolean | null,
-};
-
-type FlowStep =
-  | "emotion"
-  | "category"
-  | "message"
-  | "crisis"
-  | "warning"
-  | "support"
-  | "translate_opt"
-  | "review"
-  | "done"
-  | "feed";
-
-type FlowSelection = typeof INITIAL_SELECTION;
+type EmotionFilter = "all" | Emotion;
+type TopicFilter = "all" | Category;
 
 export default function GracefulFlow() {
-  const [step, setStep] = useState<FlowStep>("feed");
-  const [posts, setPosts] = useState<FeedPost[]>(initialPosts);
+  const [step, setStep] = useState<AppFlowStep>("feed");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [posts, setPosts] = useState<FeedPost[]>(createInitialPosts);
+  const [emotionFilter, setEmotionFilter] = useState<EmotionFilter>("all");
+  const [topicFilter, setTopicFilter] = useState<TopicFilter>("all");
+  const [viewerLanguage, setViewerLanguage] = useState<LanguageCode>("en");
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isPrayerModalOpen, setIsPrayerModalOpen] = useState(false);
-  const [activePost, setActivePost] = useState<{
-    id: string;
-    message: string;
-  } | null>(null);
+  const [activePost, setActivePost] = useState<Pick<FeedPost, "id" | "message"> | null>(null);
+  const [activePrayerListPostId, setActivePrayerListPostId] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
-  const [selection, setSelection] = useState<FlowSelection>(INITIAL_SELECTION);
+  const [selection, setSelection] = useState<AppFlowSelection>(createInitialSelection);
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
-  const [warningReason, setWarningReason] = useState<"pii" | "malice" | null>(
-    null,
-  );
+  const [warningReason, setWarningReason] = useState<WarningReason>(null);
+  const copy = getUiCopy(viewerLanguage);
+
+  const emotionFilters: Array<{
+    label: string;
+    value: EmotionFilter;
+  }> = [
+    { label: copy.feed.allEmotion, value: "all" },
+    { label: localizeEmotion("grateful", viewerLanguage), value: "grateful" },
+    { label: localizeEmotion("struggling", viewerLanguage), value: "struggling" },
+  ];
+
+  const topicFilters: Array<{
+    label: string;
+    value: TopicFilter;
+  }> = [
+    { label: copy.feed.allTopics, value: "all" },
+    { label: localizeCategory("Financial", viewerLanguage), value: "Financial" },
+    { label: localizeCategory("Family", viewerLanguage), value: "Family" },
+    { label: localizeCategory("Health", viewerLanguage), value: "Health" },
+    { label: localizeCategory("Personal", viewerLanguage), value: "Personal" },
+    { label: localizeCategory("Work", viewerLanguage), value: "Work" },
+    { label: localizeCategory("Other", viewerLanguage), value: "Other" },
+  ];
+
+  useEffect(() => {
+    setShowOnboarding(!window.sessionStorage.getItem("graceful_onboarded"));
+  }, []);
 
   const startFreshShare = () => {
-    const { allowed, waitTime } = canPost(lastPostTime);
+    const result = startShareFlow(lastPostTime);
 
-    if (!allowed) {
-      alert(
-        `🌿 Take a breath. GraceFul is a quiet space. You can share again in ${waitTime} seconds.`,
-      );
+    if (!result.allowed) {
+      alert(`🌿 ${copy.feed.cooldown(result.waitTime)}`);
       return;
     }
 
-    setSelection(INITIAL_SELECTION);
-    setWarningReason(null);
-    setStep("emotion");
+    setSelection(result.selection);
+    setWarningReason(result.warningReason);
+    setStep(result.nextStep);
   };
 
-  const handleEmotionSelect = (emotion: "grateful" | "struggling") => {
-    setSelection((current) => ({ ...current, emotion }));
-    setStep("category");
+  const handleEmotionSelect = (emotion: Emotion) => {
+    const result = selectEmotion(selection, emotion);
+    setSelection(result.selection);
+    setStep(result.nextStep);
   };
 
-  const handleCategorySelect = (category: string) => {
-    setSelection((current) => {
-      const nextSelection = { ...current, category };
-      console.log("Current Selection:", nextSelection);
-      return nextSelection;
-    });
-    setStep("message");
+  const handleCategorySelect = (category: Category) => {
+    const result = selectCategory(selection, category);
+    console.log("Current Selection:", result.selection);
+    setSelection(result.selection);
+    setStep(result.nextStep);
   };
 
   const handleMessageSubmit = (message: string) => {
-    setSelection((current) => ({ ...current, message }));
-
-    if (checkCrisis(message)) {
-      setWarningReason(null);
-      setStep("crisis");
-      return;
-    }
-
-    const safety = checkSafety(message);
-
-    if (!safety.isSafe && safety.reason) {
-      setWarningReason(safety.reason);
-      setStep("warning");
-      return;
-    }
-
-    setWarningReason(null);
-    setStep("support");
+    const result = submitMessage(selection, message);
+    setSelection(result.selection);
+    setWarningReason(result.warningReason);
+    setStep(result.nextStep);
   };
 
-  const handleSupportSelect = (support: string) => {
-    setSelection((current) => ({ ...current, support }));
-    setStep("translate_opt");
+  const handleSupportSelect = (support: FeedPost["supportType"]) => {
+    const result = selectSupport(selection, support);
+    setSelection(result.selection);
+    setStep(result.nextStep);
   };
 
   const handleTranslateSelect = (allow: boolean) => {
-    setSelection((current) => ({ ...current, allowTranslation: allow }));
-    setStep("review");
+    const result = selectTranslation(selection, allow);
+    setSelection(result.selection);
+    setStep(result.nextStep);
   };
 
   const handleFinalPost = async (finalMessage: string) => {
-    if (!selection.emotion) {
+    if (!selection.emotion || !selection.category || !selection.support) {
       return;
     }
 
@@ -173,36 +164,32 @@ export default function GracefulFlow() {
       const safety = await analyzeIntent(finalMessage);
 
       if (!safety.isSafe) {
-        console.error("AI intent analysis blocked a post at the final gate!", {
+        console.error("Guardian intent analysis blocked a post at the final gate!", {
           reason: safety.reason,
         });
-        setWarningReason("malice");
+        setWarningReason(
+          safety.reason === "profanity" ? "profanity" : "malice",
+        );
         setStep("warning");
         return;
       }
 
-      const sanitizedMessage = scrubPII(finalMessage);
       const postedAt = Date.now();
-      const newPost: FeedPost = {
-        id: postedAt.toString(),
-        emotion: selection.emotion,
-        category: selection.category,
-        message: sanitizedMessage,
-        supportType: selection.support,
-        allowTranslation: selection.allowTranslation || false,
-        createdAt: "Just now",
-        prayerCount: 0,
-      };
+      const result = completeSuccessfulPost(posts, selection, finalMessage, postedAt);
+
+      if (!result) {
+        return;
+      }
 
       console.log("POSTING TO COMMUNITY:", {
-        ...newPost,
+        ...result.posts[0],
         createdAt: new Date(postedAt).toISOString(),
       });
-      setPosts((current) => [newPost, ...current]);
-      setLastPostTime(postedAt);
-      setStep("done");
+      setPosts(result.posts);
+      setLastPostTime(result.lastPostTime);
+      setStep(result.nextStep);
     } catch (error) {
-      console.error("AI intent analysis failed at the final gate.", error);
+      console.error("Guardian intent analysis failed at the final gate.", error);
       const fallbackSafety = checkSafety(finalMessage);
 
       if (!fallbackSafety.isSafe) {
@@ -211,22 +198,16 @@ export default function GracefulFlow() {
         return;
       }
 
-      const sanitizedMessage = scrubPII(finalMessage);
       const postedAt = Date.now();
-      const newPost: FeedPost = {
-        id: postedAt.toString(),
-        emotion: selection.emotion,
-        category: selection.category,
-        message: sanitizedMessage,
-        supportType: selection.support,
-        allowTranslation: selection.allowTranslation || false,
-        createdAt: "Just now",
-        prayerCount: 0,
-      };
+      const result = completeSuccessfulPost(posts, selection, finalMessage, postedAt);
 
-      setPosts((current) => [newPost, ...current]);
-      setLastPostTime(postedAt);
-      setStep("done");
+      if (!result) {
+        return;
+      }
+
+      setPosts(result.posts);
+      setLastPostTime(result.lastPostTime);
+      setStep(result.nextStep);
     } finally {
       setIsPosting(false);
     }
@@ -245,62 +226,202 @@ export default function GracefulFlow() {
     setActivePost(null);
   };
 
+  const handleOpenPrayerList = (postId: string) => {
+    setActivePrayerListPostId(postId);
+  };
+
+  const handleClosePrayerList = () => {
+    setActivePrayerListPostId(null);
+  };
+
   const handlePrayerSubmit = (postId: string, text: string) => {
     console.log(`Submitting prayer for ${postId}:`, text);
-    setPosts((current) =>
-      current.map((post) =>
-        post.id === postId
-          ? { ...post, prayerCount: post.prayerCount + 1 }
-          : post,
-      ),
-    );
+    setPosts((current) => addPrayerToPost(current, postId, text, "Just now"));
     setIsPrayerModalOpen(false);
     setActivePost(null);
   };
 
   const injectScenario = (scenario: TestScenario) => {
-    setSelection((current) => ({
-      ...current,
-      emotion: scenario.emotion,
-      category: scenario.category,
-      message: scenario.message,
-    }));
-    setStep("message");
+    const result = applyScenarioInjection(selection, scenario);
+    setSelection(result.selection);
+    setStep(result.nextStep);
   };
+
+  const filteredPosts = posts.filter((post) => {
+    if (emotionFilter !== "all" && post.emotion !== emotionFilter) {
+      return false;
+    }
+
+    if (topicFilter !== "all" && post.category !== topicFilter) {
+      return false;
+    }
+
+    return true;
+  });
+  const activePrayerListPost =
+    activePrayerListPostId
+      ? posts.find((post) => post.id === activePrayerListPostId) ?? null
+      : null;
 
   let content: React.ReactNode;
 
   if (step === "feed") {
     content = (
-      <main className="min-h-screen bg-bg-warm p-6">
-        <div className="mx-auto max-w-md">
-          <header className="mb-8 flex items-center justify-between">
-            <h1 className="text-center text-2xl font-serif font-bold text-primary-dark">
-              GraceFul
-            </h1>
-            <button
-              onClick={startFreshShare}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm"
-            >
-              + Share
-            </button>
+      <main className="min-h-screen bg-[var(--page-bg)] px-3 py-3 md:px-4 md:py-4">
+        <div className="mx-auto overflow-hidden rounded-[2.1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] shadow-[0_16px_44px_rgba(57,84,61,0.06)]">
+          <header className="border-b border-[var(--shell-border)]/90 px-5 py-5 md:px-7 md:py-6">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-3 text-[var(--brand)]">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-soft)]">
+                    <Leaf className="h-4.5 w-4.5" />
+                  </span>
+                  <h1 className="text-[2.45rem] font-semibold tracking-[-0.03em] text-[var(--brand)] md:text-[2.95rem]">
+                    GraceFul
+                  </h1>
+                </div>
+                <p className="text-[0.98rem] text-[var(--muted-ink)] md:text-[1rem]">
+                  {copy.feed.tagline}
+                </p>
+              </div>
+
+              <div className="relative flex items-center gap-3 self-start">
+                <button
+                  type="button"
+                  aria-label="Language settings"
+                  onClick={() => setIsLanguageMenuOpen((current) => !current)}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[0.95rem] border border-[var(--brand)] bg-[var(--shell-bg)] px-4 text-[var(--brand)] transition-colors hover:bg-[var(--brand-soft)]"
+                >
+                  <Globe2 className="h-5 w-5" />
+                  <span className="text-[0.94rem] font-medium">
+                    {getLanguageLabel(viewerLanguage)}
+                  </span>
+                </button>
+                {isLanguageMenuOpen ? (
+                  <div className="absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-[12rem] rounded-[1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] p-2 shadow-[0_12px_30px_rgba(57,84,61,0.14)]">
+                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, label]) => {
+                      const isActive = viewerLanguage === code;
+
+                      return (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => {
+                            setViewerLanguage(code as LanguageCode);
+                            setIsLanguageMenuOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-[0.75rem] px-3 py-2.5 text-left text-[0.92rem] transition-colors ${
+                            isActive
+                              ? "bg-[var(--brand-soft)] text-[var(--brand)]"
+                              : "text-[var(--muted-ink)] hover:bg-[var(--chip-bg)]"
+                          }`}
+                        >
+                          <span>{label}</span>
+                          {isActive ? <Check className="h-4 w-4" /> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={startFreshShare}
+                  className="inline-flex h-12 items-center justify-center rounded-[0.95rem] bg-[var(--brand)] px-6 text-[0.98rem] font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
+                >
+                  {copy.feed.share}
+                </button>
+              </div>
+            </div>
           </header>
 
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onPray={handleOpenPrayer}
-              />
-            ))}
-          </div>
+          <section className="px-5 py-7 md:px-7 lg:px-8 lg:py-8">
+            <div className="mx-auto max-w-[50rem]">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap gap-3">
+                  {emotionFilters.map((filter) => {
+                    const isActive = emotionFilter === filter.value;
+
+                    return (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => setEmotionFilter(filter.value)}
+                        className={`rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                          isActive
+                            ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
+                            : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {topicFilters.map((filter) => {
+                    const isActive = topicFilter === filter.value;
+
+                    return (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => setTopicFilter(filter.value)}
+                        className={`rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                          isActive
+                            ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
+                            : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-7 space-y-4">
+                {filteredPosts.length > 0 ? (
+                  filteredPosts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onPray={handleOpenPrayer}
+                      onViewPrayers={handleOpenPrayerList}
+                      viewerLanguage={viewerLanguage}
+                    />
+                  ))
+                ) : (
+                  <div className="rounded-[1.85rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-10 text-center shadow-[0_10px_34px_rgba(57,84,61,0.05)]">
+                    <h2 className="text-3xl font-semibold text-[var(--ink)]">
+                      {copy.feed.noPostsTitle}
+                    </h2>
+                    <p className="mt-3 text-lg leading-8 text-[var(--muted-ink)]">
+                      {copy.feed.noPostsBody}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
 
           <PrayerModal
             post={activePost}
             isOpen={isPrayerModalOpen}
             onClose={handleClosePrayer}
             onSubmit={handlePrayerSubmit}
+            language={viewerLanguage}
+            postTranslations={
+              activePost
+                ? posts.find((entry) => entry.id === activePost.id)?.translations
+                : undefined
+            }
+          />
+          <PrayerListModal
+            post={activePrayerListPost}
+            isOpen={Boolean(activePrayerListPost)}
+            onClose={handleClosePrayerList}
+            language={viewerLanguage}
           />
         </div>
       </main>
@@ -308,53 +429,61 @@ export default function GracefulFlow() {
   } else if (step === "emotion") {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6 text-center">
-        <div className="mb-12">
-          <h1 className="mb-2 text-4xl font-serif font-bold text-primary-dark">
-            GraceFul
-          </h1>
-          <p className="text-lg text-[#6b7c6d]">How are you today?</p>
-        </div>
+        <ShareStepShell
+          onClose={() => setStep(returnToFeed())}
+          step={1}
+          title={copy.emotionStep.title}
+          description={copy.emotionStep.description}
+        >
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => handleEmotionSelect("grateful")}
+              className="group w-full rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-4 text-left transition-all hover:border-[var(--brand)] hover:bg-white"
+            >
+              <div className="flex items-start gap-3">
+                <Sun className="mt-1 h-5 w-5 text-[var(--brand)]" />
+                <div>
+                  <span className="block text-[1rem] font-semibold text-[var(--ink)]">
+                    {copy.emotionStep.gratefulTitle}
+                  </span>
+                  <span className="mt-1 block text-[0.88rem] leading-6 text-[var(--muted-ink)]">
+                    {copy.emotionStep.gratefulBody}
+                  </span>
+                </div>
+              </div>
+            </button>
 
-        <div className="w-full max-w-md space-y-4">
-          <button
-            onClick={() => handleEmotionSelect("grateful")}
-            className="group flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-[#d4e4cc] bg-white p-8 shadow-sm transition-all hover:border-primary"
-          >
-            <Sun className="h-10 w-10 text-primary transition-transform group-hover:scale-110" />
-            <div className="w-full text-center">
-              <span className="block text-xl font-bold text-[#2c3a2e]">
-                I&apos;m grateful for something
-              </span>
-              <span className="text-sm text-[#6b7c6d]">
-                Share what&apos;s bringing you joy or peace
-              </span>
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleEmotionSelect("struggling")}
-            className="group flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-[#d4e4cc] bg-white p-8 shadow-sm transition-all hover:border-struggle"
-          >
-            <Heart className="h-10 w-10 text-struggle transition-transform group-hover:scale-110" />
-            <div className="w-full text-center">
-              <span className="block text-xl font-bold text-[#2c3a2e]">
-                I&apos;m struggling with something
-              </span>
-              <span className="text-sm text-[#6b7c6d]">
-                Share what&apos;s weighing on your heart
-              </span>
-            </div>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleEmotionSelect("struggling")}
+              className="group w-full rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-4 text-left transition-all hover:border-[var(--struggling-rail)] hover:bg-white"
+            >
+              <div className="flex items-start gap-3">
+                <Heart className="mt-1 h-5 w-5 text-[var(--struggling-rail)]" />
+                <div>
+                  <span className="block text-[1rem] font-semibold text-[var(--ink)]">
+                    {copy.emotionStep.strugglingTitle}
+                  </span>
+                  <span className="mt-1 block text-[0.88rem] leading-6 text-[var(--muted-ink)]">
+                    {copy.emotionStep.strugglingBody}
+                  </span>
+                </div>
+              </div>
+            </button>
+          </div>
+        </ShareStepShell>
       </main>
     );
   } else if (step === "category") {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6">
         <CategoryStep
-          selectedEmotion={selection.emotion as "grateful" | "struggling"}
+          onClose={() => setStep(returnToFeed())}
+          selectedEmotion={selection.emotion as Emotion}
           onSelect={handleCategorySelect}
           onBack={() => setStep("emotion")}
+          language={viewerLanguage}
         />
       </main>
     );
@@ -363,18 +492,20 @@ export default function GracefulFlow() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6">
         <MessageStep
           key={`${selection.emotion}:${selection.category}:${selection.message}`}
-          category={selection.category}
+          category={selection.category as Category}
           initialMessage={selection.message}
-          selectedEmotion={selection.emotion as "grateful" | "struggling"}
+          onClose={() => setStep(returnToFeed())}
+          selectedEmotion={selection.emotion as Emotion}
           onNext={handleMessageSubmit}
           onBack={() => setStep("category")}
+          language={viewerLanguage}
         />
       </main>
     );
   } else if (step === "crisis") {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6">
-        <CrisisScreen onBack={() => setStep("message")} />
+        <CrisisScreen onBack={() => setStep("message")} language={viewerLanguage} />
       </main>
     );
   } else if (step === "warning" && warningReason) {
@@ -382,6 +513,7 @@ export default function GracefulFlow() {
       <main className="flex min-h-screen items-center justify-center bg-bg-warm p-6">
         <GuardianWarning
           reason={warningReason}
+          language={viewerLanguage}
           onRedo={() => {
             setWarningReason(null);
             setStep("message");
@@ -393,13 +525,11 @@ export default function GracefulFlow() {
     content = (
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
         <SupportStep
-          supportOptions={[
-            "A prayer would be nice",
-            "Just sharing",
-            "Both prayer and encouragement",
-          ]}
+          onClose={() => setStep(returnToFeed())}
+          supportOptions={SUPPORT_OPTIONS}
           onSelect={handleSupportSelect}
           onBack={() => setStep("message")}
+          language={viewerLanguage}
         />
       </main>
     );
@@ -408,8 +538,10 @@ export default function GracefulFlow() {
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
         <TranslateOptStep
           allowTranslation={selection.allowTranslation}
+          onClose={() => setStep(returnToFeed())}
           onSelect={handleTranslateSelect}
           onBack={() => setStep("support")}
+          language={viewerLanguage}
         />
       </main>
     );
@@ -420,30 +552,48 @@ export default function GracefulFlow() {
           key={selection.message}
           isPosting={isPosting}
           message={selection.message}
+          onClose={() => setStep(returnToFeed())}
           onBack={() => setStep("translate_opt")}
           onCrisisDetected={() => setStep("crisis")}
           onPost={handleFinalPost}
+          language={viewerLanguage}
         />
       </main>
     );
   } else if (step === "done") {
     content = (
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6 text-center">
-        <div className="scale-up-center">
-          <span className="mb-6 block text-6xl">🌿</span>
-          <h2 className="mb-2 text-3xl font-serif font-bold text-primary-dark">
-            Your message has been shared
-          </h2>
-          <p className="mx-auto mb-8 max-w-xs text-text-light">
-            Thank you for trusting this community. You are not alone.
-          </p>
-          <button
-            onClick={() => setStep("feed")}
-            className="font-bold text-primary underline"
-          >
-            Back to Feed
-          </button>
-        </div>
+        <ShareStepShell
+          onClose={() => setStep(returnToFeed())}
+          step={6}
+          title={copy.feed.successTitle}
+          description={copy.feed.successBody}
+        >
+          <div className="mb-5 flex justify-center text-5xl text-[var(--brand)]">
+            <Leaf className="h-12 w-12" />
+          </div>
+
+          <div className="rounded-[0.75rem] border border-[var(--shell-border)] bg-[var(--brand-soft)]/35 px-4 py-3 text-left text-[0.84rem] italic leading-6 text-[var(--muted-ink)]">
+            {copy.categoryStep.note}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(returnToFeed())}
+              className="rounded-[0.55rem] bg-[var(--brand)] px-5 py-2.5 text-[0.92rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
+            >
+              {copy.feed.viewFeed}
+            </button>
+            <button
+              type="button"
+              onClick={startFreshShare}
+              className="rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-5 py-2.5 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+            >
+              {copy.feed.shareAgain}
+            </button>
+          </div>
+        </ShareStepShell>
       </main>
     );
   } else {
@@ -451,16 +601,16 @@ export default function GracefulFlow() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6 text-center">
         <div className="w-full max-w-md rounded-2xl border border-[#d4e4cc] bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-serif font-bold text-primary-dark">
-            Something went off flow
+            {copy.feed.restartTitle}
           </h2>
           <p className="mt-2 text-sm leading-6 text-[#6b7c6d]">
-            Restart the sharing journey to continue.
+            {copy.feed.restartBody}
           </p>
           <button
             onClick={startFreshShare}
             className="mt-6 w-full rounded-xl bg-primary py-3 font-semibold text-white transition-colors hover:bg-primary-dark"
           >
-            Start over
+            {copy.feed.restart}
           </button>
         </div>
       </main>
@@ -469,6 +619,14 @@ export default function GracefulFlow() {
 
   return (
     <div className="relative">
+      {showOnboarding ? (
+        <OnboardingModal
+          onComplete={() => {
+            window.sessionStorage.setItem("graceful_onboarded", "1");
+            setShowOnboarding(false);
+          }}
+        />
+      ) : null}
       {content}
       <TestDashboard onInject={injectScenario} />
     </div>

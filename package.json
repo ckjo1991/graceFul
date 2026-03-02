@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --import tsx --test tests/**/*.test.ts",
+    "test:lexicon": "node --import tsx scripts/test-lexicon.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -25,6 +27,7 @@
     "eslint": "^9.18.0",
     "eslint-config-next": "^15.0.0",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2"
   }
 }

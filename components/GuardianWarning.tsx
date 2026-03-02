@@ -2,28 +2,36 @@
 
 import React from "react";
 import { RefreshCw, ShieldAlert } from "lucide-react";
+import { getUiCopy } from "@/lib/translation";
+import type { LanguageCode } from "@/types";
 
 interface GuardianWarningProps {
-  reason: "pii" | "malice";
+  reason: "pii" | "malice" | "profanity";
   onRedo: () => void;
+  language: LanguageCode;
 }
 
 export default function GuardianWarning({
   reason,
   onRedo,
+  language,
 }: GuardianWarningProps) {
+  const copy = getUiCopy(language);
   const content = {
     pii: {
-      title: "Protecting your peace",
-      message:
-        "The Guardian noticed personal details, like a full name, phone number, email, or social handle, in your message. To keep you anonymous and safe, please remove those details before posting.",
-      button: "Edit my message",
+      title: copy.guardianWarning.piiTitle,
+      message: copy.guardianWarning.piiMessage,
+      button: copy.guardianWarning.edit,
     },
     malice: {
-      title: "Let's keep it GraceFul",
-      message:
-        "GraceFul is a space for healing and peace. Some words in your message do not align with the tone we protect here. Please try rephrasing it with kindness.",
-      button: "Try again",
+      title: copy.guardianWarning.maliceTitle,
+      message: copy.guardianWarning.maliceMessage,
+      button: copy.guardianWarning.retry,
+    },
+    profanity: {
+      title: copy.guardianWarning.profanityTitle,
+      message: copy.guardianWarning.profanityMessage,
+      button: copy.guardianWarning.edit,
     },
   } as const;
 

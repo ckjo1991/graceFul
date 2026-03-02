@@ -1,63 +1,58 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft, HandHeart, MessageSquare, Sparkles } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+
+import ShareStepShell from "@/components/ShareStepShell";
+import { getUiCopy, localizeSupportType } from "@/lib/translation";
+import type { LanguageCode, SupportType } from "@/types";
 
 interface SupportStepProps {
-  onSelect: (option: string) => void;
+  onClose: () => void;
+  onSelect: (option: SupportType) => void;
   onBack: () => void;
-  supportOptions: string[];
+  supportOptions: readonly SupportType[];
+  language: LanguageCode;
 }
 
 export default function SupportStep({
+  onClose,
   onSelect,
   onBack,
   supportOptions,
+  language,
 }: SupportStepProps) {
-  const getIcon = (option: string) => {
-    if (option.includes("prayer") && option.includes("encouragement")) {
-      return <Sparkles className="h-6 w-6 text-primary" />;
-    }
-
-    if (option.includes("prayer")) {
-      return <HandHeart className="h-6 w-6 text-primary" />;
-    }
-
-    return <MessageSquare className="h-6 w-6 text-primary" />;
-  };
-
+  const copy = getUiCopy(language);
   return (
-    <div className="mx-auto w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8 flex flex-col items-start">
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center text-sm text-muted transition-colors hover:text-primary"
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </button>
-        <h2 className="text-2xl font-serif font-bold text-primary-dark">
-          What kind of support would you like?
-        </h2>
-        <p className="mt-1 text-sm text-text-light">
-          Let the community know how they can support you.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4">
+    <ShareStepShell
+      onClose={onClose}
+      step={4}
+      title={copy.supportStep.title}
+      description={copy.supportStep.description}
+    >
+      <div className="space-y-3">
         {supportOptions.map((option) => (
           <button
             key={option}
+            type="button"
             onClick={() => onSelect(option)}
-            className="group flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-white p-6 text-left transition-all hover:border-primary hover:shadow-md active:scale-[0.98]"
+            className="w-full rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-4 text-left text-[1rem] text-[var(--ink)] transition-all hover:border-[var(--brand)] hover:bg-white"
           >
-            <div className="rounded-xl bg-bg-warm p-3 transition-colors group-hover:bg-accent">
-              {getIcon(option)}
-            </div>
-            <span className="font-bold text-text">{option}</span>
+            {localizeSupportType(option, language)}
           </button>
         ))}
       </div>
-    </div>
+
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {copy.supportStep.back}
+        </button>
+      </div>
+    </ShareStepShell>
   );
 }

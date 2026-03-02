@@ -2,174 +2,178 @@
 
 ## Executive Summary
 
-GraceFul is an anonymous prayer wall designed around two emotional entry
-points: gratitude and struggle. The product should help a user move from a
-private feeling to a shareable prayer request in a calm, non-performative,
-and safety-conscious flow.
+GraceFul is an anonymous prayer wall centered on two emotional starting
+points: gratitude and struggle. The product is meant to help a person move
+from an internal burden to a shareable community prayer request without
+identity, debate, or performative social features.
 
 ## Current Prototype Status
 
-The repository currently implements a prototype of the core experience:
+The current repository ships a working local prototype in `app/page.tsx`.
+Today it includes:
 
-- A dual-path entry screen
-- A client-side share-flow state machine
-- Local Guardian moderation and crisis detection
-- A read-only prayer feed backed by sample data
+- A feed-first entry point with a `+ Share` action
+- A first-session onboarding modal that frames anonymity, prayer, and real-world community
+- A multi-step posting flow built from dedicated UI step components
+- Local Guardian checks for crisis, PII, profanity, and violent intent
+- A lexicon-backed harm-detection pass before regex-based intent checks
+- A review step that simulates Guardian analysis before final posting
+- A prayer composer plus prayer-list viewing for each eligible post
+- Local in-app translation rendering for posts that opt in
+- Development-only test scenario injection through `TestDashboard`
 
-The prototype does not yet include persistence, real translation or wording
-assistance, or end-to-end prayer submission.
+The prototype does not yet include persistence, authentication, server-backed
+moderation, or server-backed translation.
 
 ## Product Goal
 
-GraceFul should let a user share what they are carrying in as few steps as
-possible while maintaining anonymity, spiritual focus, and clear safety
-interventions when distress language appears.
+GraceFul should make it easy to share gratitude or struggle, receive prayer,
+and feel held by a calm spiritual community. The product should stay
+lightweight, anonymous, and safety-first from start to finish.
 
 ## Core Product Principles
 
 - Anonymous by default
 - Prayer over performance
 - Safety before posting
-- Simplicity over social features
-- Support for Philippine languages and dialects
+- Calm, simple interaction design
+- Support for multilingual community use, especially Philippine contexts
 
-## Core Features
+## Core Experience
 
-### Dual-Path Entry
+### Feed-First Community Wall
 
-Users begin by choosing one of two emotional entry points:
+Users currently land on a feed of anonymous posts. Each post shows:
 
-- Grateful
-- Struggling
+- Emotional tone: grateful or struggling
+- Category
+- Message body
+- Relative post time
+- Prayer count
+- Optional translation toggle when the post allows it and the viewer selects a supported language
 
-This choice frames the rest of the flow and should remain the first required
-decision in the product.
+The feed should remain free of likes, rankings, public profiles, or threaded
+discussion.
 
-### Structured Categories
+### Share Flow
 
-Every shared post must be assigned to one life-area category:
+When a user taps `+ Share`, the intended posting path is:
 
-- Financial
-- Family
-- Personal
-- Work
-- Other
+- emotion
+- category
+- message
+- warning or crisis, if needed
+- support
+- translate_opt
+- review
+- done
+- feed
 
-These categories organize the wall without introducing identity, ranking, or
-debate.
+This flow is currently orchestrated inside `app/page.tsx` and rendered through
+specialized components such as `CategoryStep`, `MessageStep`, `SupportStep`,
+`TranslateOptStep`, `ReviewStep`, `GuardianWarning`, and `CrisisScreen`.
 
 ### Guardian Safety Layer
 
-Every post must pass through a moderation layer before submission. Guardian
-must:
+Every shared message must be checked before publication. The current prototype
+Guardian behavior includes:
 
-- Enforce message length rules
-- Detect crisis or self-harm language
-- Remove obvious personally identifying details such as names, phone numbers,
-  and specific locations
+- Message length validation
+- Crisis detection
+- PII detection and scrubbing
+- Profanity detection
+- Violent or malicious intent detection
+- Lexicon-based multilingual harm matching before structural pattern checks
 
-The current codebase does this locally. A later version may move that logic to
-server-side processing or external services.
+Guardian logic is implemented locally in `lib/guardian.ts`.
 
 ### Crisis Intervention
 
-If a message suggests self-harm, crisis, or acute emotional danger, the normal
-posting flow must pause and prioritize support resources, including:
+If a message suggests self-harm or crisis, GraceFul must interrupt the normal
+flow and prioritize support resources. The current prototype references:
 
-- NCMH Crisis Hotline: 1553
-- Hopeline
+- National Center for Mental Health: 1553
+- Hopeline Philippines
 
-This intervention has priority over normal post completion.
+This intervention takes precedence over normal posting.
 
-### Language and Wording Support
+### Review Gate
 
-GraceFul should offer optional support for clearer expression without changing
-meaning:
+Before final submission, the review step runs a simulated Guardian review pass
+through `lib/ai.ts`. The prototype currently supports:
 
-- Translation across English, Tagalog, and Bisaya
-- Wording refinement that preserves the user’s intent
+- A simulated review pass with feedback
+- Safety-based disablement of final posting
 
-In the current prototype, the user can express preference for these options,
-but the actual service behavior is not yet implemented.
+This is still local/demo behavior. It is not a real backend moderation integration.
 
-### Prayer-Centered Interaction
+### Prayer Response Flow
 
-Other users should be able to respond with prayer rather than debate. Allowed
-interaction is intentionally narrow:
+Users can open a prayer modal from eligible feed posts, submit a short prayer,
+and view previously shared prayers. The prayer flow must remain:
 
-- Pray for this
-- Write a short prayer response
+- Anonymous
+- Respectful
+- Free from identity disclosure
+- Free from harmful or profane language
 
-The product must not drift into open comment threads, reactions, or social
-performance loops.
+The current prototype stores prayer entries in local client state after
+Guardian checks pass.
 
 ## Functional Requirements
 
-- Users must be able to complete the share flow without creating an account or
-  exposing identity.
-- Posts must enforce a minimum length of 40 characters and a maximum length of
-  800 characters.
-- Moderation and crisis checks must occur before final submission.
-- Translation and wording assistance must remain optional and user-invoked.
-- The product must not display likes, follower counts, reaction totals, or
-  similar social metrics.
-- Prayer responses must be text-based and supportive rather than conversational
-  or argumentative.
+- Users must be able to complete the flow without creating an account.
+- Posts must remain anonymous and must not expose personal identity.
+- Shared messages must respect the 40-800 character range.
+- Crisis content must interrupt the normal post path.
+- Harmful intent, profanity, and obvious PII must be blocked or scrubbed.
+- Prayer interactions must remain supportive rather than conversational or
+  argumentative.
+- Translation must remain optional.
+- Posting must not introduce social metrics beyond prayer count.
 
 ## Technical Requirements
 
 ### Platform
 
 - Next.js App Router
-- React client components where local step-state is required
-- TypeScript for shared product models
+- React client-side state for the current flow
+- TypeScript for product models and guardrail logic
+- Tailwind-based styling plus global CSS theme tokens
 
-### Current UI Composition
+### Current Architecture
 
-- `app/page.tsx` currently acts as the first emotional choice surface
-- `components/sharing/share-flow.tsx` contains the deeper structured share flow
-- `components/feed/prayer-feed.tsx` contains the community-wall prototype
+- `app/page.tsx` is the active prototype shell
+- `lib/guardian.ts` contains the primary safety rules
+- `lib/lexicon.ts` loads the harm lexicon used by Guardian intent detection
+- `lib/ai.ts` simulates the Guardian review pass
+- `components/*Step.tsx` files implement the main flow screens
+- `components/PostCard.tsx` and `components/PrayerModal.tsx` implement feed
+  interaction
+- `components/OnboardingModal.tsx` handles first-session product framing
+- `components/TestDashboard.tsx` provides development-only scenario injection
 
-The shipped product experience should compose these surfaces coherently rather
-than leaving them as disconnected prototypes.
+### Archived Reference Prototypes
 
-### Visual Direction
+The repository also keeps archived reference surfaces in:
 
-- Clean, calm interface with a nature-inspired aesthetic
-- Shared palette defined through the `COLORS` constant
-- Theme tokens and typography should remain aligned across
-  `tailwind.config.ts` and `app/globals.css`
-- No gamified or attention-seeking interaction patterns
+- `components/reference/share-flow.reference.tsx`
+- `components/reference/prayer-feed.reference.tsx`
 
-### Flow Definition
-
-The share flow should follow this state order:
-
-- welcome
-- category
-- message
-- support
-- translate_opt
-- wording
-- done
-
-### Data Direction
-
-- Anonymous posts and prayers should eventually move from seeded sample data to
-  a persistence layer
-- Shared types must remain consistent across the feed, share flow, and
-  moderation logic
+These are not the primary application flow currently mounted in `app/page.tsx`.
 
 ## Non-Goals
 
-- Public identities or user profiles
-- Likes, rankings, or popularity mechanics
-- Debate threads or open comment discussions
-- Social networking behavior unrelated to prayer support
+- Public identities or profiles
+- Likes, reactions, or engagement ranking
+- Open comment threads or debate
+- Social networking mechanics unrelated to prayer support
+- Mandatory automatic rewriting of a user’s message
 
 ## Success Metrics
 
 - Share-flow completion rate
-- Prayer participation rate once prayer submission is implemented
-- Moderation interception rate for crisis and PII cases
-- Low friction from first screen to completed anonymous post
+- Prayer participation rate
+- Crisis interception rate
+- PII interception rate
+- Time from tapping `+ Share` to successful anonymous post

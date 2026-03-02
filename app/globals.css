@@ -2,8 +2,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f2ee;
-  --foreground: #2c3a2e;
+  --background: #ece7e1;
+  --foreground: #314133;
+  --page-bg: #ece7e1;
+  --shell-bg: #f7f5f2;
+  --share-shell-bg: #f2efea;
+  --shell-border: #d3ddcb;
+  --card-bg: #fcfbf8;
+  --card-border: #d0dcc9;
+  --brand: #4f845c;
+  --brand-dark: #426f4c;
+  --brand-soft: #e8efe6;
+  --ink: #314133;
+  --muted-ink: #7f8b7d;
+  --timestamp: #7e887b;
+  --chip-bg: #fbfcf9;
+  --chip-border: #c8d7c1;
+  --chip-neutral-bg: #f0f1ec;
+  --chip-active-bg: #4f845c;
+  --chip-active-border: #4f845c;
+  --chip-active-text: #f8f5ef;
+  --chip-grateful-bg: #e6efe5;
+  --chip-grateful-text: #5c7d62;
+  --chip-struggling-bg: #efe6e3;
+  --chip-struggling-text: #8a6757;
+  --grateful-rail: #4f845c;
+  --struggling-rail: #8a6757;
+  --support-text: #9bb18d;
+  --support-accent: #f0bf64;
+  --dot-muted: #cad8c4;
+  --warning-bg: #f8f1dd;
+  --warning-border: #eccf87;
+  --warning-text: #cd8c41;
 }
 
 html {
@@ -11,11 +41,21 @@ html {
 }
 
 body {
-  background-color: #f5f2ee;
-  color: #2c3a2e;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.82), transparent 52%),
+    var(--page-bg);
+  color: var(--ink);
   min-height: 100vh;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua",
+    "Cormorant Garamond", Georgia, serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
 }
 
 ::selection {

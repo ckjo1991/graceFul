@@ -1,82 +1,121 @@
 "use client";
 
 import React from "react";
+import { Globe2, HandHeart, Sparkles } from "lucide-react";
+
 import {
-  HandHeart as PrayingHand,
-  Languages,
-  MessageSquare,
-} from "lucide-react";
+  getLanguageLabel,
+  getViewPrayerLabel,
+  getTranslatedMessage,
+  getUiCopy,
+  localizeCategory,
+  localizeEmotion,
+  localizeSupportType,
+} from "@/lib/translation";
+import type { FeedPost, LanguageCode } from "@/types";
 
 interface PostCardProps {
-  post: {
-    id: string;
-    emotion: "grateful" | "struggling";
-    category: string;
-    message: string;
-    supportType: string;
-    allowTranslation: boolean;
-    createdAt: string;
-    prayerCount: number;
-  };
+  post: FeedPost;
   onPray: (postId: string) => void;
+  onViewPrayers: (postId: string) => void;
+  viewerLanguage: LanguageCode;
 }
 
-export default function PostCard({ post, onPray }: PostCardProps) {
+export default function PostCard({
+  post,
+  onPray,
+  onViewPrayers,
+  viewerLanguage,
+}: PostCardProps) {
+  const copy = getUiCopy(viewerLanguage);
   const isGrateful = post.emotion === "grateful";
+  const emotionLabel = localizeEmotion(post.emotion, viewerLanguage);
+  const emotionBadgeClass = isGrateful
+    ? "bg-[var(--chip-grateful-bg)] text-[var(--chip-grateful-text)]"
+    : "bg-[var(--chip-struggling-bg)] text-[var(--chip-struggling-text)]";
+  const railClass = isGrateful
+    ? "bg-[var(--grateful-rail)]"
+    : "bg-[var(--struggling-rail)]";
+  const canTranslate =
+    post.allowTranslation &&
+    viewerLanguage !== post.sourceLanguage &&
+    viewerLanguage !== "en";
+
+  const displayMessage = canTranslate
+    ? getTranslatedMessage(post.message, post.translations, viewerLanguage)
+    : post.message;
 
   return (
-    <div
-      className={`mb-4 w-full rounded-xl border-l-4 bg-white p-5 shadow-sm transition-all hover:shadow-md ${
-        isGrateful ? "border-primary" : "border-struggle"
-      }`}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex gap-2">
-          <span
-            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
-              isGrateful
-                ? "bg-emerald-50 text-primary"
-                : "bg-orange-50 text-struggle"
-            }`}
-          >
-            {isGrateful ? "🙏 Grateful" : "💙 Struggling"}
-          </span>
-          <span className="rounded-md bg-bg-warm px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
-            {post.category}
-          </span>
-        </div>
-        <span className="text-xs font-medium text-border">{post.createdAt}</span>
-      </div>
+    <article className="relative mx-auto w-full max-w-[50rem] overflow-hidden rounded-[1.45rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-4 py-4 shadow-[0_8px_24px_rgba(57,84,61,0.04)] md:px-6 md:py-5">
+      <span className={`absolute inset-y-0 left-0 w-[7px] ${railClass}`} />
 
-      <p className="mb-4 text-[15px] leading-relaxed text-text">
-        {post.message}
-      </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-wrap gap-2.5">
+            <span
+              className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[0.92rem] font-medium ${emotionBadgeClass}`}
+            >
+              {emotionLabel}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[var(--chip-neutral-bg)] px-3.5 py-1.5 text-[0.92rem] font-medium text-[var(--muted-ink)]">
+              {localizeCategory(post.category, viewerLanguage)}
+            </span>
+          </div>
 
-      {post.allowTranslation && (
-        <button className="mb-4 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
-          <Languages className="h-3 w-3" />
-          Translate to your language
-        </button>
-      )}
-
-      <div className="flex items-center justify-between border-t border-bg-warm pt-4">
-        <div className="flex items-center gap-2 text-muted">
-          <PrayingHand className="h-4 w-4" />
-          <span className="text-xs font-medium">
-            {post.prayerCount} {post.prayerCount === 1 ? "prayer" : "prayers"}
+          <span className="pt-1 text-[0.92rem] text-[var(--timestamp)]">
+            {post.createdAt}
           </span>
         </div>
 
-        {post.supportType !== "Just sharing" && (
+        <p className="max-w-3xl text-[1rem] leading-[1.8] tracking-[-0.01em] text-[var(--ink)] md:text-[1.08rem]">
+          {displayMessage}
+        </p>
+
+        {canTranslate ? (
+          <div className="rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--brand-soft)]/30 px-4 py-3 text-[0.84rem] leading-6 text-[var(--muted-ink)]">
+            <p className="font-medium text-[var(--brand)]">
+              {copy.postCard.translated} {getLanguageLabel(viewerLanguage)}
+            </p>
+            <p className="mt-1">
+              <span className="font-medium">{copy.postCard.original}:</span>{" "}
+              {post.message}
+            </p>
+          </div>
+        ) : null}
+
+        <div className="inline-flex items-center gap-2 text-[0.94rem] italic text-[var(--support-text)]">
+          <Sparkles className="h-4 w-4 text-[var(--support-accent)]" />
+          <span>{localizeSupportType(post.supportType, viewerLanguage)}</span>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
           <button
+            type="button"
             onClick={() => onPray(post.id)}
-            className="flex items-center gap-2 rounded-lg bg-bg-warm px-4 py-2 text-xs font-bold text-primary transition-colors hover:bg-accent/20"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2.5 text-[0.96rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
           >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Write a Prayer
+            <HandHeart className="h-4 w-4" />
+            {copy.postCard.pray}
           </button>
-        )}
+
+          {post.prayerCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => onViewPrayers(post.id)}
+              className="inline-flex items-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.96rem] font-medium text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+            >
+              {getViewPrayerLabel(post.prayerCount, viewerLanguage)}
+            </button>
+          ) : null}
+
+          {canTranslate ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.96rem] font-medium text-[var(--muted-ink)]">
+              <Globe2 className="h-4 w-4" />
+              {getLanguageLabel(viewerLanguage)}
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

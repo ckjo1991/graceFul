@@ -1,4 +1,3 @@
-import { checkLexicon } from "@/lib/lexicon";
 import { MAX_CHARS, MIN_CHARS } from "@/lib/constants";
 import type { GuardianResult } from "@/types";
 
@@ -14,6 +13,7 @@ export const CRISIS_KEYWORDS = [
 ];
 
 const HARM_VERBS = [
+  // Explicit
   "kill",
   "murder",
   "shoot",
@@ -28,6 +28,7 @@ const HARM_VERBS = [
   "slay",
   "massacre",
   "wipe out",
+  // Euphemistic removal/harm verbs
   "remove",
   "removed",
   "eliminate",
@@ -56,17 +57,17 @@ const INTENT_PHRASES = [
   "i would like",
 ];
 
-const FORBIDDEN_WORDS = ["fuck", "gago", "puta", "tangina"];
-
 const TARGET_PATTERN =
   /\b(him|her|them|someone|somebody|that person|this person|my\s+(?:dad|mom|mother|father|boss|sister|brother|friend|wife|husband|partner)|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/;
 
 const LOWERCASE_TARGET_PATTERN =
   /\b(him|her|them|someone|somebody|that person|this person|my\s+(?:dad|mom|mother|father|boss|sister|brother|friend|wife|husband|partner))\b/;
 
+// Catches: "I pray that [person] gets removed from this world / existence / our lives"
 const DIRECTED_REMOVAL_PATTERN =
   /\b(?:i\s+)?(?:pray|hope|wish|want)\s+(?:that\s+)?(?:(?:he|she|they|him|her|them|someone|somebody|that\s+person|this\s+person|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+)?(?:gets?\s+|be\s+|is\s+|would\s+be\s+)?(?:removed?|taken|erased?|wiped?|eliminated?|gone|disappear(?:ed)?)\s+(?:from\s+)?(?:this\s+world|existence|our\s+(?:lives?|world)|my\s+(?:life|world))\b/i;
 
+// Catches: "I pray that [person] dies / gets hurt / is killed"
 const DIRECTED_HARM_PATTERN =
   /\b(?:i\s+)?(?:pray|hope|wish|want)\s+(?:that\s+)?(?:(?:he|she|they|him|her|them|someone|somebody|that\s+person|this\s+person|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+)?(?:gets?\s+|be\s+|is\s+|would\s+be\s+)?(?:kill(?:ed)?|hurt|dead|die(?:s)?|murder(?:ed)?|shot|stabbed|punished|suffer(?:s)?|burn(?:ed)?|beaten)\b/i;
 
@@ -116,32 +117,25 @@ export const checkCrisis = (text: string): boolean => {
   return CRISIS_KEYWORDS.some((keyword) => lowerText.includes(keyword));
 };
 
-export const checkProfanity = (text: string): boolean => {
-  const lowerText = text.toLowerCase();
-  return FORBIDDEN_WORDS.some((word) => lowerText.includes(word));
-};
-
 export function hasViolentIntent(text: string): boolean {
-  // Gate 1: lexicon (fast, no regex compilation cost per call)
-  const lexiconResult = checkLexicon(text);
-  if (lexiconResult.matched) {
-    console.debug("[Guardian] Lexicon match:", lexiconResult.lang, lexiconResult.term);
-    return true;
-  }
+  const lowerText = text.toLowerCase();
 
-  // Gate 2: directed structural patterns (high-confidence regex)
+  // Check new directed patterns first — these are highest confidence
   if (DIRECTED_REMOVAL_PATTERN.test(text)) return true;
   if (DIRECTED_HARM_PATTERN.test(text)) return true;
   if (ALT_VIOLENT_INTENT_PATTERN.test(text)) return true;
 
-  // Gate 3: triple-token check (verb + intent + target co-occurring)
-  const lowerText = text.toLowerCase();
+  // Original triple-token check (verb + intent phrase + target co-occurring)
   const hasVerb = HARM_VERBS.some((verb) => lowerText.includes(verb));
   const hasIntent = INTENT_PHRASES.some((phrase) => lowerText.includes(phrase));
   const hasTarget =
     LOWERCASE_TARGET_PATTERN.test(lowerText) || TARGET_PATTERN.test(text);
 
   if (hasVerb && hasIntent && hasTarget) return true;
+
+  // Implied pattern from ai.ts (kept here for consolidation)
+  const impliedPattern = /\b(hope|wish|pray)\b.*\b(hurt|die|injury|accident)\b/i;
+  if (impliedPattern.test(text)) return true;
 
   return false;
 }
@@ -150,15 +144,16 @@ export const checkSafety = (
   text: string,
 ): {
   isSafe: boolean;
-  reason: "malice" | "pii" | "profanity" | null;
+  reason: "malice" | "pii" | null;
   foundDetail: string | null;
 } => {
   const lowerText = text.toLowerCase();
+  const forbiddenWords = ["fuck", "gago", "puta", "tangina"];
   const namePattern = /\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g;
 
-  for (const word of FORBIDDEN_WORDS) {
+  for (const word of forbiddenWords) {
     if (lowerText.includes(word)) {
-      return { isSafe: false, reason: "profanity", foundDetail: word };
+      return { isSafe: false, reason: "malice", foundDetail: word };
     }
   }
 
@@ -171,11 +166,7 @@ export const checkSafety = (
     containsPattern(text, EMAIL_PATTERN) ||
     containsPattern(text, SOCIAL_PATTERN)
   ) {
-    return {
-      isSafe: false,
-      reason: "pii",
-      foundDetail: "personal contact info",
-    };
+    return { isSafe: false, reason: "pii", foundDetail: "personal contact info" };
   }
 
   if (namePattern.test(text)) {
@@ -188,23 +179,20 @@ export const checkSafety = (
 export const scrubPII = (text: string): string => {
   let sanitized = text;
 
-  const phonePattern = /(\+?63|0)9\d{9}/g;
-  const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const socialPattern = /(@|facebook\.com\/|twitter\.com\/)[a-zA-Z0-9._-]+/gi;
-  const fullNamePattern = /\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g;
-  const locationPattern = /(St\.|Hospital|Clinic|Avenue|Brgy\.)\s+[A-Z][a-z]+/g;
+  const PHONE_PATTERN = /(\+?63|0)9\d{9}/g;
+  const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const SOCIAL_PATTERN = /(@|facebook\.com\/|twitter\.com\/)[a-zA-Z0-9._-]+/gi;
+  const FULL_NAME_PATTERN = /\b([A-Z][a-z]+ [A-Z][a-z]+)\b/g;
+  const LOCATION_PATTERN = /(St\.|Hospital|Clinic|Avenue|Brgy\.)\s+[A-Z][a-z]+/g;
 
   try {
-    sanitized = sanitized.replaceAll(phonePattern, "[phone removed]");
-    sanitized = sanitized.replaceAll(emailPattern, "[email removed]");
-    sanitized = sanitized.replaceAll(socialPattern, "[social link removed]");
-    sanitized = sanitized.replaceAll(fullNamePattern, "[name removed]");
-    sanitized = sanitized.replaceAll(
-      locationPattern,
-      "[location generalized]",
-    );
-  } catch (error) {
-    console.error("Scrubbing failed:", error);
+    sanitized = sanitized.replaceAll(PHONE_PATTERN, "[phone removed]");
+    sanitized = sanitized.replaceAll(EMAIL_PATTERN, "[email removed]");
+    sanitized = sanitized.replaceAll(SOCIAL_PATTERN, "[social link removed]");
+    sanitized = sanitized.replaceAll(FULL_NAME_PATTERN, "[name removed]");
+    sanitized = sanitized.replaceAll(LOCATION_PATTERN, "[location generalized]");
+  } catch (e) {
+    console.error("Scrubbing failed:", e);
   }
 
   return sanitized;
@@ -239,26 +227,6 @@ export function runGuardian(rawMessage: string): GuardianResult {
     };
   }
 
-  const safety = checkSafety(rawMessage);
-
-  if (!safety.isSafe) {
-    if (safety.reason === "malice") {
-      return {
-        outcome: "block",
-        sanitizedMessage: rawMessage.trim(),
-        reasons: ["Harmful intent detected. Please rephrase."],
-      };
-    }
-
-    if (safety.reason === "profanity") {
-      return {
-        outcome: "block",
-        sanitizedMessage: rawMessage.trim(),
-        reasons: ["Offensive language detected. Please rephrase."],
-      };
-    }
-  }
-
   let sanitizedMessage = rawMessage.trim();
   const reasons: string[] = [];
 
@@ -268,26 +236,17 @@ export function runGuardian(rawMessage: string): GuardianResult {
   }
 
   if (containsPattern(sanitizedMessage, NAME_PATTERN)) {
-    sanitizedMessage = sanitizedMessage.replaceAll(
-      NAME_PATTERN,
-      "[redacted identity]",
-    );
+    sanitizedMessage = sanitizedMessage.replaceAll(NAME_PATTERN, "[redacted identity]");
     reasons.push("Name reference removed.");
   }
 
   if (containsPattern(sanitizedMessage, FULL_NAME_PATTERN)) {
-    sanitizedMessage = sanitizedMessage.replaceAll(
-      FULL_NAME_PATTERN,
-      "[redacted name]",
-    );
+    sanitizedMessage = sanitizedMessage.replaceAll(FULL_NAME_PATTERN, "[redacted name]");
     reasons.push("Full name removed.");
   }
 
   if (containsPattern(sanitizedMessage, LOCATION_PATTERN)) {
-    sanitizedMessage = sanitizedMessage.replaceAll(
-      LOCATION_PATTERN,
-      "[redacted location]",
-    );
+    sanitizedMessage = sanitizedMessage.replaceAll(LOCATION_PATTERN, "[redacted location]");
     reasons.push("Specific location removed.");
   }
 

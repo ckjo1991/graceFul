@@ -4,13 +4,19 @@ import { useState } from "react";
 
 import { CATEGORIES, EMOTIONS, MAX_CHARS, MIN_CHARS, SUPPORTED_LANGUAGES } from "@/lib/constants";
 import { moderateSubmission } from "@/api/guardian";
-import type { Category, GuardianResult, ShareDraft, ShareStep } from "@/types";
+import type {
+  Category,
+  Emotion,
+  GuardianResult,
+  PrototypeShareDraft,
+  PrototypeShareStep,
+} from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
-const INITIAL_DRAFT: ShareDraft = {
+const INITIAL_DRAFT: PrototypeShareDraft = {
   emotion: null,
   category: null,
   message: "",
@@ -18,8 +24,8 @@ const INITIAL_DRAFT: ShareDraft = {
   wantsWordingHelp: false,
 };
 
-function nextStep(step: ShareStep): ShareStep {
-  const order: ShareStep[] = [
+function nextStep(step: PrototypeShareStep): PrototypeShareStep {
+  const order: PrototypeShareStep[] = [
     "welcome",
     "category",
     "message",
@@ -34,8 +40,8 @@ function nextStep(step: ShareStep): ShareStep {
 }
 
 export function ShareFlow() {
-  const [step, setStep] = useState<ShareStep>("welcome");
-  const [draft, setDraft] = useState<ShareDraft>(INITIAL_DRAFT);
+  const [step, setStep] = useState<PrototypeShareStep>("welcome");
+  const [draft, setDraft] = useState<PrototypeShareDraft>(INITIAL_DRAFT);
   const [guardianNotes, setGuardianNotes] = useState<string[]>([]);
   const [guardianOutcome, setGuardianOutcome] = useState<GuardianResult["outcome"] | null>(null);
 
@@ -44,7 +50,7 @@ export function ShareFlow() {
 
   const stepLabel = getStepLabel(step);
 
-  const handleEmotion = (emotion: ShareDraft["emotion"]) => {
+  const handleEmotion = (emotion: PrototypeShareDraft["emotion"]) => {
     setDraft((current) => ({ ...current, emotion }));
     setStep("category");
   };
@@ -62,6 +68,10 @@ export function ShareFlow() {
 
     if (result.outcome === "redirect_crisis") {
       setStep("support");
+      return;
+    }
+
+    if (result.outcome === "block") {
       return;
     }
 
@@ -93,7 +103,7 @@ export function ShareFlow() {
         <div className="grid gap-3 sm:grid-cols-2">
           {EMOTIONS.map((emotion) => (
             <Button key={emotion} className="justify-start rounded-[1.5rem]" onClick={() => handleEmotion(emotion)}>
-              {emotion}
+              {formatEmotionLabel(emotion)}
             </Button>
           ))}
         </div>
@@ -136,6 +146,13 @@ export function ShareFlow() {
             Minimum {MIN_CHARS} characters. Crisis content interrupts the flow and
             redirects to support.
           </p>
+          {guardianNotes.length > 0 ? (
+            <ul className="space-y-2 rounded-[1rem] border border-[var(--destructive)]/20 bg-[var(--destructive)]/5 p-4 text-sm text-[var(--foreground)]">
+              {guardianNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
 
@@ -180,7 +197,7 @@ export function ShareFlow() {
                 onClick={() =>
                   setDraft((current) => ({
                     ...current,
-                    translatedTo: code as ShareDraft["translatedTo"],
+                    translatedTo: code as PrototypeShareDraft["translatedTo"],
                   }))
                 }
               >
@@ -230,7 +247,7 @@ export function ShareFlow() {
   );
 }
 
-function stepTitle(step: ShareStep) {
+function stepTitle(step: PrototypeShareStep) {
   switch (step) {
     case "welcome":
       return "Emotion selection first.";
@@ -249,7 +266,7 @@ function stepTitle(step: ShareStep) {
   }
 }
 
-function stepDescription(step: ShareStep) {
+function stepDescription(step: PrototypeShareStep) {
   switch (step) {
     case "welcome":
       return "The flow cannot begin anywhere else. Grateful or Struggling sets the tone of the whole submission.";
@@ -268,7 +285,7 @@ function stepDescription(step: ShareStep) {
   }
 }
 
-function getStepLabel(step: ShareStep) {
+function getStepLabel(step: PrototypeShareStep) {
   switch (step) {
     case "welcome":
       return "Step 1";
@@ -285,4 +302,8 @@ function getStepLabel(step: ShareStep) {
     case "done":
       return "Complete";
   }
+}
+
+function formatEmotionLabel(emotion: Emotion) {
+  return emotion.charAt(0).toUpperCase() + emotion.slice(1);
 }

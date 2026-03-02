@@ -1,15 +1,42 @@
-export type Emotion = "Grateful" | "Struggling";
+export type Emotion = "grateful" | "struggling";
 
 export type Category =
   | "Financial"
   | "Family"
+  | "Health"
   | "Personal"
   | "Work"
   | "Other";
 
-export type LanguageCode = "en" | "tl" | "ceb";
+export type SupportType =
+  | "A prayer would be nice"
+  | "Just sharing"
+  | "Both prayer and encouragement";
 
-export type ShareStep =
+export type LanguageCode =
+  | "en"
+  | "tl"
+  | "ceb"
+  | "ilo"
+  | "hil"
+  | "war"
+  | "pam"
+  | "bcl"
+  | "es";
+
+export type AppFlowStep =
+  | "feed"
+  | "emotion"
+  | "category"
+  | "message"
+  | "crisis"
+  | "warning"
+  | "support"
+  | "translate_opt"
+  | "review"
+  | "done";
+
+export type PrototypeShareStep =
   | "welcome"
   | "category"
   | "message"
@@ -18,7 +45,15 @@ export type ShareStep =
   | "wording"
   | "done";
 
-export interface ShareDraft {
+export interface AppFlowSelection {
+  emotion: Emotion | "";
+  category: Category | "";
+  message: string;
+  support: SupportType | "";
+  allowTranslation: boolean | null;
+}
+
+export interface PrototypeShareDraft {
   emotion: Emotion | null;
   category: Category | null;
   message: string;
@@ -27,25 +62,34 @@ export interface ShareDraft {
 }
 
 export interface GuardianResult {
-  outcome: "allow" | "sanitize" | "redirect_crisis";
+  outcome: "allow" | "sanitize" | "redirect_crisis" | "block";
   sanitizedMessage: string;
   reasons: string[];
 }
 
-export interface Prayer {
+export interface PrayerResponse {
   id: string;
-  authorLabel: string;
   message: string;
   createdAt: string;
+  authorLabel?: string;
 }
 
-export interface Post {
+export type TranslationMap = Partial<Record<LanguageCode, string>>;
+
+export interface FeedPost {
   id: string;
   emotion: Emotion;
   category: Category;
   message: string;
-  prayerCount: number;
-  translationLabel: string;
+  supportType: SupportType;
+  allowTranslation: boolean;
+  sourceLanguage: LanguageCode;
+  translations: TranslationMap;
   createdAt: string;
-  prayers: Prayer[];
+  prayerCount: number;
+  prayers: PrayerResponse[];
+}
+
+export interface FeedPostWithPrayers extends FeedPost {
+  translationLabel: string;
 }

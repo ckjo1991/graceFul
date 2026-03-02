@@ -1,31 +1,37 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ChevronLeft, LoaderCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronLeft, LoaderCircle, ShieldCheck } from "lucide-react";
 
-import WordingAssist from "@/components/WordingAssist";
-import { runGuardianAI } from "@/lib/ai";
+import ShareStepShell from "@/components/ShareStepShell";
+import { runGuardianReview } from "@/lib/ai";
+import { getUiCopy, localizeGuardianFeedback } from "@/lib/translation";
+import type { LanguageCode } from "@/types";
 
 interface ReviewStepProps {
   isPosting: boolean;
   message: string;
+  onClose: () => void;
   onBack: () => void;
   onCrisisDetected: () => void;
   onPost: (finalMessage: string) => Promise<void>;
+  language: LanguageCode;
 }
 
 export default function ReviewStep({
   isPosting,
   message,
+  onClose,
   onBack,
   onCrisisDetected,
   onPost,
+  language,
 }: ReviewStepProps) {
+  const copy = getUiCopy(language);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [isSafe, setIsSafe] = useState(true);
   const [displayMessage, setDisplayMessage] = useState("");
-  const [feedback, setFeedback] = useState("Guardian is reviewing your message.");
-  const [isWordingAssistOpen, setIsWordingAssistOpen] = useState(false);
+  const [feedback, setFeedback] = useState<string>(copy.reviewStep.initialFeedback);
 
   useEffect(() => {
     let isActive = true;
@@ -33,17 +39,13 @@ export default function ReviewStep({
     const analyze = async () => {
       setIsAnalyzing(true);
       setIsSafe(true);
-      setIsWordingAssistOpen(false);
-      console.log("ReviewStep received draft:", message);
 
       try {
-        const result = await runGuardianAI(message);
+        const result = await runGuardianReview(message);
 
         if (!isActive) {
           return;
         }
-
-        console.log("ReviewStep Guardian result:", result);
 
         if (result.isCrisis) {
           onCrisisDetected();
@@ -52,7 +54,7 @@ export default function ReviewStep({
 
         setDisplayMessage(result.scrubbedMessage);
         setIsSafe(result.isSafe);
-        setFeedback(result.feedback);
+        setFeedback(localizeGuardianFeedback(result.feedback, language));
       } catch {
         if (!isActive) {
           return;
@@ -60,7 +62,7 @@ export default function ReviewStep({
 
         setDisplayMessage(message);
         setIsSafe(true);
-        setFeedback("Guardian could not finish analysis, so the original draft is shown.");
+        setFeedback(copy.reviewStep.fallbackFeedback);
       } finally {
         if (isActive) {
           setIsAnalyzing(false);
@@ -73,102 +75,53 @@ export default function ReviewStep({
     return () => {
       isActive = false;
     };
-  }, [message, onCrisisDetected]);
-
-  const handleWordingConfirm = (finalMessage: string) => {
-    console.log("ReviewStep wording confirmed:", finalMessage);
-    setDisplayMessage(finalMessage);
-    setFeedback("Wording updated. Review the version you selected before sharing.");
-    setIsWordingAssistOpen(false);
-  };
+  }, [copy.reviewStep.fallbackFeedback, language, message, onCrisisDetected]);
 
   return (
-    <div className="mx-auto w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8 flex flex-col items-start">
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center text-sm text-muted transition-colors hover:text-primary"
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </button>
-        <h2 className="text-2xl font-serif font-bold text-primary-dark">
-          Review your message
-        </h2>
-        <p className="mt-1 text-sm text-text-light">
-          One last look before sharing with the community.
-        </p>
-      </div>
-
-      <div className="relative mb-6 overflow-hidden rounded-2xl border-2 border-border bg-white p-6 shadow-sm">
-        <div className="absolute right-0 top-0 p-2">
-          <ShieldCheck className="h-5 w-5 text-accent opacity-50" />
-        </div>
+    <ShareStepShell
+      onClose={onClose}
+      step={6}
+      title={copy.reviewStep.title}
+      description={copy.reviewStep.description}
+    >
+      <div className="rounded-[0.75rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-3">
         {isAnalyzing ? (
-          <div className="flex min-h-28 items-center gap-3 text-text-light">
-            <LoaderCircle className="h-5 w-5 animate-spin text-primary" />
-            <div>
-              <p className="font-semibold text-primary-dark">Guardian is thinking...</p>
-              <p className="text-sm">
-                Checking for sensitive details and making sure this is safe to share.
-              </p>
-            </div>
+          <div className="flex items-center gap-3 text-[var(--muted-ink)]">
+            <LoaderCircle className="h-4 w-4 animate-spin text-[var(--brand)]" />
+            <span className="text-[0.92rem]">{copy.reviewStep.reviewing}</span>
           </div>
         ) : (
-          <p className="whitespace-pre-wrap leading-relaxed text-text">
+          <p className="whitespace-pre-wrap text-[0.98rem] leading-7 text-[var(--ink)]">
             {displayMessage}
           </p>
         )}
       </div>
 
-      {!isWordingAssistOpen ? (
-        <button
-          onClick={() => setIsWordingAssistOpen(true)}
-          disabled={isAnalyzing || !isSafe || !displayMessage}
-          className="mb-8 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-accent px-4 py-3 font-semibold text-primary transition-all hover:bg-accent/10 disabled:opacity-50"
-        >
-          <Sparkles className="h-4 w-4" />
-          ✨ Help me with wording
-        </button>
-      ) : (
-        <div className="mb-8 space-y-3">
-          <WordingAssist
-            originalMessage={displayMessage || message}
-            onConfirm={handleWordingConfirm}
-          />
-          <button
-            onClick={() => setIsWordingAssistOpen(false)}
-            className="w-full rounded-xl border border-border bg-white px-4 py-3 text-sm font-semibold text-text transition-colors hover:bg-bg-warm"
-          >
-            Keep current wording
-          </button>
-        </div>
-      )}
-
-      <div className="mb-8 flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-        <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
-        <p className="text-xs leading-relaxed text-primary-dark">
-          <strong>GraceFul Guardian:</strong> {feedback}
-        </p>
+      <div className="mt-4 flex items-start gap-2 rounded-[0.75rem] border border-[var(--shell-border)] bg-[var(--brand-soft)]/35 px-3 py-3 text-[0.84rem] leading-6 text-[var(--muted-ink)]">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" />
+        <span>{feedback}</span>
       </div>
 
-      <button
-        onClick={() => {
-          console.log("ReviewStep submitting:", {
-            originalMessage: message,
-            displayMessage,
-            isSafe,
-            isPosting,
-          });
-          void onPost(displayMessage);
-        }}
-        disabled={
-          isAnalyzing || isPosting || isWordingAssistOpen || !isSafe || !displayMessage
-        }
-        className="w-full rounded-xl bg-primary-dark py-4 font-bold text-white shadow-lg transition-all hover:bg-[#1b3d26] active:scale-[0.98]"
-      >
-        {isPosting ? "Checking intent..." : "Share Anonymously 🌿"}
-      </button>
-    </div>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {copy.reviewStep.back}
+        </button>
+        <button
+          type="button"
+          onClick={() => void onPost(displayMessage)}
+          disabled={
+            isAnalyzing || isPosting || !isSafe || !displayMessage
+          }
+          className="rounded-[0.55rem] bg-[var(--brand)] px-5 py-2.5 text-[0.92rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)] disabled:opacity-60"
+        >
+          {isPosting ? copy.reviewStep.checking : `${copy.reviewStep.share} 🌿`}
+        </button>
+      </div>
+    </ShareStepShell>
   );
 }

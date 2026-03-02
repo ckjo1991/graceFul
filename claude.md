@@ -1,80 +1,100 @@
 # GraceFul Development Rules
 
 ## Project Overview
-GraceFul is an anonymous prayer wall built to provide a safe space for
-vulnerability. It focuses on structured spiritual response through prayers
-instead of social debate, public identity, or engagement metrics.
+
+GraceFul is an anonymous prayer wall prototype. It is designed to keep people
+focused on prayer, encouragement, and safe sharing rather than identity,
+debate, or social performance.
 
 ## Current Repo Reality
 
-The current repository is a prototype. When changing code, preserve the
-distinction between what is already implemented and what is only planned.
+The active app flow lives in `app/page.tsx`. Treat that file as the main
+product shell unless you intentionally migrate the architecture.
 
-- `app/page.tsx` currently renders a standalone emotional entry screen.
-- `components/sharing/share-flow.tsx` contains the richer state-machine flow.
-- `components/feed/prayer-feed.tsx` renders seeded posts from
-  `lib/sample-posts.ts`.
-- `api/guardian.ts` is a local wrapper around `lib/guardian.ts`, not a real
-  HTTP API route.
-- Translation and wording assistance are represented as captured intent, not as
-  completed service integrations.
+- The default screen is the feed, not the share flow.
+- A first-session onboarding modal appears before normal use until dismissed.
+- Posting is handled through a local step machine inside `app/page.tsx`.
+- The review experience uses simulated Guardian review logic from `lib/ai.ts`.
+- Guardian and privacy enforcement live in `lib/guardian.ts`.
+- Guardian intent detection also depends on the lexicon loader in `lib/lexicon.ts`.
+- Prayer submission is local-only and updates counts in client state.
+- `components/reference/share-flow.reference.tsx` and
+  `components/reference/prayer-feed.reference.tsx` are archived reference
+  prototypes, not mounted product code.
 
 ## Critical Workflow Rules
-1. **Emotion Selection First:** Every user journey must begin with an
-   explicit choice between `Grateful` or `Struggling`. This frames the post
-   and is non-negotiable.
-1. **No Identity Storage:** Zero tracking of personal identity. Do not store
-   accounts, profiles, names, or other identifying markers.
-1. **No Social Metrics:** Do not add likes, engagement counts, reactions, or
-   comment threads. The only allowed interaction is a written prayer.
-1. **The Guardian Layer:** Every submission must pass through Guardian
-   safeguards.
-   - **Crisis Detection:** Immediately block and redirect users to
-     `NCMH (1553)` or `Hopeline` when self-harm or hopelessness is detected.
-   - **PII Scrubbing:** Automatically remove names, phone numbers including
-     `09xx` formats, and specific locations before content is stored or shown.
-1. **Meaning Preservation:** AI rewording through
-   `✨ Help me with wording` may clarify phrasing, but it must not change the
-   user's original heart, intent, or meaning.
-1. **State Machine Navigation:** The UI must follow the state-driven flow
-   `welcome → category → message → support → translate_opt → wording → done`.
-1. **Prototype Accuracy:** Do not mark translation, wording help, feed
-   filtering, or prayer submission as complete unless the behavior is actually
-   wired and testable in the code.
+
+1. **Emotion Selection First**
+   Any new post must begin with an explicit `grateful` or `struggling`
+   selection.
+2. **Anonymous by Default**
+   Do not add accounts, public identities, profile handles, or personal
+   attribution to posts or prayers.
+3. **Prayer Over Social Feedback**
+   Do not add likes, comments, follower mechanics, or ranking systems.
+4. **Guardian Before Publication**
+   Content must pass crisis, PII, profanity, and malicious-intent checks before
+   it is accepted.
+5. **Crisis Takes Priority**
+   If crisis language is detected, interrupt the flow and show support
+   resources instead of continuing normally.
+6. **Prototype Accuracy**
+   Do not describe simulated review behavior as production-ready infrastructure.
+   The current `lib/ai.ts` behavior is local demo logic.
+
+## Current Step Model
+
+The main flow in `app/page.tsx` currently uses these states:
+
+- `feed`
+- `emotion`
+- `category`
+- `message`
+- `crisis`
+- `warning`
+- `support`
+- `translate_opt`
+- `review`
+- `done`
+
+If you change this state model, update the docs in the same pass.
 
 ## Code Standards
-- **TypeScript Strict Mode:** All new code must be typed. Do not use `any`.
-- **Functional Components:** Use React functional components and Hooks such as
-  `useState` and `useEffect`.
-- **Centralized Styling:** Use the `COLORS` constant for the nature-inspired
-  palette, with primary color `#4a7c59`.
-- **Validation:** Strictly enforce `MIN_CHARS = 40` and `MAX_CHARS = 800`.
-- **Shared Models:** Keep `types/index.ts`, `lib/sample-posts.ts`, and the
-  rendered component props aligned. Do not allow sample data and shared types
-  to drift apart.
-- **Naming Conventions:** Use clear, semantic names such as `resetFlow`,
-  `runGuardian`, and `moderateSubmission`.
+
+- Use TypeScript throughout. Do not introduce `any`.
+- Prefer functional React components and local state where the flow is
+  UI-driven.
+- Keep product rules centralized in `lib/guardian.ts` and avoid duplicating
+  safety logic in multiple places.
+- Keep client-side product state understandable; this flow is already complex
+  enough without hidden abstractions.
+- Preserve the current visual language defined by `tailwind.config.ts`,
+  `app/globals.css`, and `lib/constants.ts`.
+- Avoid drifting shared models apart. The app currently has both typed shared
+  models in `types/index.ts` and local flow-specific models in `app/page.tsx`;
+  reduce that duplication rather than adding more.
 
 ## File Conventions
-- **Components:** Organize UI in `/components`, including areas such as
-  `/sharing` and `/feed`.
-- **Logic:** Keep AI and moderation logic in `/lib`.
-- **Types:** Centralize interfaces and shared types in `/types`.
-- **Language:** Manage UI strings through `UI_EN` to support
-  multi-dialect translation.
-- **App Composition:** Assemble the actual product experience through the
-  App Router entrypoints in `/app`.
-- **Styling:** Keep theme tokens coherent between `app/globals.css`,
-  `tailwind.config.ts`, and `lib/constants.ts`.
-- **Docs:** When implementation changes materially, update `prd.md`,
-  `planning.md`, and `tasks.md` in the same pass.
 
-## Testing Requirements
-- **Moderation Logic:** Add unit tests to verify PII and malicious content are
-  flagged or sanitized correctly.
-- **Crisis Redirect:** Manually verify that crisis keywords trigger
-  `NCMH (1553)` or `Hopeline` resources.
-- **Posting Flow:** Add integration tests to confirm a post completes every
-  required step before appearing in the feed.
-- **Type Consistency:** Add checks or tests that fail when post/prayer sample
-  data no longer matches the shared TypeScript model.
+- Put main routed UI in `/app`.
+- Keep reusable flow screens in `/components`.
+- Keep Guardian review and support logic in `/lib`.
+- Keep shared product types in `/types`.
+- Keep development-only fixtures and scenario data in dedicated helper files
+  such as `lib/testData.ts`.
+
+## Testing Expectations
+
+- Add unit coverage for crisis, profanity, PII, and malicious-intent checks.
+- Verify the prayer modal uses the same protection standards as post creation.
+- Verify the `+ Share` path and return-to-feed path work end to end.
+- Keep development-only helpers like `TestDashboard` gated out of production.
+
+## Documentation Rule
+
+When implementation changes materially, update these files together:
+
+- `prd.md`
+- `planning.md`
+- `tasks.md`
+- `claude.md`, when development rules also changed

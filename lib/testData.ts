@@ -1,7 +1,9 @@
+import type { Category, Emotion } from "@/types";
+
 export interface TestScenario {
   label: string;
-  emotion: "grateful" | "struggling";
-  category: string;
+  emotion: Emotion;
+  category: Category;
   message: string;
 }
 

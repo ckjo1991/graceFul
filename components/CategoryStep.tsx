@@ -3,58 +3,66 @@
 import React from "react";
 import { ChevronLeft } from "lucide-react";
 
+import ShareStepShell from "@/components/ShareStepShell";
+import { CATEGORIES } from "@/lib/constants";
+import { getUiCopy, localizeCategory } from "@/lib/translation";
+import type { Category, Emotion, LanguageCode } from "@/types";
+
 interface CategoryStepProps {
-  onSelect: (category: string) => void;
+  onClose: () => void;
+  onSelect: (category: Category) => void;
   onBack: () => void;
-  selectedEmotion: "grateful" | "struggling";
+  selectedEmotion: Emotion;
+  language: LanguageCode;
 }
 
-const categories = ["Financial", "Family", "Personal", "Work", "Other"];
-
 export default function CategoryStep({
+  onClose,
   onSelect,
   onBack,
   selectedEmotion,
+  language,
 }: CategoryStepProps) {
-  const accentColor =
-    selectedEmotion === "struggling" ? "hover:border-struggle" : "hover:border-primary";
+  const copy = getUiCopy(language);
+  const hoverAccent =
+    selectedEmotion === "struggling"
+      ? "hover:border-[var(--struggling-rail)]"
+      : "hover:border-[var(--brand)]";
 
   return (
-    <div className="mx-auto w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8 flex flex-col items-start">
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center text-sm text-[#6b7c6d] transition-colors hover:text-[#4a7c59]"
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </button>
-        <h2 className="text-2xl font-serif font-bold text-primary-dark">
-          What area of life is this about?
-        </h2>
-        <p className="mt-1 text-sm text-[#6b7c6d]">
-          Choose the category that fits best.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3">
-        {categories.map((category) => (
+    <ShareStepShell
+      onClose={onClose}
+      step={2}
+      title={copy.categoryStep.title}
+      description={copy.categoryStep.description}
+    >
+      <div className="space-y-3">
+        {CATEGORIES.map((category) => (
           <button
             key={category}
+            type="button"
             onClick={() => onSelect(category)}
-            className={`w-full rounded-xl border-2 border-[#d4e4cc] bg-white p-4 text-left font-medium text-[#2c3a2e] transition-all hover:shadow-md active:scale-[0.98] ${accentColor}`}
+            className={`w-full rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-4 text-left text-[1rem] text-[var(--ink)] transition-all hover:bg-white ${hoverAccent}`}
           >
-            {category}
+            {localizeCategory(category, language)}
           </button>
         ))}
       </div>
 
-      <div className="mt-8 rounded-lg border border-[#c8bea7] bg-[#f9faf7] p-4">
-        <p className="text-xs italic leading-relaxed text-[#6b7c6d]">
-          GraceFul is a place to share, pray, and encourage, but it is not a
-          substitute for real community.
-        </p>
+      <div className="mt-4 rounded-[0.7rem] border border-[var(--shell-border)] bg-[var(--brand-soft)]/35 px-3 py-2.5 text-[0.78rem] italic leading-6 text-[var(--muted-ink)]">
+        {copy.categoryStep.note}
       </div>
-    </div>
+
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {copy.categoryStep.back}
+        </button>
+      </div>
+    </ShareStepShell>
   );
 }

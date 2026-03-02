@@ -34,7 +34,7 @@ export function PrayerFeed() {
             className="rounded-[1.5rem] border border-[var(--border)] bg-white/80 p-5"
           >
             <div className="flex items-center justify-between gap-3">
-              <Badge>{post.emotion}</Badge>
+              <Badge>{formatEmotionLabel(post.emotion)}</Badge>
               <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
                 {post.category}
               </span>
@@ -64,3 +64,6 @@ export function PrayerFeed() {
   );
 }
 
+function formatEmotionLabel(emotion: "grateful" | "struggling") {
+  return emotion.charAt(0).toUpperCase() + emotion.slice(1);
+}

@@ -1,84 +1,85 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft, Globe, Languages } from "lucide-react";
+import { ChevronLeft, Globe2 } from "lucide-react";
+
+import ShareStepShell from "@/components/ShareStepShell";
+import { getUiCopy } from "@/lib/translation";
+import type { LanguageCode } from "@/types";
 
 interface TranslateOptStepProps {
+  onClose: () => void;
   onSelect: (allow: boolean) => void;
   onBack: () => void;
   allowTranslation: boolean | null;
+  language: LanguageCode;
 }
 
 export default function TranslateOptStep({
+  onClose,
   onSelect,
   onBack,
   allowTranslation,
+  language,
 }: TranslateOptStepProps) {
+  const copy = getUiCopy(language);
   return (
-    <div className="mx-auto w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8 flex flex-col items-start">
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center text-sm text-muted transition-colors hover:text-primary"
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </button>
-        <div className="mb-4 rounded-full bg-accent/20 p-3">
-          <Globe className="h-6 w-6 text-primary" />
-        </div>
-        <h2 className="text-2xl font-serif font-bold text-primary-dark">
-          Would you like to allow viewers to translate your post?
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-text-light">
-          If someone has set their language, your post will appear in theirs
-          with your original always available.
-        </p>
+    <ShareStepShell
+      onClose={onClose}
+      step={5}
+      title={copy.translateStep.title}
+      description={copy.translateStep.description}
+    >
+      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-[var(--brand-soft)]">
+        <Globe2 className="h-6 w-6 text-[var(--brand)]" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="space-y-3">
         <button
+          type="button"
           onClick={() => onSelect(true)}
-          className={`group flex w-full items-start gap-4 rounded-2xl border-2 p-6 text-left transition-all ${
+          className={`w-full rounded-[0.9rem] border px-4 py-4 text-left transition-all ${
             allowTranslation === true
-              ? "border-primary bg-white shadow-md"
-              : "border-border bg-white hover:border-primary"
+              ? "border-[var(--brand)] bg-white"
+              : "border-[var(--chip-border)] bg-[var(--chip-bg)] hover:border-[var(--brand)]"
           }`}
         >
-          <div className="rounded-lg bg-bg-warm p-2">
-            <Languages className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <span className="block font-bold text-text">
-              Yes, allow translation
-            </span>
-            <span className="mt-1 block text-xs text-text-light">
-              Help your message reach more people across different languages.
-            </span>
-          </div>
+          <span className="block text-[1rem] font-semibold text-[var(--ink)]">
+            {copy.translateStep.yesTitle}
+          </span>
+          <span className="mt-1 block text-[0.86rem] leading-6 text-[var(--muted-ink)]">
+            {copy.translateStep.yesBody}
+          </span>
         </button>
 
         <button
+          type="button"
           onClick={() => onSelect(false)}
-          className={`group flex w-full items-start gap-4 rounded-2xl border-2 p-6 text-left transition-all ${
+          className={`w-full rounded-[0.9rem] border px-4 py-4 text-left transition-all ${
             allowTranslation === false
-              ? "border-struggle bg-white shadow-md"
-              : "border-border bg-white hover:border-struggle"
+              ? "border-[var(--brand)] bg-white"
+              : "border-[var(--chip-border)] bg-[var(--chip-bg)] hover:border-[var(--brand)]"
           }`}
         >
-          <div className="rounded-lg bg-bg-warm p-2">
-            <span className="text-lg">🌿</span>
-          </div>
-          <div>
-            <span className="block font-bold text-text">
-              No, keep my words only
-            </span>
-            <span className="mt-1 block text-xs text-text-light">
-              Your words will stay exactly as you wrote them.
-            </span>
-          </div>
+          <span className="block text-[1rem] font-semibold text-[var(--ink)]">
+            {copy.translateStep.noTitle}
+          </span>
+          <span className="mt-1 block text-[0.86rem] leading-6 text-[var(--muted-ink)]">
+            {copy.translateStep.noBody}
+          </span>
         </button>
       </div>
-    </div>
+
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {copy.translateStep.back}
+        </button>
+      </div>
+    </ShareStepShell>
   );
 }

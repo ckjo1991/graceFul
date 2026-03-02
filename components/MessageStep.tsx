@@ -1,97 +1,119 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronLeft, Info } from "lucide-react";
+import { ChevronLeft, PenLine } from "lucide-react";
 
+import ShareStepShell from "@/components/ShareStepShell";
 import { MAX_CHARS, MIN_CHARS } from "@/lib/constants";
+import { getUiCopy, localizeCategory } from "@/lib/translation";
+import type { Category, Emotion, LanguageCode } from "@/types";
 
 interface MessageStepProps {
+  onClose: () => void;
   onNext: (message: string) => void;
   onBack: () => void;
-  selectedEmotion: "grateful" | "struggling";
-  category: string;
+  selectedEmotion: Emotion;
+  category: Category;
   initialMessage?: string;
+  language: LanguageCode;
 }
 
 export default function MessageStep({
+  onClose,
   onNext,
   onBack,
   selectedEmotion,
   category,
   initialMessage = "",
+  language,
 }: MessageStepProps) {
+  const copy = getUiCopy(language);
   const [message, setMessage] = useState(initialMessage);
 
   const trimmedLength = message.trim().length;
-  const isTooShort = trimmedLength > 0 && trimmedLength < MIN_CHARS;
   const canContinue = trimmedLength >= MIN_CHARS;
+  const remaining = Math.max(MIN_CHARS - trimmedLength, 0);
+  const isGrateful = selectedEmotion === "grateful";
+  const intro = isGrateful
+    ? copy.messageStep.gratefulIntro
+    : copy.messageStep.strugglingIntro;
 
   return (
-    <div className="mx-auto w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-6 flex flex-col items-start">
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center text-sm text-muted transition-colors hover:text-primary"
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </button>
-        <h2 className="text-2xl font-serif font-bold text-primary-dark">
-          Share what&apos;s on your heart
-        </h2>
-        <p className="mt-1 text-sm text-text-light">
-          Write freely. Your identity will never be shown.
-        </p>
-      </div>
-
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-accent bg-[#f0f7f0] p-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-primary">
-          {selectedEmotion === "grateful" ? "🙏 Gratitude" : "💙 Struggle"}
+    <ShareStepShell
+      onClose={onClose}
+      step={3}
+      title={copy.messageStep.title}
+      description={copy.messageStep.description}
+    >
+      <div className="rounded-[0.75rem] border border-[var(--chip-border)] bg-[var(--brand-soft)]/45 px-4 py-3 text-[0.98rem] text-[var(--muted-ink)]">
+        <span className="italic">{intro}</span>{" "}
+        <span className="font-semibold text-[var(--brand)]">
+          {localizeCategory(category, language)}
         </span>
-        <span className="text-muted">•</span>
-        <span className="text-xs font-semibold text-text">{category}</span>
+        <span className="text-[var(--shell-border)]">
+          {" "}
+          - {copy.messageStep.previewSuffix}
+        </span>
       </div>
 
-      <div className="relative">
+      <div className="mt-4">
         <textarea
           autoFocus
-          className="min-h-[200px] w-full resize-none rounded-xl border-2 border-border p-4 font-sans text-text transition-all placeholder:text-border focus:border-primary focus:ring-0"
+          className="min-h-[8.75rem] w-full resize-none rounded-[0.9rem] border border-[var(--chip-border)] bg-[var(--card-bg)] p-4 text-[0.98rem] leading-7 text-[var(--ink)] outline-none transition-colors placeholder:text-[var(--shell-border)] focus:border-[var(--brand)]"
           maxLength={MAX_CHARS}
           placeholder={
-            selectedEmotion === "grateful"
-              ? "Tell us more about what you're grateful for..."
-              : "Tell us more about what you're going through..."
+            isGrateful
+              ? copy.messageStep.gratefulPlaceholder
+              : copy.messageStep.strugglingPlaceholder
           }
+          spellCheck={true}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
         />
 
-        <div className={`mt-2 text-right text-xs ${isTooShort ? "text-crisis" : "text-muted"}`}>
-          {message.length} / {MAX_CHARS}
+        <div className="mt-2 flex items-center justify-between gap-3 text-[0.78rem]">
+          <span className={canContinue ? "text-[var(--support-text)]" : "text-[var(--warning-text)]"}>
+            {canContinue
+              ? copy.messageStep.goodLength
+              : copy.messageStep.atLeast(MIN_CHARS, remaining)}
+          </span>
+          <span className="text-[var(--warning-text)]">
+            {message.length}/{MAX_CHARS}
+          </span>
         </div>
       </div>
 
-      {isTooShort ? (
-        <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs text-crisis animate-in fade-in">
-          <Info className="h-4 w-4 shrink-0" />
+      {trimmedLength > 0 && !canContinue ? (
+        <div className="mt-4 flex items-start gap-2 rounded-[0.7rem] border border-[var(--warning-border)] bg-[var(--warning-bg)] px-3 py-3 text-[0.84rem] leading-6 text-[var(--warning-text)]">
+          <PenLine className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Please share a bit more (at least {MIN_CHARS} characters) so others can pray
-            for you meaningfully.
+            {copy.messageStep.tooBrief}
           </span>
         </div>
       ) : null}
 
-      <button
-        className={`mt-6 w-full rounded-xl py-4 font-bold transition-all ${
-          canContinue
-            ? "bg-primary text-white shadow-md hover:bg-primary-dark active:scale-[0.98]"
-            : "cursor-not-allowed bg-border text-muted"
-        }`}
-        disabled={!canContinue}
-        onClick={() => onNext(message.trim())}
-      >
-        Continue →
-      </button>
-    </div>
+      <div className="mt-5 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          {copy.messageStep.back}
+        </button>
+        <button
+          type="button"
+          disabled={!canContinue}
+          onClick={() => onNext(message.trim())}
+          className={`rounded-[0.55rem] px-5 py-2.5 text-[0.92rem] font-medium transition-colors ${
+            canContinue
+              ? "bg-[var(--brand)] text-white hover:bg-[var(--brand-dark)]"
+              : "cursor-not-allowed border border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--muted-ink)]"
+          }`}
+        >
+          {copy.messageStep.continue} →
+        </button>
+      </div>
+    </ShareStepShell>
   );
 }

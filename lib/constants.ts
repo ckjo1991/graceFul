@@ -1,4 +1,11 @@
-import type { Category, Emotion, LanguageCode, ShareStep } from "@/types";
+import type {
+  AppFlowStep,
+  Category,
+  Emotion,
+  LanguageCode,
+  PrototypeShareStep,
+  SupportType,
+} from "@/types";
 
 export const COLORS = {
   bg: "#f5f1e8",
@@ -12,22 +19,47 @@ export const COLORS = {
 export const MIN_CHARS = 40;
 export const MAX_CHARS = 800;
 
-export const EMOTIONS: readonly Emotion[] = ["Grateful", "Struggling"];
+export const EMOTIONS: readonly Emotion[] = ["grateful", "struggling"];
 export const CATEGORIES: readonly Category[] = [
   "Financial",
   "Family",
+  "Health",
   "Personal",
   "Work",
   "Other",
+];
+export const SUPPORT_OPTIONS: readonly SupportType[] = [
+  "A prayer would be nice",
+  "Just sharing",
+  "Both prayer and encouragement",
 ];
 
 export const SUPPORTED_LANGUAGES: Readonly<Record<LanguageCode, string>> = {
   en: "English",
   tl: "Tagalog",
   ceb: "Bisaya",
+  ilo: "Ilocano",
+  hil: "Hiligaynon",
+  war: "Waray",
+  pam: "Kapampangan",
+  bcl: "Bicol",
+  es: "Spanish",
 };
 
-export const FLOW_STEPS: readonly ShareStep[] = [
+export const FLOW_STEPS: readonly AppFlowStep[] = [
+  "feed",
+  "emotion",
+  "category",
+  "message",
+  "crisis",
+  "warning",
+  "support",
+  "translate_opt",
+  "review",
+  "done",
+];
+
+export const LEGACY_SHARE_STEPS: readonly PrototypeShareStep[] = [
   "welcome",
   "category",
   "message",
@@ -38,12 +70,10 @@ export const FLOW_STEPS: readonly ShareStep[] = [
 ];
 
 export const UI_EN = {
-  heroTitle: "Share what your heart is carrying.",
+  heroTitle: "GraceFul keeps prayer requests calm and anonymous.",
   heroBody:
-    "GraceFul keeps the flow calm, anonymous, and prayer-centered from the first tap.",
+    "The current product opens on the feed, then moves into a guided share flow only when someone chooses to post.",
   supportTitle: "Support comes as prayer, not debate.",
   crisisTitle: "If you are in immediate danger, contact NCMH (1553) or Hopeline now.",
-  wordingPrompt: "Help me with wording",
   translatePrompt: "Offer translation after the core message is written",
 } as const;
-

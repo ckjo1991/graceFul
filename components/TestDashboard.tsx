@@ -10,7 +10,10 @@ interface TestDashboardProps {
 }
 
 export default function TestDashboard({ onInject }: TestDashboardProps) {
-  if (process.env.NODE_ENV !== "development") {
+  if (
+    process.env.NODE_ENV !== "development" ||
+    process.env.NEXT_PUBLIC_SHOW_DEBUGGER !== "1"
+  ) {
     return null;
   }
 
