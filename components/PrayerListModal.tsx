@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { HandHeart, X } from "lucide-react";
 
 import {
@@ -8,6 +8,7 @@ import {
   getPrayerCountLabel,
   getUiCopy,
 } from "@/lib/translation";
+import { lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import type { FeedPost, LanguageCode } from "@/types";
 
 interface PrayerListModalProps {
@@ -23,6 +24,18 @@ export default function PrayerListModal({
   post,
   language,
 }: PrayerListModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      lockBodyScroll();
+    } else {
+      unlockBodyScroll();
+    }
+
+    return () => {
+      unlockBodyScroll();
+    };
+  }, [isOpen]);
+
   if (!isOpen || !post) {
     return null;
   }

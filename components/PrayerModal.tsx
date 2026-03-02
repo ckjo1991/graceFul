@@ -8,6 +8,7 @@ import {
   getDisplayTranslatedMessage,
   getUiCopy,
 } from "@/lib/translation";
+import { lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
 import type { FeedPost, LanguageCode } from "@/types";
 
 interface PrayerModalProps {
@@ -39,6 +40,18 @@ export default function PrayerModal({
       setGuardianReason(null);
     }
   }, [isOpen, post?.id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      lockBodyScroll();
+    } else {
+      unlockBodyScroll();
+    }
+
+    return () => {
+      unlockBodyScroll();
+    };
+  }, [isOpen]);
 
   if (!isOpen || !post) return null;
 

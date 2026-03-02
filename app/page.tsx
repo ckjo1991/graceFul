@@ -48,6 +48,32 @@ type FeedFilter = "all" | Emotion | "my_posts";
 const DEVICE_ID_STORAGE_KEY = "graceful_device_id";
 const DEFAULT_FEED_FILTER: FeedFilter = "all";
 
+type DebouncedFunction<Args extends unknown[]> = ((...args: Args) => void) & {
+  cancel: () => void;
+};
+
+function debounce<Args extends unknown[]>(fn: (...args: Args) => void, ms: number) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const debounced = ((...args: Args) => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    timer = setTimeout(() => {
+      fn(...args);
+    }, ms);
+  }) as DebouncedFunction<Args>;
+
+  debounced.cancel = () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  };
+
+  return debounced;
+}
+
 export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -110,18 +136,23 @@ export default function GracefulFlow() {
   }, []);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsCompact(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: "0px" },
-    );
+    const handleIntersection = debounce(([entry]: IntersectionObserverEntry[]) => {
+      setIsCompact(!entry.isIntersecting);
+    }, 50);
+
+    const observer = new IntersectionObserver(handleIntersection, {
+      threshold: 0,
+      rootMargin: "0px",
+    });
 
     if (sentinelRef.current) {
       observer.observe(sentinelRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      handleIntersection.cancel();
+    };
   }, []);
 
   const startFreshShare = () => {
@@ -312,7 +343,7 @@ export default function GracefulFlow() {
         <div className="mx-auto rounded-[2.1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] shadow-[0_16px_44px_rgba(57,84,61,0.06)]">
           <div ref={sentinelRef} className="h-0 w-full" />
           <header
-            className={`sticky top-0 z-40 bg-white/95 backdrop-blur-sm transition-shadow duration-200 ${
+            className={`sticky top-0 z-40 overflow-hidden bg-white/95 backdrop-blur-sm will-change-transform transition-shadow duration-200 ${
               isCompact ? "border-b border-[#d4e4cc] shadow-sm" : ""
             }`}
           >
