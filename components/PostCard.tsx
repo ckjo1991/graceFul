@@ -47,13 +47,20 @@ export default function PostCard({
     ? "bg-[var(--grateful-rail)]"
     : "bg-[var(--struggling-rail)]";
   const cardBg = TOPIC_CARD_TINTS[post.category?.toLowerCase()] ?? "bg-white";
+  const deviceId =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("graceful_device_id")
+      : null;
+  const isOwnPost = post.deviceId === deviceId;
   const normalizedSupport =
     post.support === "encouragement" ? "just_sharing" : post.support;
   const showsPrayerButton =
-    normalizedSupport === "prayer" || normalizedSupport === "both";
+    !isOwnPost &&
+    (normalizedSupport === "prayer" || normalizedSupport === "both");
   const showsHeartButton =
     normalizedSupport === "just_sharing" || normalizedSupport === "both";
-  const showsViewPrayerButton = showsPrayerButton && post.prayers.length > 0;
+  const showsViewPrayerButton =
+    !isOwnPost && showsPrayerButton && post.prayers.length > 0;
   const heartLabel = heartCount === 0 ? "🤍" : `🤍 ${heartCount}`;
   const activeHeartLabel = `🩷 ${heartCount}`;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
@@ -107,6 +114,10 @@ export default function PostCard({
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {isOwnPost ? (
+            <span className="text-xs italic text-[#6b7c6d]">Your post</span>
+          ) : null}
+
           {showsPrayerButton ? (
             <button
               type="button"
