@@ -107,6 +107,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "posts" },
           (payload) => {
+            console.log("[GraceFul] Realtime event received:", payload);
             const newPost = mapRowToPost(payload.new as Parameters<typeof mapRowToPost>[0]);
             pushPost(newPost);
           },
@@ -115,6 +116,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           "postgres_changes",
           { event: "DELETE", schema: "public", table: "posts" },
           (payload) => {
+            console.log("[GraceFul] Realtime event received:", payload);
             const deletedId = (payload.old as { id?: string }).id;
 
             if (!deletedId) {
@@ -128,6 +130,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "prayers" },
           (payload) => {
+            console.log("[GraceFul] Realtime event received:", payload);
             const prayer = mapRowToPrayer(payload.new as Parameters<typeof mapRowToPrayer>[0]);
             attachPrayer(prayer);
           },
@@ -136,6 +139,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           "postgres_changes",
           { event: "DELETE", schema: "public", table: "prayers" },
           (payload) => {
+            console.log("[GraceFul] Realtime event received:", payload);
             const deletedId = (payload.old as { id?: string }).id;
 
             if (!deletedId) {
@@ -150,7 +154,9 @@ export function PostsProvider({ children }: { children: ReactNode }) {
             );
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log("[GraceFul] Realtime status:", status);
+        });
     };
 
     async function loadPosts() {
