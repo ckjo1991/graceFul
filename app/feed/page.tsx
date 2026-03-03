@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Globe2, Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
+import CommunityNudge from "@/components/CommunityNudge";
 import CrisisScreen from "@/components/CrisisScreen";
 import GuardianWarning from "@/components/GuardianWarning";
 import MessageStep from "@/components/MessageStep";
@@ -31,6 +32,11 @@ import {
 } from "@/lib/app-flow";
 import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
 import { checkCrisis, checkSafety } from "@/lib/guardian";
+import {
+  markNudgeShown,
+  nudgeState,
+  shouldShowNudge,
+} from "@/lib/nudge-engine";
 import type { TestScenario } from "@/lib/testData";
 import { pickThankYouMessage, type ThankYouMessage } from "@/lib/thank-you";
 import { getUiCopy, localizeCategory, localizeEmotion } from "@/lib/translation";
@@ -80,7 +86,7 @@ function debounce<Args extends unknown[]>(fn: (...args: Args) => void, ms: numbe
 export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { posts, isLoading, addPost, addPrayer } = usePosts();
+  const { posts, isLoading, postError, addPost, addPrayer } = usePosts();
   const [activeEmotion, setActiveEmotion] =
     useState<EmotionFilter>(DEFAULT_EMOTION_FILTER);
   const [activeTopic, setActiveTopic] =
@@ -99,7 +105,10 @@ export default function GracefulFlow() {
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
   const [warningReason, setWarningReason] = useState<WarningReason>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showNudge, setShowNudge] = useState(false);
   const isModalOpen = useRef(false);
+  const nudgeCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previousActiveFlowRef = useRef(false);
   const copy = getUiCopy(viewerLanguage);
 
   const emotionFilters: Array<{
@@ -124,6 +133,8 @@ export default function GracefulFlow() {
   ];
 
   useEffect(() => {
+    nudgeState.feedViewStartTime = Date.now();
+
     setShowOnboarding(!window.sessionStorage.getItem("graceful_onboarded"));
 
     try {
@@ -142,6 +153,23 @@ export default function GracefulFlow() {
       setDeviceId(window.crypto.randomUUID());
     }
   }, []);
+
+  const triggerNudgeCheck = useCallback(() => {
+    if (shouldShowNudge()) {
+      setShowNudge(true);
+    }
+  }, []);
+
+  const scheduleNudgeCheck = useCallback((delay: number) => {
+    if (nudgeCheckTimeoutRef.current) {
+      clearTimeout(nudgeCheckTimeoutRef.current);
+    }
+
+    nudgeCheckTimeoutRef.current = setTimeout(() => {
+      nudgeCheckTimeoutRef.current = null;
+      triggerNudgeCheck();
+    }, delay);
+  }, [triggerNudgeCheck]);
 
   useEffect(() => {
     const handleIntersection = debounce(([entry]: IntersectionObserverEntry[]) => {
@@ -182,6 +210,62 @@ export default function GracefulFlow() {
       syncCompactState();
     }
   }, [syncCompactState]);
+
+  const isInActiveFlow = step !== "feed" || isPrayerModalOpen || isPosting;
+
+  useEffect(() => {
+    nudgeState.isInActiveFlow = isInActiveFlow;
+
+    if (isInActiveFlow && showNudge) {
+      setShowNudge(false);
+    }
+
+    if (previousActiveFlowRef.current && !isInActiveFlow) {
+      scheduleNudgeCheck(500);
+    }
+
+    previousActiveFlowRef.current = isInActiveFlow;
+  }, [isInActiveFlow, scheduleNudgeCheck, showNudge]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        triggerNudgeCheck();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [triggerNudgeCheck]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      triggerNudgeCheck();
+    }, 300000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [triggerNudgeCheck]);
+
+  useEffect(() => {
+    if (!showNudge) {
+      return;
+    }
+
+    markNudgeShown();
+  }, [showNudge]);
+
+  useEffect(() => {
+    return () => {
+      if (nudgeCheckTimeoutRef.current) {
+        clearTimeout(nudgeCheckTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setShowExitConfirm(false);
@@ -314,7 +398,18 @@ export default function GracefulFlow() {
         return;
       }
 
-      addPost(result.newPost);
+      const didSave = await addPost(result.newPost);
+
+      if (!didSave) {
+        setCompletionMessage(null);
+        setStep(result.nextStep);
+        return;
+      }
+
+      nudgeState.lastPostSubmittedAt = postedAt;
+      if (result.newPost.support === "just_sharing") {
+        nudgeState.passivePostCount += 1;
+      }
       setCompletionMessage(pickThankYouMessage(selection.emotion));
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
@@ -341,7 +436,18 @@ export default function GracefulFlow() {
         return;
       }
 
-      addPost(result.newPost);
+      const didSave = await addPost(result.newPost);
+
+      if (!didSave) {
+        setCompletionMessage(null);
+        setStep(result.nextStep);
+        return;
+      }
+
+      nudgeState.lastPostSubmittedAt = postedAt;
+      if (result.newPost.support === "just_sharing") {
+        nudgeState.passivePostCount += 1;
+      }
       setCompletionMessage(pickThankYouMessage(selection.emotion));
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
@@ -371,10 +477,17 @@ export default function GracefulFlow() {
     setActivePrayerListPostId(null);
   };
 
-  const handlePrayerSubmit = (postId: string, text: string) => {
-    addPrayer(postId, text);
+  const handlePrayerSubmit = async (postId: string, text: string) => {
+    const didSave = await addPrayer(postId, text);
+
+    if (!didSave) {
+      return false;
+    }
+
+    nudgeState.prayerSubmittedThisSession = true;
     setIsPrayerModalOpen(false);
     setActivePost(null);
+    return true;
   };
 
   const injectScenario = (scenario: TestScenario) => {
@@ -801,6 +914,11 @@ export default function GracefulFlow() {
               {copy.feed.shareAgain}
             </button>
           </div>
+          {postError ? (
+            <p className="mt-4 text-sm text-[#dc2626]">
+              Something went wrong saving your post. Please try again.
+            </p>
+          ) : null}
         </ShareStepShell>
       </main>
     );
@@ -836,6 +954,9 @@ export default function GracefulFlow() {
         />
       ) : null}
       {content}
+      {showNudge ? (
+        <CommunityNudge onDismiss={() => setShowNudge(false)} />
+      ) : null}
       <TestDashboard onInject={injectScenario} />
     </div>
   );

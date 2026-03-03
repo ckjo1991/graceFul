@@ -17,14 +17,18 @@ import {
   fetchPosts,
   insertPost,
   insertPrayer,
+  mapRowToPost,
+  mapRowToPrayer,
 } from "@/lib/db";
 import type { FeedPost, Prayer } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 type PostsContextType = {
   posts: FeedPost[];
   isLoading: boolean;
-  addPost: (post: FeedPost) => void;
-  addPrayer: (postId: string, prayerText: string) => void;
+  postError: string | null;
+  addPost: (post: FeedPost) => Promise<boolean>;
+  addPrayer: (postId: string, prayerText: string) => Promise<boolean>;
   deletePost: (id: string) => void;
   deletePrayer: (id: string) => void;
   deleteAllPosts: () => void;
@@ -35,9 +39,119 @@ const PostsContext = createContext<PostsContextType | null>(null);
 export function PostsProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [postError, setPostError] = useState<string | null>(null);
+
+  const pushPost = useCallback((incomingPost: FeedPost) => {
+    setPosts((prev) => {
+      if (prev.find((post) => post.id === incomingPost.id)) {
+        return prev;
+      }
+
+      return [incomingPost, ...prev];
+    });
+  }, []);
+
+  const attachPrayer = useCallback((incomingPrayer: Prayer & { postId: string }) => {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === incomingPrayer.postId
+          ? {
+              ...post,
+              prayers: post.prayers.find((prayer) => prayer.id === incomingPrayer.id)
+                ? post.prayers
+                : [
+                    ...post.prayers,
+                    {
+                      id: incomingPrayer.id,
+                      message: incomingPrayer.message,
+                      createdAt: incomingPrayer.createdAt,
+                      authorLabel: incomingPrayer.authorLabel,
+                    },
+                  ],
+            }
+          : post,
+      ),
+    );
+  }, []);
+
+  const setTimedPostError = useCallback((message: string) => {
+    setPostError(message);
+  }, []);
+
+  useEffect(() => {
+    if (!postError) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPostError(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [postError]);
 
   useEffect(() => {
     let isActive = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const subscribeToFeed = () => {
+      if (!isActive || channel) {
+        return;
+      }
+
+      channel = supabase
+        .channel("feed-sync")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "posts" },
+          (payload) => {
+            const newPost = mapRowToPost(payload.new as Parameters<typeof mapRowToPost>[0]);
+            pushPost(newPost);
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "posts" },
+          (payload) => {
+            const deletedId = (payload.old as { id?: string }).id;
+
+            if (!deletedId) {
+              return;
+            }
+
+            setPosts((prev) => prev.filter((post) => post.id !== deletedId));
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "prayers" },
+          (payload) => {
+            const prayer = mapRowToPrayer(payload.new as Parameters<typeof mapRowToPrayer>[0]);
+            attachPrayer(prayer);
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "prayers" },
+          (payload) => {
+            const deletedId = (payload.old as { id?: string }).id;
+
+            if (!deletedId) {
+              return;
+            }
+
+            setPosts((prev) =>
+              prev.map((post) => ({
+                ...post,
+                prayers: post.prayers.filter((prayer) => prayer.id !== deletedId),
+              })),
+            );
+          },
+        )
+        .subscribe();
+    };
 
     async function loadPosts() {
       setIsLoading(true);
@@ -71,7 +185,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
 
         setPosts(loadedPosts);
       } catch (error) {
-        console.error("Failed to load posts from Supabase.", error);
+        console.error("[GraceFul] fetchPosts failed:", error);
 
         if (isActive) {
           setPosts([]);
@@ -79,6 +193,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       } finally {
         if (isActive) {
           setIsLoading(false);
+          subscribeToFeed();
         }
       }
     }
@@ -87,18 +202,29 @@ export function PostsProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isActive = false;
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
     };
-  }, []);
+  }, [attachPrayer, pushPost]);
 
-  const addPost = useCallback((post: FeedPost) => {
-    setPosts((prev) => [post, ...prev]);
+  const addPost = useCallback(async (post: FeedPost) => {
+    setPostError(null);
 
-    void insertPost(post).catch((error) => {
-      console.error("Failed to persist post.", error);
-    });
-  }, []);
+    try {
+      await insertPost(post);
+      pushPost(post);
+      return true;
+    } catch (error) {
+      console.error("[GraceFul] Post save failed:", error);
+      setTimedPostError("Something went wrong saving your post. Please try again.");
+      return false;
+    }
+  }, [pushPost, setTimedPostError]);
 
-  const addPrayer = useCallback((postId: string, prayerText: string) => {
+  const addPrayer = useCallback(async (postId: string, prayerText: string) => {
+    setPostError(null);
+
     const prayer: Prayer = {
       id:
         typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -109,21 +235,16 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       authorLabel: "Community prayer",
     };
 
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              prayers: [...post.prayers, prayer],
-            }
-          : post,
-      ),
-    );
-
-    void insertPrayer(postId, prayer).catch((error) => {
-      console.error("Failed to persist prayer.", error);
-    });
-  }, []);
+    try {
+      await insertPrayer(postId, prayer);
+      attachPrayer({ ...prayer, postId });
+      return true;
+    } catch (error) {
+      console.error("[GraceFul] Prayer save failed:", error);
+      setTimedPostError("Something went wrong saving your post. Please try again.");
+      return false;
+    }
+  }, [attachPrayer, setTimedPostError]);
 
   const deletePost = useCallback((id: string) => {
     setPosts((prev) => prev.filter((post) => post.id !== id));
@@ -159,6 +280,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       value={{
         posts,
         isLoading,
+        postError,
         addPost,
         addPrayer,
         deletePost,

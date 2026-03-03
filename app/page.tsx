@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, type RefObject } from "react";
 import Link from "next/link";
 import { Leaf } from "lucide-react";
 
@@ -19,7 +22,46 @@ const pillars = [
   },
 ];
 
+function useScrollY(heroRef: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    let frameId: number | null = null;
+
+    const updatePosition = () => {
+      frameId = null;
+
+      if (!heroRef.current) {
+        return;
+      }
+
+      heroRef.current.style.transform = `translateY(${window.scrollY * 0.3}px)`;
+    };
+
+    const handleScroll = () => {
+      if (frameId !== null) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(updatePosition);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [heroRef]);
+}
+
 export default function LandingPage() {
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  useScrollY(heroRef);
+
   return (
     <main className="min-h-screen bg-[var(--page-bg)] text-[var(--ink)]">
       <header className="sticky top-0 z-20 border-b border-[#d4e4cc] bg-white/95 backdrop-blur-sm">
@@ -42,8 +84,14 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="bg-[#f5f7f2]">
-        <div className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6 sm:py-24 lg:px-8 lg:py-32">
+      <section className="relative overflow-hidden">
+        <div
+          ref={heroRef}
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-[#f5f7f2] will-change-transform"
+          style={{ top: "-20%", height: "140%" }}
+        />
+        <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6 sm:py-24 lg:px-8 lg:py-32">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--muted-ink)]">
             Anonymous sharing & prayer
           </p>

@@ -20,7 +20,7 @@ interface PrayerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onModalVisibilityChange?: (isOpen: boolean) => void;
-  onSubmit: (postId: string, prayerText: string) => void;
+  onSubmit: (postId: string, prayerText: string) => boolean | Promise<boolean>;
   language: LanguageCode;
   postTranslations?: FeedPost["translations"];
 }
@@ -85,7 +85,7 @@ export default function PrayerModal({
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const result = validatePrayerSubmission(prayerText);
     if (!result.allowed) {
       if (result.reason !== "too_short") {
@@ -94,7 +94,12 @@ export default function PrayerModal({
       return;
     }
 
-    onSubmit(post.id, result.sanitizedText);
+    const wasSubmitted = await onSubmit(post.id, result.sanitizedText);
+
+    if (!wasSubmitted) {
+      return;
+    }
+
     setPrayerText("");
     setGuardianReason(null);
   };
@@ -194,7 +199,9 @@ export default function PrayerModal({
 
           <button
             disabled={isSubmitDisabled}
-            onClick={handleSubmit}
+            onClick={() => {
+              void handleSubmit();
+            }}
             className={`mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold transition-all ${
               !isSubmitDisabled
                 ? "bg-primary text-white shadow-md hover:bg-primary-dark active:scale-[0.98]"

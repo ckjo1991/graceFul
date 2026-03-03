@@ -13,6 +13,7 @@ type PrayerRow = {
   id: string;
   message: string;
   created_at: string;
+  post_id: string;
 };
 
 type JoinedPostRow = {
@@ -118,6 +119,38 @@ function isMissingReasonColumnError(error: SupabaseQueryError | null): boolean {
   return details.includes("reason") && details.includes("column");
 }
 
+export function mapRowToPost(row: PostRow): FeedPost {
+  const allowTranslation = row.allow_translation ?? true;
+
+  return {
+    id: row.id,
+    emotion: row.emotion,
+    category: row.category,
+    message: row.message,
+    support: row.support,
+    createdAt: row.created_at,
+    deviceId: row.device_id ?? undefined,
+    wantsFollowUp: row.wants_follow_up ?? false,
+    hearts: row.hearts ?? 0,
+    allowTranslation,
+    sourceLanguage: "en",
+    translations: allowTranslation ? generateTranslations(row.message) : {},
+    prayers: [],
+  };
+}
+
+export function mapRowToPrayer(
+  row: PrayerRow,
+): Prayer & { postId: string } {
+  return {
+    id: row.id,
+    postId: row.post_id,
+    message: row.message,
+    createdAt: row.created_at,
+    authorLabel: "Community prayer",
+  };
+}
+
 export async function fetchPosts(): Promise<FeedPost[]> {
   const { data, error } = await supabase
     .from("posts")
@@ -130,30 +163,19 @@ export async function fetchPosts(): Promise<FeedPost[]> {
 
   const rows = (data ?? []) as PostRow[];
 
-  return rows.map((row) => {
-    const allowTranslation = row.allow_translation ?? true;
+  return rows.map((row) => ({
+    ...mapRowToPost(row),
+    prayers: (row.prayers ?? []).map((prayer) => {
+      const mappedPrayer = mapRowToPrayer(prayer);
 
-    return {
-      id: row.id,
-      emotion: row.emotion,
-      category: row.category,
-      message: row.message,
-      support: row.support,
-      createdAt: row.created_at,
-      deviceId: row.device_id ?? undefined,
-      wantsFollowUp: row.wants_follow_up ?? false,
-      hearts: row.hearts ?? 0,
-      allowTranslation,
-      sourceLanguage: "en",
-      translations: allowTranslation ? generateTranslations(row.message) : {},
-      prayers: (row.prayers ?? []).map((prayer) => ({
-        id: prayer.id,
-        message: prayer.message,
-        createdAt: prayer.created_at,
-        authorLabel: "Community prayer",
-      })),
-    };
-  });
+      return {
+        id: mappedPrayer.id,
+        message: mappedPrayer.message,
+        createdAt: mappedPrayer.createdAt,
+        authorLabel: mappedPrayer.authorLabel,
+      };
+    }),
+  }));
 }
 
 export async function insertPost(post: FeedPost): Promise<void> {
