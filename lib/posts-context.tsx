@@ -108,8 +108,18 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "INSERT", schema: "public", table: "posts" },
           (payload) => {
             console.log("[GraceFul] Realtime event received:", payload);
+            if (!payload?.new) {
+              return;
+            }
+
             const newPost = mapRowToPost(payload.new as Parameters<typeof mapRowToPost>[0]);
-            pushPost(newPost);
+            setPosts((prev) => {
+              if (prev.find((post) => post.id === newPost.id)) {
+                return prev;
+              }
+
+              return [newPost, ...prev];
+            });
           },
         )
         .on(
@@ -117,13 +127,11 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "DELETE", schema: "public", table: "posts" },
           (payload) => {
             console.log("[GraceFul] Realtime event received:", payload);
-            const deletedId = (payload.old as { id?: string }).id;
-
-            if (!deletedId) {
+            if (!payload?.old?.id) {
               return;
             }
 
-            setPosts((prev) => prev.filter((post) => post.id !== deletedId));
+            setPosts((prev) => prev.filter((post) => post.id !== payload.old.id));
           },
         )
         .on(
@@ -131,8 +139,28 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "INSERT", schema: "public", table: "prayers" },
           (payload) => {
             console.log("[GraceFul] Realtime event received:", payload);
+            if (!payload?.new) {
+              return;
+            }
+
             const prayer = mapRowToPrayer(payload.new as Parameters<typeof mapRowToPrayer>[0]);
-            attachPrayer(prayer);
+
+            if (!prayer?.postId) {
+              return;
+            }
+
+            setPosts((prev) =>
+              prev.map((post) =>
+                post.id === prayer.postId
+                  ? {
+                      ...post,
+                      prayers: post.prayers.find((existingPrayer) => existingPrayer.id === prayer.id)
+                        ? post.prayers
+                        : [...post.prayers, prayer],
+                    }
+                  : post,
+              ),
+            );
           },
         )
         .on(
@@ -140,16 +168,14 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "DELETE", schema: "public", table: "prayers" },
           (payload) => {
             console.log("[GraceFul] Realtime event received:", payload);
-            const deletedId = (payload.old as { id?: string }).id;
-
-            if (!deletedId) {
+            if (!payload?.old?.id) {
               return;
             }
 
             setPosts((prev) =>
               prev.map((post) => ({
                 ...post,
-                prayers: post.prayers.filter((prayer) => prayer.id !== deletedId),
+                prayers: post.prayers.filter((prayer) => prayer.id !== payload.old.id),
               })),
             );
           },
