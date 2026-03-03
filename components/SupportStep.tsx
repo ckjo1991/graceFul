@@ -3,11 +3,14 @@
 import React from "react";
 import { ChevronLeft } from "lucide-react";
 
-import ShareStepShell from "@/components/ShareStepShell";
+import ShareStepShell, {
+  type ShareStepShellExitConfirmation,
+} from "@/components/ShareStepShell";
 import { getUiCopy, localizeSupportType } from "@/lib/translation";
 import type { LanguageCode, SupportType } from "@/types";
 
 interface SupportStepProps {
+  exitConfirmation?: ShareStepShellExitConfirmation;
   onClose: () => void;
   onSelect: (option: SupportType) => void;
   onBack: () => void;
@@ -16,6 +19,7 @@ interface SupportStepProps {
 }
 
 export default function SupportStep({
+  exitConfirmation,
   onClose,
   onSelect,
   onBack,
@@ -25,6 +29,7 @@ export default function SupportStep({
   const copy = getUiCopy(language);
   return (
     <ShareStepShell
+      exitConfirmation={exitConfirmation}
       onClose={onClose}
       step={4}
       title={copy.supportStep.title}

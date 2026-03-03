@@ -11,7 +11,9 @@ import PostCard from "@/components/PostCard";
 import PrayerListModal from "@/components/PrayerListModal";
 import PrayerModal from "@/components/PrayerModal";
 import ReviewStep from "@/components/ReviewStep";
-import ShareStepShell from "@/components/ShareStepShell";
+import ShareStepShell, {
+  type ShareStepShellExitConfirmation,
+} from "@/components/ShareStepShell";
 import SupportStep from "@/components/SupportStep";
 import TestDashboard from "@/components/TestDashboard";
 import { analyzeIntent } from "@/lib/ai";
@@ -30,6 +32,7 @@ import {
 import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
 import { checkCrisis, checkSafety } from "@/lib/guardian";
 import type { TestScenario } from "@/lib/testData";
+import { pickThankYouMessage, type ThankYouMessage } from "@/lib/thank-you";
 import { getUiCopy, localizeCategory, localizeEmotion } from "@/lib/translation";
 import { usePosts } from "@/lib/posts-context";
 import type {
@@ -41,11 +44,12 @@ import type {
   LanguageCode,
 } from "@/types";
 
-type TopicFilter = "all" | Category;
-type FeedFilter = "all" | Emotion | "my_posts";
+type EmotionFilter = "all" | Emotion;
+type TopicFilter = "all_topics" | Category;
 
 const DEVICE_ID_STORAGE_KEY = "graceful_device_id";
-const DEFAULT_FEED_FILTER: FeedFilter = "all";
+const DEFAULT_EMOTION_FILTER: EmotionFilter = "all";
+const DEFAULT_TOPIC_FILTER: TopicFilter = "all_topics";
 
 type DebouncedFunction<Args extends unknown[]> = ((...args: Args) => void) & {
   cancel: () => void;
@@ -77,8 +81,11 @@ export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { posts, isLoading, addPost, addPrayer } = usePosts();
-  const [activeFilter, setActiveFilter] = useState<FeedFilter>(DEFAULT_FEED_FILTER);
-  const [topicFilter, setTopicFilter] = useState<TopicFilter>("all");
+  const [activeEmotion, setActiveEmotion] =
+    useState<EmotionFilter>(DEFAULT_EMOTION_FILTER);
+  const [activeTopic, setActiveTopic] =
+    useState<TopicFilter>(DEFAULT_TOPIC_FILTER);
+  const [isMyPosts, setIsMyPosts] = useState(false);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [viewerLanguage, setViewerLanguage] = useState<LanguageCode>("en");
   const [isCompact, setIsCompact] = useState(false);
@@ -88,14 +95,16 @@ export default function GracefulFlow() {
   const [activePrayerListPostId, setActivePrayerListPostId] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [selection, setSelection] = useState<AppFlowSelection>(createInitialSelection);
+  const [completionMessage, setCompletionMessage] = useState<ThankYouMessage | null>(null);
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
   const [warningReason, setWarningReason] = useState<WarningReason>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const isModalOpen = useRef(false);
   const copy = getUiCopy(viewerLanguage);
 
   const emotionFilters: Array<{
     label: string;
-    value: FeedFilter;
+    value: EmotionFilter;
   }> = [
     { label: copy.feed.allEmotion, value: "all" },
     { label: localizeEmotion("grateful", viewerLanguage), value: "grateful" },
@@ -106,13 +115,12 @@ export default function GracefulFlow() {
     label: string;
     value: TopicFilter;
   }> = [
-    { label: copy.feed.allTopics, value: "all" },
+    { label: copy.feed.allTopics, value: "all_topics" },
     { label: localizeCategory("Financial", viewerLanguage), value: "Financial" },
     { label: localizeCategory("Family", viewerLanguage), value: "Family" },
     { label: localizeCategory("Health", viewerLanguage), value: "Health" },
-    { label: localizeCategory("Personal", viewerLanguage), value: "Personal" },
     { label: localizeCategory("Work", viewerLanguage), value: "Work" },
-    { label: localizeCategory("Other", viewerLanguage), value: "Other" },
+    { label: localizeCategory("Personal", viewerLanguage), value: "Personal" },
   ];
 
   useEffect(() => {
@@ -175,11 +183,47 @@ export default function GracefulFlow() {
     }
   }, [syncCompactState]);
 
+  useEffect(() => {
+    setShowExitConfirm(false);
+  }, [step]);
+
   const closeShareFlow = useCallback(() => {
     isModalOpen.current = false;
+    setShowExitConfirm(false);
+    setCompletionMessage(null);
+    setSelection(createInitialSelection());
+    setWarningReason(null);
     setStep(returnToFeed());
     syncCompactState();
   }, [syncCompactState]);
+
+  const shouldConfirmShareExit =
+    step !== "feed" &&
+    step !== "emotion" &&
+    step !== "done" &&
+    (selection.emotion !== null ||
+      selection.category !== null ||
+      selection.message.trim() !== "" ||
+      selection.support !== null);
+
+  const handleShareCloseAttempt = useCallback(() => {
+    if (shouldConfirmShareExit) {
+      setShowExitConfirm(true);
+      return;
+    }
+
+    closeShareFlow();
+  }, [closeShareFlow, shouldConfirmShareExit]);
+
+  const shareExitConfirmation: ShareStepShellExitConfirmation = {
+    confirmLabel: "That's OK",
+    description: "What you've written won't be saved.",
+    dismissLabel: "Continue sharing",
+    isVisible: showExitConfirm,
+    onConfirm: closeShareFlow,
+    onDismiss: () => setShowExitConfirm(false),
+    title: "Leave without sharing?",
+  };
 
   const startFreshShare = () => {
     const result = startShareFlow(lastPostTime);
@@ -190,6 +234,7 @@ export default function GracefulFlow() {
     }
 
     isModalOpen.current = true;
+    setCompletionMessage(null);
     setSelection(result.selection);
     setWarningReason(result.warningReason);
     setStep(result.nextStep);
@@ -270,6 +315,7 @@ export default function GracefulFlow() {
       }
 
       addPost(result.newPost);
+      setCompletionMessage(pickThankYouMessage(selection.emotion));
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
     } catch (error) {
@@ -296,6 +342,7 @@ export default function GracefulFlow() {
       }
 
       addPost(result.newPost);
+      setCompletionMessage(pickThankYouMessage(selection.emotion));
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
     } finally {
@@ -341,21 +388,19 @@ export default function GracefulFlow() {
     (typeof window !== "undefined"
       ? window.localStorage.getItem(DEVICE_ID_STORAGE_KEY)
       : null);
+  const hasMyPosts = !!currentDeviceId && posts.some(
+    (post) => post.deviceId === currentDeviceId,
+  );
 
   const filteredPosts = posts.filter((post) => {
-    if (activeFilter === "my_posts") {
-      if (!currentDeviceId || post.deviceId !== currentDeviceId) {
-        return false;
-      }
-    } else if (activeFilter !== "all" && post.emotion !== activeFilter) {
-      return false;
-    }
+    const emotionMatch =
+      activeEmotion === "all" || post.emotion === activeEmotion;
+    const topicMatch =
+      activeTopic === "all_topics" || post.category === activeTopic;
+    const myPostsMatch =
+      !isMyPosts || (!!currentDeviceId && post.deviceId === currentDeviceId);
 
-    if (topicFilter !== "all" && post.category !== topicFilter) {
-      return false;
-    }
-
-    return true;
+    return emotionMatch && topicMatch && myPostsMatch;
   });
   let content: React.ReactNode;
 
@@ -365,7 +410,7 @@ export default function GracefulFlow() {
         <div className="mx-auto rounded-[2.1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] shadow-[0_16px_44px_rgba(57,84,61,0.06)]">
           <div ref={sentinelRef} className="h-0 w-full" />
           <header
-            className={`sticky top-0 z-40 overflow-hidden bg-white/95 backdrop-blur-sm will-change-transform transition-shadow duration-200 ${
+            className={`sticky top-0 z-10 overflow-hidden bg-white/95 backdrop-blur-sm will-change-transform transition-shadow duration-200 ${
               isCompact ? "border-b border-[#d4e4cc] shadow-sm" : ""
             }`}
           >
@@ -422,13 +467,9 @@ export default function GracefulFlow() {
                   <div className="hidden items-center gap-3 sm:flex">
                     <button
                       type="button"
-                      onClick={() =>
-                        setActiveFilter(
-                          activeFilter === "my_posts" ? "all" : "my_posts",
-                        )
-                      }
+                      onClick={() => setIsMyPosts((current) => !current)}
                       className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                        activeFilter === "my_posts"
+                        isMyPosts
                           ? "bg-[#2c3a2e] text-white"
                           : "border border-[#d4e4cc] bg-white text-[#2c3a2e] hover:border-[var(--brand)] hover:text-[var(--brand)]"
                       }`}
@@ -450,23 +491,17 @@ export default function GracefulFlow() {
 
           <section className="px-5 py-7 pb-24 sm:pb-0 md:px-7 lg:px-8 lg:py-8">
             <div className="mx-auto max-w-[50rem]">
-              <div
-                className={`relative z-30 flex flex-col gap-4 bg-transparent transition-opacity duration-200 ${
-                  activeFilter === "my_posts"
-                    ? "pointer-events-none h-0 opacity-0"
-                    : "opacity-100"
-                }`}
-              >
+              <div className="flex flex-col gap-4 bg-transparent transition-opacity duration-200">
                 <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
                   <div className="flex flex-nowrap gap-3 sm:flex-wrap">
                     {emotionFilters.map((filter) => {
-                      const isActive = activeFilter === filter.value;
+                      const isActive = activeEmotion === filter.value;
 
                       return (
                         <button
                           key={filter.value}
                           type="button"
-                          onClick={() => setActiveFilter(filter.value)}
+                          onClick={() => setActiveEmotion(filter.value)}
                           className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
                             isActive
                               ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
@@ -483,13 +518,13 @@ export default function GracefulFlow() {
                 <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
                   <div className="flex flex-nowrap gap-3 sm:flex-wrap">
                     {topicFilters.map((filter) => {
-                      const isActive = topicFilter === filter.value;
+                      const isActive = activeTopic === filter.value;
 
                       return (
                         <button
                           key={filter.value}
                           type="button"
-                          onClick={() => setTopicFilter(filter.value)}
+                          onClick={() => setActiveTopic(filter.value)}
                           className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
                             isActive
                               ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
@@ -519,7 +554,7 @@ export default function GracefulFlow() {
                       viewerLanguage={viewerLanguage}
                     />
                   ))
-                ) : activeFilter === "my_posts" ? (
+                ) : isMyPosts && !hasMyPosts ? (
                   <div className="rounded-[1.85rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-10 text-center shadow-[0_10px_34px_rgba(57,84,61,0.05)]">
                     <h2 className="text-3xl font-semibold text-[var(--ink)]">
                       You haven&apos;t shared anything yet
@@ -538,7 +573,7 @@ export default function GracefulFlow() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setActiveFilter("all")}
+                        onClick={() => setIsMyPosts(false)}
                         className="cursor-pointer text-sm text-[#4a7c59] underline"
                       >
                         Browse the feed
@@ -582,17 +617,13 @@ export default function GracefulFlow() {
           />
         </div>
 
-        <div className="fixed bottom-6 left-1/2 z-50 block -translate-x-1/2 sm:hidden">
+        <div className="fixed bottom-6 left-1/2 z-20 block -translate-x-1/2 sm:hidden">
           <div className="flex items-center gap-0 overflow-hidden rounded-full border border-[#d4e4cc] bg-white/95 shadow-lg shadow-black/10 backdrop-blur-sm">
             <button
               type="button"
-              onClick={() =>
-                setActiveFilter(
-                  activeFilter === "my_posts" ? "all" : "my_posts",
-                )
-              }
+              onClick={() => setIsMyPosts((current) => !current)}
               className={`px-5 py-2.5 text-sm font-semibold transition-colors ${
-                activeFilter === "my_posts"
+                isMyPosts
                   ? "bg-[#2c3a2e] text-white"
                   : "bg-transparent text-[#2c3a2e] hover:bg-[#f0f7f0]"
               }`}
@@ -615,7 +646,7 @@ export default function GracefulFlow() {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6 text-center">
         <ShareStepShell
-          onClose={closeShareFlow}
+          onClose={handleShareCloseAttempt}
           step={1}
           title={copy.emotionStep.title}
           description={copy.emotionStep.description}
@@ -664,7 +695,8 @@ export default function GracefulFlow() {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6">
         <CategoryStep
-          onClose={closeShareFlow}
+          exitConfirmation={shareExitConfirmation}
+          onClose={handleShareCloseAttempt}
           selectedEmotion={selection.emotion as Emotion}
           onSelect={handleCategorySelect}
           onBack={() => setStep("emotion")}
@@ -678,8 +710,9 @@ export default function GracefulFlow() {
         <MessageStep
           key={`${selection.emotion}:${selection.category}:${selection.message}`}
           category={selection.category as Category}
+          exitConfirmation={shareExitConfirmation}
           initialMessage={selection.message}
-          onClose={closeShareFlow}
+          onClose={handleShareCloseAttempt}
           selectedEmotion={selection.emotion as Emotion}
           onNext={handleMessageSubmit}
           onBack={() => setStep("category")}
@@ -710,7 +743,8 @@ export default function GracefulFlow() {
     content = (
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
         <SupportStep
-          onClose={closeShareFlow}
+          exitConfirmation={shareExitConfirmation}
+          onClose={handleShareCloseAttempt}
           supportOptions={SUPPORT_OPTIONS}
           onSelect={handleSupportSelect}
           onBack={() => setStep("message")}
@@ -723,9 +757,10 @@ export default function GracefulFlow() {
       <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6">
         <ReviewStep
           key={selection.message}
+          exitConfirmation={shareExitConfirmation}
           isPosting={isPosting}
           message={selection.message}
-          onClose={closeShareFlow}
+          onClose={handleShareCloseAttempt}
           onBack={() => setStep("support")}
           onCrisisDetected={() => setStep("crisis")}
           onPost={handleFinalPost}
@@ -739,8 +774,8 @@ export default function GracefulFlow() {
         <ShareStepShell
           onClose={closeShareFlow}
           step={5}
-          title={copy.feed.successTitle}
-          description={copy.feed.successBody}
+          title={completionMessage?.title ?? copy.feed.successTitle}
+          description={completionMessage?.body ?? copy.feed.successBody}
         >
           <div className="mb-5 flex justify-center text-5xl text-[var(--brand)]">
             <Leaf className="h-12 w-12" />

@@ -12,6 +12,7 @@ import {
 import { createInitialPosts } from "@/lib/app-flow";
 import {
   deleteAllPosts as deleteAllPostsFromDb,
+  deletePrayer as deletePrayerFromDb,
   deletePostById,
   fetchPosts,
   insertPost,
@@ -25,6 +26,7 @@ type PostsContextType = {
   addPost: (post: FeedPost) => void;
   addPrayer: (postId: string, prayerText: string) => void;
   deletePost: (id: string) => void;
+  deletePrayer: (id: string) => void;
   deleteAllPosts: () => void;
 };
 
@@ -48,7 +50,22 @@ export function PostsProvider({ children }: { children: ReactNode }) {
         }
 
         if (loadedPosts.length === 0 && process.env.NODE_ENV === "development") {
-          setPosts(createInitialPosts());
+          const developmentPosts = createInitialPosts();
+          setPosts(developmentPosts);
+
+          void Promise.allSettled(
+            developmentPosts.flatMap((post) => [
+              insertPost(post),
+              ...post.prayers.map((prayer) => insertPrayer(post.id, prayer)),
+            ]),
+          ).then((results) => {
+            const rejectedSeeds = results.filter((result) => result.status === "rejected");
+
+            if (rejectedSeeds.length > 0) {
+              console.warn("Failed to seed development posts.", rejectedSeeds);
+            }
+          });
+
           return;
         }
 
@@ -116,6 +133,19 @@ export function PostsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const deletePrayer = useCallback((id: string) => {
+    setPosts((prev) =>
+      prev.map((post) => ({
+        ...post,
+        prayers: post.prayers.filter((prayer) => prayer.id !== id),
+      })),
+    );
+
+    void deletePrayerFromDb(id).catch((error) => {
+      console.error("Failed to delete prayer.", error);
+    });
+  }, []);
+
   const deleteAllPosts = useCallback(() => {
     setPosts([]);
 
@@ -126,7 +156,15 @@ export function PostsProvider({ children }: { children: ReactNode }) {
 
   return (
     <PostsContext.Provider
-      value={{ posts, isLoading, addPost, addPrayer, deletePost, deleteAllPosts }}
+      value={{
+        posts,
+        isLoading,
+        addPost,
+        addPrayer,
+        deletePost,
+        deletePrayer,
+        deleteAllPosts,
+      }}
     >
       {children}
     </PostsContext.Provider>

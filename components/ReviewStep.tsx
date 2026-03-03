@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, LoaderCircle, ShieldCheck } from "lucide-react";
 
-import ShareStepShell from "@/components/ShareStepShell";
+import ShareStepShell, {
+  type ShareStepShellExitConfirmation,
+} from "@/components/ShareStepShell";
 import { runGuardianReview } from "@/lib/ai";
 import { getUiCopy, localizeGuardianFeedback } from "@/lib/translation";
 import type { LanguageCode } from "@/types";
 
 interface ReviewStepProps {
+  exitConfirmation?: ShareStepShellExitConfirmation;
   isPosting: boolean;
   message: string;
   onClose: () => void;
@@ -19,6 +22,7 @@ interface ReviewStepProps {
 }
 
 export default function ReviewStep({
+  exitConfirmation,
   isPosting,
   message,
   onClose,
@@ -79,6 +83,7 @@ export default function ReviewStep({
 
   return (
     <ShareStepShell
+      exitConfirmation={exitConfirmation}
       onClose={onClose}
       step={5}
       title={copy.reviewStep.title}

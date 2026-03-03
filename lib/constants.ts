@@ -24,9 +24,8 @@ export const CATEGORIES: readonly Category[] = [
   "Financial",
   "Family",
   "Health",
-  "Personal",
   "Work",
-  "Other",
+  "Personal",
 ];
 export const SUPPORT_OPTIONS: readonly SupportType[] = [
   "prayer",

@@ -39,7 +39,7 @@ export const TEST_SCENARIOS: TestScenario[] = [
   {
     label: "🚫 Malice (Unkind)",
     emotion: "struggling",
-    category: "Other",
+    category: "Personal",
     message:
       "Napakasama ng ugali ng kapitbahay ko. Gago talaga siya, mamatay ka sana sa ginawa mo sa akin.",
   },

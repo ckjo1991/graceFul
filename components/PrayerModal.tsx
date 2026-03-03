@@ -74,7 +74,7 @@ export default function PrayerModal({
 
     if (hasDraft) {
       const shouldClose = window.confirm(
-        copy.prayerModal.confirmClose,
+        "Leave without praying? Your prayer won't be saved.",
       );
 
       if (!shouldClose) {

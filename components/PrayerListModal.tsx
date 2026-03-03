@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { HandHeart, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Flag, HandHeart, X } from "lucide-react";
 
+import { insertPrayerReport } from "@/lib/db";
+import { REPORT_REASONS, type ReportReason } from "@/lib/reporting";
 import {
   getDisplayTranslatedMessage,
   getPrayerCountLabel,
@@ -28,6 +30,14 @@ export default function PrayerListModal({
   posts,
   language,
 }: PrayerListModalProps) {
+  const [confirmingPrayerId, setConfirmingPrayerId] = useState<string | null>(null);
+  const [submittingPrayerId, setSubmittingPrayerId] = useState<string | null>(null);
+  const [reportedPrayerIds, setReportedPrayerIds] = useState<Record<string, true>>({});
+  const [prayerReportError, setPrayerReportError] = useState<string | null>(null);
+  const [selectedReportReason, setSelectedReportReason] = useState<ReportReason>(
+    REPORT_REASONS[0],
+  );
+
   useEffect(() => {
     if (isOpen) {
       onModalVisibilityChange?.(true);
@@ -46,6 +56,42 @@ export default function PrayerListModal({
   }, [isOpen, onModalVisibilityChange]);
 
   const currentPost = postId ? posts.find((post) => post.id === postId) ?? null : null;
+  const getPrayerReportKey = (prayerId: string) =>
+    currentPost ? `${currentPost.id}:${prayerId}` : prayerId;
+
+  useEffect(() => {
+    if (isOpen) {
+      return;
+    }
+
+    setConfirmingPrayerId(null);
+    setSubmittingPrayerId(null);
+    setPrayerReportError(null);
+    setSelectedReportReason(REPORT_REASONS[0]);
+  }, [isOpen]);
+
+  const handlePrayerReport = async (prayerId: string) => {
+    if (!currentPost || submittingPrayerId) {
+      return;
+    }
+
+    setSubmittingPrayerId(prayerId);
+    setPrayerReportError(null);
+
+    try {
+      await insertPrayerReport(prayerId, currentPost.id, selectedReportReason);
+      setReportedPrayerIds((current) => ({
+        ...current,
+        [getPrayerReportKey(prayerId)]: true,
+      }));
+      setConfirmingPrayerId(null);
+      setSelectedReportReason(REPORT_REASONS[0]);
+    } catch {
+      setPrayerReportError("Could not submit this prayer report. Please try again.");
+    } finally {
+      setSubmittingPrayerId(null);
+    }
+  };
 
   if (!isOpen || !currentPost) {
     return null;
@@ -100,13 +146,31 @@ export default function PrayerListModal({
                 key={prayer.id}
                 className="rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <span className="text-sm font-semibold text-primary">
                     {prayer.authorLabel ?? copy.postCard.communityPrayer}
                   </span>
-                  <span className="text-xs text-muted">
-                    {formatRelativeTime(prayer.createdAt)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">
+                      {formatRelativeTime(prayer.createdAt)}
+                    </span>
+                    {reportedPrayerIds[getPrayerReportKey(prayer.id)] ? (
+                      <span className="text-xs text-[#9ca3af]">✓</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrayerReportError(null);
+                          setSelectedReportReason(REPORT_REASONS[0]);
+                          setConfirmingPrayerId(prayer.id);
+                        }}
+                        className="cursor-pointer text-[#9ca3af] transition-colors hover:text-[#dc2626]"
+                        aria-label="Report prayer"
+                      >
+                        <Flag className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-text">
                   {prayer.message}
@@ -120,6 +184,66 @@ export default function PrayerListModal({
           )}
         </div>
       </div>
+
+      {confirmingPrayerId || submittingPrayerId ? (
+        <div className="fixed inset-0 z-[60] bg-black/30">
+          <div className="mx-auto mt-[30vh] max-w-sm rounded-2xl bg-white p-6 text-center shadow-lg">
+            <h3 className="text-[1.35rem] font-semibold leading-tight tracking-[-0.03em] text-[var(--brand-dark)]">
+              Report this prayer?
+            </h3>
+            <p className="mt-3 text-[0.96rem] leading-7 text-[var(--muted-ink)]">
+              This will flag it for review.
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {REPORT_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => setSelectedReportReason(reason)}
+                  disabled={Boolean(submittingPrayerId)}
+                  className={`rounded-full border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-default disabled:opacity-70 ${
+                    selectedReportReason === reason
+                      ? "border-[var(--brand)] bg-[#edf5ea] text-[var(--brand-dark)]"
+                      : "border-[var(--chip-border)] bg-white text-[var(--muted-ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                  }`}
+                  aria-pressed={selectedReportReason === reason}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            {prayerReportError ? (
+              <p className="mt-3 text-sm text-[#dc2626]">{prayerReportError}</p>
+            ) : null}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmingPrayerId(null);
+                  setPrayerReportError(null);
+                  setSelectedReportReason(REPORT_REASONS[0]);
+                }}
+                disabled={Boolean(submittingPrayerId)}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--chip-border)] bg-[var(--card-bg)] px-5 py-3 text-[0.95rem] font-medium text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)] disabled:cursor-default disabled:opacity-70"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirmingPrayerId) {
+                    void handlePrayerReport(confirmingPrayerId);
+                  }
+                }}
+                disabled={Boolean(submittingPrayerId)}
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#dc2626] px-5 py-3 text-[0.95rem] font-medium text-white transition-colors hover:bg-[#b91c1c] disabled:cursor-default disabled:opacity-70"
+              >
+                Yes, report
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

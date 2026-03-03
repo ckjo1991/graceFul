@@ -4,9 +4,8 @@ export type Category =
   | "Financial"
   | "Family"
   | "Health"
-  | "Personal"
   | "Work"
-  | "Other";
+  | "Personal";
 
 export type SupportType =
   | "just_sharing"

@@ -3,12 +3,15 @@
 import React, { useState } from "react";
 import { ChevronLeft, PenLine } from "lucide-react";
 
-import ShareStepShell from "@/components/ShareStepShell";
+import ShareStepShell, {
+  type ShareStepShellExitConfirmation,
+} from "@/components/ShareStepShell";
 import { MAX_CHARS, MIN_CHARS } from "@/lib/constants";
 import { getUiCopy, localizeCategory } from "@/lib/translation";
 import type { Category, Emotion, LanguageCode } from "@/types";
 
 interface MessageStepProps {
+  exitConfirmation?: ShareStepShellExitConfirmation;
   onClose: () => void;
   onNext: (message: string) => void;
   onBack: () => void;
@@ -19,6 +22,7 @@ interface MessageStepProps {
 }
 
 export default function MessageStep({
+  exitConfirmation,
   onClose,
   onNext,
   onBack,
@@ -40,6 +44,7 @@ export default function MessageStep({
 
   return (
     <ShareStepShell
+      exitConfirmation={exitConfirmation}
       onClose={onClose}
       step={3}
       title={copy.messageStep.title}

@@ -3,12 +3,15 @@
 import React from "react";
 import { ChevronLeft } from "lucide-react";
 
-import ShareStepShell from "@/components/ShareStepShell";
+import ShareStepShell, {
+  type ShareStepShellExitConfirmation,
+} from "@/components/ShareStepShell";
 import { CATEGORIES } from "@/lib/constants";
 import { getUiCopy, localizeCategory } from "@/lib/translation";
 import type { Category, Emotion, LanguageCode } from "@/types";
 
 interface CategoryStepProps {
+  exitConfirmation?: ShareStepShellExitConfirmation;
   onClose: () => void;
   onSelect: (category: Category) => void;
   onBack: () => void;
@@ -17,6 +20,7 @@ interface CategoryStepProps {
 }
 
 export default function CategoryStep({
+  exitConfirmation,
   onClose,
   onSelect,
   onBack,
@@ -31,6 +35,7 @@ export default function CategoryStep({
 
   return (
     <ShareStepShell
+      exitConfirmation={exitConfirmation}
       onClose={onClose}
       step={2}
       title={copy.categoryStep.title}
