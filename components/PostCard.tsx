@@ -47,11 +47,12 @@ export default function PostCard({
     ? "bg-[var(--grateful-rail)]"
     : "bg-[var(--struggling-rail)]";
   const cardBg = TOPIC_CARD_TINTS[post.category?.toLowerCase()] ?? "bg-white";
-  const showsPrayerButton = post.support === "prayer" || post.support === "both";
+  const normalizedSupport =
+    post.support === "encouragement" ? "just_sharing" : post.support;
+  const showsPrayerButton =
+    normalizedSupport === "prayer" || normalizedSupport === "both";
   const showsHeartButton =
-    post.support === "just_sharing" ||
-    post.support === "both" ||
-    post.support === "encouragement";
+    normalizedSupport === "just_sharing" || normalizedSupport === "both";
   const showsViewPrayerButton = showsPrayerButton && post.prayers.length > 0;
   const heartLabel = heartCount === 0 ? "🤍" : `🤍 ${heartCount}`;
   const activeHeartLabel = `🩷 ${heartCount}`;
