@@ -56,3 +56,14 @@ test("validatePrayerSubmission allows safe prayers and trims whitespace", () => 
     "Lord, please give this person peace, wisdom, and steady strength today.",
   );
 });
+
+test("validatePrayerSubmission allows faith declarations with non-harmful urgency phrasing", () => {
+  const result = validatePrayerSubmission(
+    "Lord I created something that I am not sure if the world is ready for but I know that with your guidance, You will make it happen. And Lord I declare that if this doesn't align with you then Lord remove this asap.",
+  );
+
+  assert.equal(result.allowed, true);
+  if (!result.allowed) {
+    assert.fail("Expected faith declaration prayer to pass validation.");
+  }
+});

@@ -19,12 +19,26 @@ test("validateMessageLength enforces minimum and maximum lengths", () => {
 test("checkCrisis flags crisis language", () => {
   assert.equal(checkCrisis("I feel hopeless and want to end it all."), true);
   assert.equal(checkCrisis("Please pray for wisdom at work this week."), false);
+  assert.equal(
+    checkCrisis("Please remove this fear asap and help me rest in Your peace."),
+    false,
+  );
+  assert.equal(
+    checkCrisis("Lord, remove me asap because I can't go on anymore."),
+    true,
+  );
 });
 
 test("hasViolentIntent catches lexicon and structural harm wishes", () => {
   assert.equal(hasViolentIntent("mamatay ka na"), true);
   assert.equal(hasViolentIntent("I hope he gets removed from this world"), true);
   assert.equal(hasViolentIntent("Please pray that I respond with patience and peace."), false);
+  assert.equal(
+    hasViolentIntent(
+      "Lord I created something that I am not sure if the world is ready for but I know that with your guidance, You will make it happen. And Lord I declare that if this doesn't align with you then Lord remove this asap.",
+    ),
+    false,
+  );
 });
 
 test("checkSafety flags profanity and PII", () => {
