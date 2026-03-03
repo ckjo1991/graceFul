@@ -13,6 +13,11 @@ export type ModerationReportRecord = {
   createdAt: string;
 };
 
+type ReportReasonInput = {
+  reason: string | null;
+  createdAt: string;
+};
+
 export type ReportReasonSummary = {
   reason: string | null;
   count: number;
@@ -47,7 +52,7 @@ export function sortReportsByCreatedAtDesc<T extends { createdAt: string }>(
 }
 
 export function summarizeReportReasons(
-  reports: ModerationReportRecord[],
+  reports: ReportReasonInput[],
 ): ReportReasonSummary[] {
   const summary = new Map<string, ReportReasonSummary>();
 

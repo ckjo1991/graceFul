@@ -26,7 +26,7 @@ type JoinedPostRow = {
 type ReportsWithPostRow = {
   id: string;
   post_id: string | null;
-  reason: string | null;
+  reason?: string | null;
   created_at: string;
   posts: JoinedPostRow | JoinedPostRow[] | null;
 };
@@ -42,7 +42,7 @@ type JoinedPrayerRow = {
 type PrayerReportsWithPrayerRow = {
   id: string;
   prayer_id: string | null;
-  reason: string | null;
+  reason?: string | null;
   created_at: string;
   prayers: JoinedPrayerRow | JoinedPrayerRow[] | null;
 };
@@ -330,7 +330,11 @@ export async function fetchReportedPosts(): Promise<ModerationReportedPost[]> {
       .from("reports")
       .select("id, post_id, created_at, posts!inner(id, message, emotion, category, created_at)");
 
-    data = fallbackResult.data;
+    data =
+      fallbackResult.data?.map((row) => ({
+        ...row,
+        reason: null,
+      })) ?? null;
     error = fallbackResult.error;
   }
 
@@ -407,7 +411,11 @@ export async function fetchReportedPrayers(): Promise<ModerationReportedPrayer[]
         "id, prayer_id, created_at, prayers!inner(id, message, post_id, created_at, posts!inner(message))",
       );
 
-    data = fallbackResult.data;
+    data =
+      fallbackResult.data?.map((row) => ({
+        ...row,
+        reason: null,
+      })) ?? null;
     error = fallbackResult.error;
   }
 
