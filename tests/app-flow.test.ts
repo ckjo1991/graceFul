@@ -43,7 +43,7 @@ test("share flow supports the happy path from feed to done and back to feed", ()
   assert.equal(message.nextStep, "support");
   assert.equal(message.warningReason, null);
 
-  const support = selectSupport(selection, "A prayer would be nice");
+  const support = selectSupport(selection, "prayer");
   selection = support.selection;
   assert.equal(support.nextStep, "review");
 
@@ -72,10 +72,11 @@ test("share flow supports the happy path from feed to done and back to feed", ()
     "I am grateful for a calm week with my family and I would love prayer for continued peace in our home.",
   );
   assert.equal(createdPost.deviceId, "device-123");
-  assert.equal(createdPost.supportType, "A prayer would be nice");
+  assert.equal(createdPost.support, "prayer");
   assert.equal(createdPost.allowTranslation, true);
   assert.equal(createdPost.sourceLanguage, "en");
   assert.equal(createdPost.createdAt, "Just now");
+  assert.equal(createdPost.hearts, 0);
   assert.deepEqual(createdPost.prayers, []);
   assert.ok(
     !(createdPost.translations.tl ?? "").startsWith("Pagsasalin sa Tagalog:"),

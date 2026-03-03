@@ -16,9 +16,7 @@ import SupportStep from "@/components/SupportStep";
 import TestDashboard from "@/components/TestDashboard";
 import { analyzeIntent } from "@/lib/ai";
 import {
-  addPrayerToPost,
   completeSuccessfulPost,
-  createInitialPosts,
   createInitialSelection,
   injectScenario as applyScenarioInjection,
   returnToFeed,
@@ -33,6 +31,7 @@ import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
 import { checkCrisis, checkSafety } from "@/lib/guardian";
 import type { TestScenario } from "@/lib/testData";
 import { getUiCopy, localizeCategory, localizeEmotion } from "@/lib/translation";
+import { usePosts } from "@/lib/posts-context";
 import type {
   AppFlowSelection,
   AppFlowStep,
@@ -77,7 +76,7 @@ function debounce<Args extends unknown[]>(fn: (...args: Args) => void, ms: numbe
 export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [posts, setPosts] = useState<FeedPost[]>(createInitialPosts);
+  const { posts, isLoading, addPost, addPrayer } = usePosts();
   const [activeFilter, setActiveFilter] = useState<FeedFilter>(DEFAULT_FEED_FILTER);
   const [topicFilter, setTopicFilter] = useState<TopicFilter>("all");
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -215,7 +214,7 @@ export default function GracefulFlow() {
     setStep(result.nextStep);
   };
 
-  const handleSupportSelect = (support: FeedPost["supportType"]) => {
+  const handleSupportSelect = (support: FeedPost["support"]) => {
     const result = selectSupport(selection, support);
     setSelection(result.selection);
     setStep(result.nextStep);
@@ -270,7 +269,7 @@ export default function GracefulFlow() {
         return;
       }
 
-      setPosts(result.posts);
+      addPost(result.newPost);
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
     } catch (error) {
@@ -296,7 +295,7 @@ export default function GracefulFlow() {
         return;
       }
 
-      setPosts(result.posts);
+      addPost(result.newPost);
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
     } finally {
@@ -326,7 +325,7 @@ export default function GracefulFlow() {
   };
 
   const handlePrayerSubmit = (postId: string, text: string) => {
-    setPosts((current) => addPrayerToPost(current, postId, text, "Just now"));
+    addPrayer(postId, text);
     setIsPrayerModalOpen(false);
     setActivePost(null);
   };
@@ -506,7 +505,11 @@ export default function GracefulFlow() {
               </div>
 
               <div className="mt-7 space-y-4">
-                {filteredPosts.length > 0 ? (
+                {isLoading ? (
+                  <p className="py-12 text-center text-[#6b7c6d]">
+                    Loading...
+                  </p>
+                ) : filteredPosts.length > 0 ? (
                   filteredPosts.map((post) => (
                     <PostCard
                       key={post.id}

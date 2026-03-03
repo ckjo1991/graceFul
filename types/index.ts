@@ -9,9 +9,10 @@ export type Category =
   | "Other";
 
 export type SupportType =
-  | "A prayer would be nice"
-  | "Just sharing"
-  | "Both prayer and encouragement";
+  | "just_sharing"
+  | "prayer"
+  | "both"
+  | "encouragement";
 
 export type LanguageCode =
   | "en"
@@ -69,6 +70,8 @@ export interface PrayerResponse {
   authorLabel?: string;
 }
 
+export type Prayer = PrayerResponse;
+
 export type TranslationMap = Partial<Record<LanguageCode, string>>;
 
 export interface FeedPost {
@@ -78,11 +81,12 @@ export interface FeedPost {
   message: string;
   deviceId?: string;
   wantsFollowUp: boolean;
-  supportType: SupportType;
+  support: SupportType;
   allowTranslation: boolean;
   sourceLanguage: LanguageCode;
   translations: TranslationMap;
   createdAt: string;
+  hearts: number;
   prayers: PrayerResponse[];
 }
 

@@ -29,9 +29,10 @@ export const CATEGORIES: readonly Category[] = [
   "Other",
 ];
 export const SUPPORT_OPTIONS: readonly SupportType[] = [
-  "A prayer would be nice",
-  "Just sharing",
-  "Both prayer and encouragement",
+  "prayer",
+  "just_sharing",
+  "both",
+  "encouragement",
 ];
 
 export const SUPPORTED_LANGUAGES: Readonly<Record<LanguageCode, string>> = {

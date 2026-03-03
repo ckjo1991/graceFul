@@ -4,6 +4,7 @@ import React from "react";
 import { HandHeart, Sparkles } from "lucide-react";
 
 import {
+  getViewPrayerLabel,
   getUiCopy,
   localizeCategory,
   localizeEmotion,
@@ -34,6 +35,8 @@ export default function PostCard({
   onViewPrayers,
   viewerLanguage,
 }: PostCardProps) {
+  const [hasHearted, setHasHearted] = React.useState(false);
+  const [heartCount, setHeartCount] = React.useState(post.hearts);
   const copy = getUiCopy(viewerLanguage);
   const isGrateful = post.emotion === "grateful";
   const emotionLabel = localizeEmotion(post.emotion, viewerLanguage);
@@ -44,8 +47,30 @@ export default function PostCard({
     ? "bg-[var(--grateful-rail)]"
     : "bg-[var(--struggling-rail)]";
   const cardBg = TOPIC_CARD_TINTS[post.category?.toLowerCase()] ?? "bg-white";
+  const showsPrayerButton = post.support === "prayer" || post.support === "both";
+  const showsHeartButton =
+    post.support === "just_sharing" ||
+    post.support === "both" ||
+    post.support === "encouragement";
+  const showsViewPrayerButton = showsPrayerButton && post.prayers.length > 0;
+  const heartLabel = heartCount === 0 ? "🤍" : `🤍 ${heartCount}`;
+  const activeHeartLabel = `🩷 ${heartCount}`;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
   const displayMessage = post.message;
+
+  React.useEffect(() => {
+    setHasHearted(false);
+    setHeartCount(post.hearts);
+  }, [post.hearts, post.id]);
+
+  const handleHeartClick = () => {
+    if (hasHearted) {
+      return;
+    }
+
+    setHasHearted(true);
+    setHeartCount((currentCount) => currentCount + 1);
+  };
 
   return (
     <article
@@ -77,26 +102,42 @@ export default function PostCard({
 
         <div className="inline-flex items-center gap-2 text-[0.94rem] italic text-[var(--support-text)]">
           <Sparkles className="h-4 w-4 text-[var(--support-accent)]" />
-          <span>{localizeSupportType(post.supportType, viewerLanguage)}</span>
+          <span>{localizeSupportType(post.support, viewerLanguage)}</span>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => onPray(post.id)}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2.5 text-[0.96rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
-          >
-            <HandHeart className="h-4 w-4" />
-            {copy.postCard.pray}
-          </button>
+          {showsPrayerButton ? (
+            <button
+              type="button"
+              onClick={() => onPray(post.id)}
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2.5 text-[0.96rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
+            >
+              <HandHeart className="h-4 w-4" />
+              {copy.postCard.pray}
+            </button>
+          ) : null}
 
-          {post.prayers.length > 0 ? (
+          {showsHeartButton ? (
+            <button
+              type="button"
+              onClick={handleHeartClick}
+              className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                hasHearted
+                  ? "border-[#f9a8d4] bg-[#fce7f3] text-[#be185d]"
+                  : "border-[#d4e4cc] bg-white text-[#2c3a2e]"
+              }`}
+            >
+              {hasHearted ? activeHeartLabel : heartLabel}
+            </button>
+          ) : null}
+
+          {showsViewPrayerButton ? (
             <button
               type="button"
               onClick={() => onViewPrayers(post.id)}
               className="inline-flex items-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.96rem] font-medium text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
             >
-              {`View prayer (${post.prayers.length})`}
+              {getViewPrayerLabel(post.prayers.length, viewerLanguage)}
             </button>
           ) : null}
         </div>

@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 
+import { PostsProvider } from "@/lib/posts-context";
+
 export const metadata: Metadata = {
   title: "GraceFul",
   description: "Anonymous prayer wall for gratitude, struggle, and safe support.",
@@ -25,7 +27,7 @@ export default function RootLayout({
         className="text-[var(--foreground)]"
         suppressHydrationWarning={true}
       >
-        {children}
+        <PostsProvider>{children}</PostsProvider>
       </body>
     </html>
   );

@@ -8,7 +8,7 @@ export const samplePosts: FeedPostWithPrayers[] = [
     message:
       "I am grateful that my mother came through her tests well this week. Please pray that our family stays steady and thankful as we keep caring for her.",
     wantsFollowUp: false,
-    supportType: "A prayer would be nice",
+    support: "prayer",
     allowTranslation: true,
     sourceLanguage: "en",
     translations: {
@@ -17,6 +17,7 @@ export const samplePosts: FeedPostWithPrayers[] = [
     },
     translationLabel: "English",
     createdAt: "2026-02-27T09:00:00.000Z",
+    hearts: 0,
     prayers: [
       {
         id: "prayer-1",
@@ -34,7 +35,7 @@ export const samplePosts: FeedPostWithPrayers[] = [
     message:
       "I have been carrying deep anxiety about work and I need prayer for wisdom, endurance, and the courage to keep going without losing hope.",
     wantsFollowUp: false,
-    supportType: "Both prayer and encouragement",
+    support: "both",
     allowTranslation: true,
     sourceLanguage: "en",
     translations: {
@@ -43,6 +44,7 @@ export const samplePosts: FeedPostWithPrayers[] = [
     },
     translationLabel: "Tagalog available",
     createdAt: "2026-02-26T13:15:00.000Z",
+    hearts: 0,
     prayers: [
       {
         id: "prayer-2",
@@ -60,7 +62,7 @@ export const samplePosts: FeedPostWithPrayers[] = [
     message:
       "Provision came just when we needed it. I want to thank God openly and ask for continued wisdom as we handle what has been entrusted to us.",
     wantsFollowUp: false,
-    supportType: "Just sharing",
+    support: "just_sharing",
     allowTranslation: true,
     sourceLanguage: "en",
     translations: {
@@ -69,6 +71,7 @@ export const samplePosts: FeedPostWithPrayers[] = [
     },
     translationLabel: "Bisaya available",
     createdAt: "2026-02-25T07:45:00.000Z",
+    hearts: 0,
     prayers: [],
   },
 ];

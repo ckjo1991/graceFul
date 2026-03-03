@@ -22,15 +22,17 @@ export const INITIAL_SELECTION: AppFlowSelection = {
   wantsFollowUp: false,
 };
 
-const initialPosts: FeedPost[] =
-  process.env.NODE_ENV === "development" ? samplePosts : [];
+export const INITIAL_POSTS: FeedPost[] =
+  process.env.NODE_ENV === "development"
+    ? samplePosts.map((post) => ({ ...post, prayers: [...post.prayers] }))
+    : [];
 
 export function createInitialSelection(): AppFlowSelection {
   return { ...INITIAL_SELECTION };
 }
 
 export function createInitialPosts(): FeedPost[] {
-  return initialPosts.map((post) => ({ ...post, prayers: [...post.prayers] }));
+  return INITIAL_POSTS.map((post) => ({ ...post, prayers: [...post.prayers] }));
 }
 
 export function startShareFlow(lastPostTime: number | null) {
@@ -136,11 +138,12 @@ export function createFeedPost(
     message: sanitizedMessage,
     deviceId,
     wantsFollowUp: selection.wantsFollowUp,
-    supportType: selection.support,
+    support: selection.support,
     allowTranslation: true,
     sourceLanguage: "en",
     translations: generateTranslations(sanitizedMessage),
     createdAt: "Just now",
+    hearts: 0,
     prayers: [],
   };
 }
@@ -161,6 +164,7 @@ export function completeSuccessfulPost(
   handleEscalationRequest(newPost);
 
   return {
+    newPost,
     posts: [newPost, ...posts],
     lastPostTime: postedAt,
     nextStep: "done" as AppFlowStep,

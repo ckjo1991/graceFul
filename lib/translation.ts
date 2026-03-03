@@ -509,29 +509,34 @@ const CATEGORY_LABELS: Record<LanguageCode, Record<Category, string>> = {
 
 const SUPPORT_LABELS: Record<LanguageCode, Record<SupportType, string>> = {
   en: {
-    "A prayer would be nice": "A prayer would be nice",
-    "Just sharing": "Just sharing",
-    "Both prayer and encouragement": "Both prayer and encouragement",
+    prayer: "A prayer would be nice",
+    just_sharing: "Just sharing",
+    both: "Both prayer and encouragement",
+    encouragement: "Encouragement only",
   },
   tl: {
-    "A prayer would be nice": "Masaya ako sa panalangin",
-    "Just sharing": "Nagbabahagi lang",
-    "Both prayer and encouragement": "Panalangin at pagpapatibay ng loob",
+    prayer: "Masaya ako sa panalangin",
+    just_sharing: "Nagbabahagi lang",
+    both: "Panalangin at pagpapatibay ng loob",
+    encouragement: "Pagpapatibay ng loob lang",
   },
   ceb: {
-    "A prayer would be nice": "Maayo unta og naay pag-ampo",
-    "Just sharing": "Nagpaambit lang",
-    "Both prayer and encouragement": "Pag-ampo ug pagdasig",
+    prayer: "Maayo unta og naay pag-ampo",
+    just_sharing: "Nagpaambit lang",
+    both: "Pag-ampo ug pagdasig",
+    encouragement: "Pagdasig lang",
   },
   hil: {
-    "A prayer would be nice": "Mayo ang isa ka pangamuyo",
-    "Just sharing": "Nagapaambit lang",
-    "Both prayer and encouragement": "Pangamuyo kag pagdasig",
+    prayer: "Mayo ang isa ka pangamuyo",
+    just_sharing: "Nagapaambit lang",
+    both: "Pangamuyo kag pagdasig",
+    encouragement: "Pagdasig lang",
   },
   es: {
-    "A prayer would be nice": "Una oracion seria buena",
-    "Just sharing": "Solo comparto",
-    "Both prayer and encouragement": "Oracion y animo",
+    prayer: "Una oracion seria buena",
+    just_sharing: "Solo comparto",
+    both: "Oracion y animo",
+    encouragement: "Solo animo",
   },
 };
 
