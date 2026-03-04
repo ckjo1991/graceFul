@@ -143,14 +143,18 @@ export default function PostCard({
       return;
     }
 
-    const nextHeartCount = heartCount + 1;
+    const previousCount = heartCount;
+    const previousHearted = hasHearted;
 
     setHasHearted(true);
-    setHeartCount(nextHeartCount);
+    setHeartCount((currentCount) => currentCount + 1);
     setIsHeartPending(true);
     void (async () => {
       try {
-        await updateHearts(post.id, nextHeartCount);
+        await updateHearts(post.id, previousCount + 1);
+      } catch {
+        setHasHearted(previousHearted);
+        setHeartCount(previousCount);
       } finally {
         setIsHeartPending(false);
       }
@@ -255,7 +259,7 @@ export default function PostCard({
                 <button
                   type="button"
                   onClick={handleHeartClick}
-                  disabled={isHeartPending}
+                  disabled={isHeartPending || hasHearted}
                   className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                     hasHearted
                       ? "border-[#f9a8d4] bg-[#fce7f3] text-[#be185d]"
