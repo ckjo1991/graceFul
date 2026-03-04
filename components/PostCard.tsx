@@ -53,6 +53,7 @@ export default function PostCard({
   const [isReported, setIsReported] = React.useState(false);
   const [hasHearted, setHasHearted] = React.useState(false);
   const [heartCount, setHeartCount] = React.useState(post.hearts);
+  const [isHeartPending, setIsHeartPending] = React.useState(false);
   const [isReportMenuOpen, setIsReportMenuOpen] = React.useState(false);
   const [reportState, setReportState] = React.useState<"idle" | "confirming" | "submitting">("idle");
   const [reportError, setReportError] = React.useState<string | null>(null);
@@ -92,13 +93,17 @@ export default function PostCard({
 
   React.useEffect(() => {
     setIsReported(false);
-    setHasHearted(false);
-    setHeartCount(post.hearts);
     setIsReportMenuOpen(false);
     setReportState("idle");
     setReportError(null);
     setSelectedReportReason(REPORT_REASONS[0]);
-  }, [post.hearts, post.id]);
+  }, [post.id]);
+
+  React.useEffect(() => {
+    setHasHearted(false);
+    setHeartCount(post.hearts);
+    setIsHeartPending(false);
+  }, [post.id]);
 
   React.useEffect(() => {
     if (!isReportMenuOpen) {
@@ -134,13 +139,22 @@ export default function PostCard({
   }, [showReportModal]);
 
   const handleHeartClick = () => {
-    if (hasHearted) {
+    if (hasHearted || isHeartPending) {
       return;
     }
 
+    const nextHeartCount = heartCount + 1;
+
     setHasHearted(true);
-    setHeartCount((currentCount) => currentCount + 1);
-    void updateHearts(post.id, heartCount + 1);
+    setHeartCount(nextHeartCount);
+    setIsHeartPending(true);
+    void (async () => {
+      try {
+        await updateHearts(post.id, nextHeartCount);
+      } finally {
+        setIsHeartPending(false);
+      }
+    })();
   };
 
   const handleCancel = () => {
@@ -241,6 +255,7 @@ export default function PostCard({
                 <button
                   type="button"
                   onClick={handleHeartClick}
+                  disabled={isHeartPending}
                   className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                     hasHearted
                       ? "border-[#f9a8d4] bg-[#fce7f3] text-[#be185d]"
