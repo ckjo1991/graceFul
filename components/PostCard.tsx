@@ -50,12 +50,11 @@ export default function PostCard({
   onViewPrayers,
   viewerLanguage,
 }: PostCardProps) {
+  const [isReported, setIsReported] = React.useState(false);
   const [hasHearted, setHasHearted] = React.useState(false);
   const [heartCount, setHeartCount] = React.useState(post.hearts);
   const [isReportMenuOpen, setIsReportMenuOpen] = React.useState(false);
-  const [reportState, setReportState] = React.useState<
-    "idle" | "confirming" | "submitting" | "reported"
-  >("idle");
+  const [reportState, setReportState] = React.useState<"idle" | "confirming" | "submitting">("idle");
   const [reportError, setReportError] = React.useState<string | null>(null);
   const [selectedReportReason, setSelectedReportReason] = React.useState<
     (typeof REPORT_REASONS)[number]
@@ -93,6 +92,7 @@ export default function PostCard({
     reportState === "confirming" || reportState === "submitting";
 
   React.useEffect(() => {
+    setIsReported(false);
     setHasHearted(false);
     setHeartCount(post.hearts);
     setIsReportMenuOpen(false);
@@ -150,7 +150,7 @@ export default function PostCard({
   };
 
   const handleReport = async () => {
-    if (reportState === "submitting" || reportState === "reported") {
+    if (reportState === "submitting" || isReported) {
       return;
     }
 
@@ -160,7 +160,8 @@ export default function PostCard({
 
     try {
       await insertReport(post.id, selectedReportReason);
-      setReportState("reported");
+      setIsReported(true);
+      setReportState("idle");
     } catch {
       setReportError("Could not submit this report. Please try again.");
       setReportState("confirming");
@@ -177,7 +178,7 @@ export default function PostCard({
 
           {!isOwnPost ? (
             <div ref={reportMenuRef} className="absolute right-3 top-3 z-10">
-              {reportState === "reported" ? (
+              {isReported ? (
                 <span className="text-xs italic text-[#9ca3af]">✓ Reported</span>
               ) : (
                 <>
