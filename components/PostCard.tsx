@@ -4,7 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { HandHeart, MoreHorizontal, Sparkles } from "lucide-react";
 
-import { insertReport } from "@/lib/db";
+import { insertReport, updateHearts } from "@/lib/db";
 import { REPORT_REASONS } from "@/lib/reporting";
 import {
   getViewPrayerLabel,
@@ -82,8 +82,7 @@ export default function PostCard({
     (normalizedSupport === "prayer" || normalizedSupport === "both");
   const showsHeartButton =
     normalizedSupport === "just_sharing" || normalizedSupport === "both";
-  const showsViewPrayerButton =
-    !isOwnPost && showsPrayerButton && post.prayers.length > 0;
+  const showsViewPrayerButton = post.prayers.length > 0;
   const heartLabel = heartCount === 0 ? "🤍" : `🤍 ${heartCount}`;
   const activeHeartLabel = `🩷 ${heartCount}`;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
@@ -141,6 +140,7 @@ export default function PostCard({
 
     setHasHearted(true);
     setHeartCount((currentCount) => currentCount + 1);
+    void updateHearts(post.id, heartCount + 1);
   };
 
   const handleCancel = () => {
