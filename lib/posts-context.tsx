@@ -130,6 +130,24 @@ export function PostsProvider({ children }: { children: ReactNode }) {
         )
         .on(
           "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "posts" },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (event: any) => {
+            if (!event?.new?.id) {
+              return;
+            }
+
+            setPosts((prev) =>
+              prev.map((post) =>
+                post.id === event.new.id
+                  ? { ...post, hearts: event.new.hearts ?? post.hearts }
+                  : post,
+              ),
+            );
+          },
+        )
+        .on(
+          "postgres_changes",
           { event: "DELETE", schema: "public", table: "posts" },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (event: any) => {
