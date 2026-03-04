@@ -108,16 +108,13 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "INSERT", schema: "public", table: "posts" },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (event: any) => {
-            console.log("[GraceFul] Raw INSERT event:", event);
             if (!event || typeof event !== "object") {
-              console.warn("[GraceFul] Invalid event structure, skipping");
               return;
             }
 
-            const payload = event.payload;
+            const payload = event;
 
             if (!payload?.new) {
-              console.warn("[GraceFul] No payload.new, skipping INSERT");
               return;
             }
 
@@ -136,16 +133,13 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "DELETE", schema: "public", table: "posts" },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (event: any) => {
-            console.log("[GraceFul] Raw DELETE event:", event);
             if (!event || typeof event !== "object") {
-              console.warn("[GraceFul] Invalid event structure, skipping");
               return;
             }
 
-            const payload = event.payload;
+            const payload = event;
 
             if (!payload?.old?.id) {
-              console.warn("[GraceFul] No payload.old.id, skipping DELETE");
               return;
             }
 
@@ -157,16 +151,13 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "INSERT", schema: "public", table: "prayers" },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (event: any) => {
-            console.log("[GraceFul] Raw INSERT event:", event);
             if (!event || typeof event !== "object") {
-              console.warn("[GraceFul] Invalid event structure, skipping");
               return;
             }
 
-            const payload = event.payload;
+            const payload = event;
 
             if (!payload?.new) {
-              console.warn("[GraceFul] No payload.new, skipping INSERT");
               return;
             }
 
@@ -195,16 +186,13 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "DELETE", schema: "public", table: "prayers" },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (event: any) => {
-            console.log("[GraceFul] Raw DELETE event:", event);
             if (!event || typeof event !== "object") {
-              console.warn("[GraceFul] Invalid event structure, skipping");
               return;
             }
 
-            const payload = event.payload;
+            const payload = event;
 
             if (!payload?.old?.id) {
-              console.warn("[GraceFul] No payload.old.id, skipping DELETE");
               return;
             }
 
