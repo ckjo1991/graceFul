@@ -127,7 +127,7 @@ export const PHILIPPINE_RESOURCES = {
   },
 };
 
-const PHONE_PATTERN = /\b(?:\+63|0)9\d{9}\b/g;
+const PHONE_PATTERN = /\b(?:\+?63[-\s]?|0)9\d{2}[-\s]?\d{3}[-\s]?\d{4}\b/g;
 const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const SOCIAL_PATTERN =
   /(@[a-zA-Z0-9._]+)|(facebook\.com\/[a-zA-Z0-9._]+)|(fb\.me\/[a-zA-Z0-9._]+)/gi;
@@ -148,6 +148,42 @@ const FULL_NAME_EXCLUSIONS = new Set([
   "Father",
   "Your",
   "You",
+  "Hope",
+  "Joy",
+  "Grace",
+  "Faith",
+  "Peace",
+  "Mercy",
+  "Charity",
+  "Angel",
+  "Heaven",
+  "Summer",
+  "Winter",
+  "April",
+  "May",
+  "June",
+  "Rose",
+  "Lily",
+  "Daisy",
+  "Luna",
+  "Aurora",
+  "Star",
+  "Dawn",
+  "Light",
+  "River",
+  "Sky",
+  "Malaya",
+  "Ligaya",
+  "Hiraya",
+  "Pagasa",
+  "Tala",
+  "Buhay",
+  "Liwanag",
+  "Ganda",
+  "Tapang",
+  "Saya",
+  "Araw",
+  "Bituin",
 ]);
 
 function isLikelyFullName(candidate: string): boolean {
@@ -316,7 +352,8 @@ export const scrubPII = (text: string): string => {
   const phonePattern = /(\+?63|0)9\d{9}/g;
   const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   const socialPattern = /(@|facebook\.com\/|twitter\.com\/)[a-zA-Z0-9._-]+/gi;
-  const locationPattern = /(St\.|Hospital|Clinic|Avenue|Brgy\.)\s+[A-Z][a-z]+/g;
+  const locationPattern =
+    /\b(?:St\.|Hospital|Clinic|Avenue|Brgy\.|Medical Center|Medical City|Ospital ng|Cardinal|Philippine General|St\. Luke|Makati Medical|Asian Hospital)\b[^.!?\n]*/gi;
 
   try {
     sanitized = sanitized.replaceAll(phonePattern, "[phone removed]");
