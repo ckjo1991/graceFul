@@ -1,22 +1,26 @@
 # GraceFul Task List
 
-## Foundation and UI
+## Foundation and Routing
 
 - [x] Set up a Next.js 15 + React 19 + TypeScript project.
 - [x] Define the theme in `tailwind.config.ts` and `app/globals.css`.
 - [x] Create reusable UI primitives for buttons, badges, cards, and textareas.
-- [x] Build the feed-first shell in `app/page.tsx`.
-- [x] Add a first-session onboarding modal.
+- [x] Add a landing page at `/`.
+- [x] Mount the main product flow at `/feed`.
+- [x] Wrap the app in a shared `PostsProvider`.
+- [x] Add a moderation route at `/admin` with tabbed views for all posts and
+  flagged content.
 
 ## Posting Flow
 
 - [x] Add emotion selection for `grateful` and `struggling`.
 - [x] Add category selection.
-- [x] Add message entry with 40-800 character constraints.
+- [x] Add message entry with product length constraints.
 - [x] Add support-preference selection.
-- [x] Add translation-permission selection.
 - [x] Add a review step before final submission.
 - [x] Add a success state that returns users to the feed.
+- [x] Add a first-session onboarding modal.
+- [x] Add a quiet-return community nudge.
 
 ## Safety and Guardian
 
@@ -24,51 +28,78 @@
 - [x] Add profanity detection.
 - [x] Add violent-intent detection.
 - [x] Add lexicon-backed multilingual harm detection.
+- [x] Expand violent-intent exact lexicon entries (EN/PH) and add metaphor exceptions.
+- [x] Expand PH mobile number detection patterns.
+- [x] Add stem-aware threat matching and direct-threat/malicious-wish structural gates.
+- [x] Add weapon-plus-violent-verb threat pairing checks.
 - [x] Add PII detection and scrubbing for posts.
+- [x] Expand PII scrubbing for Metro Manila hospital/location references and aliases.
+- [x] Add marker-triggered and surname-aware name redaction heuristics.
 - [x] Reuse Guardian protection for prayer submission.
 - [x] Add a local cooldown check before starting a fresh share.
 - [x] Surface crisis and warning states in dedicated UI screens.
+- [x] Add final posting guard checks before Supabase write.
+- [ ] Replace simulated review with a server-backed moderation decision path.
+
+## Persistence and Realtime
+
+- [x] Add a shared Supabase client in `lib/supabase.ts`.
+- [x] Add database read and write helpers in `lib/db.ts`.
+- [x] Fetch posts from Supabase on app load.
+- [x] Persist new posts to Supabase.
+- [x] Persist new prayers to Supabase.
+- [x] Add Supabase Realtime subscriptions for post inserts and deletes.
+- [x] Add Supabase Realtime subscription for post updates (heart sync).
+- [x] Add Supabase Realtime subscriptions for prayer inserts and deletes.
+- [x] Add null guards to realtime payload handlers to prevent crashes on
+  incomplete events.
+- [x] Persist heart reactions in Supabase.
+- [x] Add temporary realtime debug logging for subscription status and received
+  payloads.
+- [ ] Verify realtime behavior across devices and remove temporary debug logs.
 
 ## Feed and Prayer Interaction
 
-- [x] Seed the feed with local anonymous posts.
-- [x] Render post cards with emotion, category, time, and prayer count.
-- [x] Add a styled native language selector to the feed header.
-- [x] Move `My Posts` into the feed header next to the share action.
-- [x] Unify feed filter state across `All`, `Grateful`, `Struggling`, and
-  `My Posts`.
-- [x] Add a dedicated `My Posts` empty state with a share CTA.
+- [x] Render post cards with emotion, category, time, support intent, and
+  prayer count.
+- [x] Show and persist heart counts for supported post types.
+- [x] Add `My Posts` filtering based on the current device.
+- [x] Add emotion and topic feed filters.
 - [x] Add a prayer modal for eligible posts.
 - [x] Add a prayer viewer for posts with existing prayers.
-- [x] Update prayer counts locally after a prayer is submitted.
-- [x] Show working local translation rendering when a post allows translation.
+- [x] Sync prayer inserts back into feed state.
+- [x] Add localized UI copy for supported viewer languages.
+- [ ] Re-enable or redesign feed-card translation display.
 
-## Guardian Review and Prototype Support
+## Reporting and Moderation Intake
 
-- [x] Simulate Guardian review behavior in `lib/ai.ts`.
-- [x] Add a development-only test dashboard with scenario injection.
-- [x] Update `prd.md`, `claude.md`, `planning.md`, and `tasks.md` to match the
-  current app structure.
-
-## Cleanup and Alignment
-
-- [x] Unify the post and prayer models across `app/page.tsx`, `types/index.ts`,
-  and related components.
-- [x] Archive the older share and feed prototypes under `components/reference/`.
-- [ ] Eliminate duplicated product assumptions across active and secondary
-  prototypes.
-
-## Persistence and Backend
-
-- [ ] Replace client-only post state with persistent storage.
-- [ ] Replace client-only prayer count updates with persistent prayer records.
-- [ ] Move final submission and moderation decisions behind a server boundary.
-- [ ] Replace simulated Guardian review with a real service or server action.
+- [x] Add post reporting flow.
+- [x] Persist post reports.
+- [x] Add prayer reporting flow.
+- [x] Persist prayer reports.
+- [x] Build a moderation review UI for stored reports.
+- [ ] Harden moderation access control beyond URL key checks.
+- [ ] Add explicit moderation action tracking (who/when/why) for deletions.
 
 ## Quality and Release Readiness
 
 - [x] Add unit tests for `lib/guardian.ts`.
-- [x] Add integration coverage for the full posting flow.
+- [x] Add tests for the share-flow helpers.
 - [x] Add tests for prayer submission safety behavior.
-- [x] Run lint and fix issues caused by model drift or dead prototype files.
+- [x] Add tests for reporting helpers.
+- [x] Add tests for translation/content helper behavior.
+- [x] Add tests for thank-you variant selection.
+- [x] Keep `npm run build` passing after realtime fixes.
+- [ ] Add browser-level coverage for realtime feed behavior.
+- [ ] Add browser-level coverage for moderation workflow behavior.
 - [ ] Confirm development-only tooling does not ship into production UX.
+
+## Documentation and Alignment
+
+- [x] Update `prd.md`, `planning.md`, `tasks.md`, and `claude.md` to match the
+  current routed app and Supabase-backed architecture.
+- [x] Include `/admin` moderation realities and heart persistence status in all
+  top-level docs.
+- [x] Add Guardian crisis reference spec in `docs/guardian/GUARDIAN_CRISIS_DETECTION_V1.md`.
+- [ ] Eliminate stale prototype assumptions from remaining reference code and
+  comments.

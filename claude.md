@@ -2,29 +2,30 @@
 
 ## Project Overview
 
-GraceFul is an anonymous prayer wall prototype. It is designed to keep people
-focused on prayer, encouragement, and safe sharing rather than identity,
-debate, or social performance.
+GraceFul is an anonymous prayer wall focused on gratitude, struggle, prayer,
+and safe sharing. The product should feel calm and supportive, not social,
+performative, or identity-driven.
 
 ## Current Repo Reality
 
-The active app flow lives in `app/page.tsx`. Treat that file as the main
-product shell unless you intentionally migrate the architecture.
+The active product experience is split across routed surfaces:
 
-- The default screen is the feed, not the share flow.
-- A first-session onboarding modal appears before normal use until dismissed.
-- Posting is handled through a local step machine inside `app/page.tsx`.
-- The review experience uses simulated Guardian review logic from `lib/ai.ts`.
-- Guardian and privacy enforcement live in `lib/guardian.ts`.
-- Guardian intent detection also depends on the lexicon loader in `lib/lexicon.ts`.
-- Prayer submission is local-only and updates counts in client state.
-- The feed header currently uses a styled native language `select` above the
-  `My Posts` and `+ Share` buttons.
-- Feed filtering is driven by one `activeFilter` state that is shared by
-  `All`, `Grateful`, `Struggling`, and `My Posts`.
-- `components/reference/share-flow.reference.tsx` and
-  `components/reference/prayer-feed.reference.tsx` are archived reference
-  prototypes, not mounted product code.
+- `app/page.tsx` is the landing page
+- `app/feed/page.tsx` is the mounted feed and share flow
+- `app/admin/page.tsx` is the moderation surface (key-gated)
+
+Other current architecture rules:
+
+- `app/layout.tsx` wraps the app in `PostsProvider`
+- `lib/posts-context.tsx` is the main client-side source of truth for feed
+  state
+- Posts, prayers, reports, prayer reports, and heart counts are persisted
+  through Supabase helpers in `lib/db.ts`
+- Supabase Realtime is used to sync post insert/update/delete and prayer
+  insert/delete into the feed
+- Guardian and privacy enforcement live in `lib/guardian.ts`
+- The review experience still uses simulated logic from `lib/ai.ts`
+- `components/reference/*` are archived references, not mounted product code
 
 ## Critical Workflow Rules
 
@@ -43,12 +44,21 @@ product shell unless you intentionally migrate the architecture.
    If crisis language is detected, interrupt the flow and show support
    resources instead of continuing normally.
 6. **Prototype Accuracy**
-   Do not describe simulated review behavior as production-ready infrastructure.
-   The current `lib/ai.ts` behavior is local demo logic.
+   Do not describe simulated review behavior as production-ready moderation
+   infrastructure.
+7. **Realtime Safety**
+   Realtime handlers must defensively guard `payload?.new` and
+   `payload?.old?.id` before using event data, including update events.
+8. **Moderation Access**
+   Treat `/admin` key-based access as temporary. Do not present it as secure
+   role-based authentication.
+9. **Deduplicate Safety Data**
+   Before adding new Guardian phrases, aliases, or regex alternatives, check
+   existing entries first and merge without introducing duplicates.
 
 ## Current Step Model
 
-The main flow in `app/page.tsx` currently uses these states:
+The main product flow in `app/feed/page.tsx` currently uses:
 
 - `feed`
 - `emotion`
@@ -57,45 +67,47 @@ The main flow in `app/page.tsx` currently uses these states:
 - `crisis`
 - `warning`
 - `support`
-- `translate_opt`
 - `review`
 - `done`
 
-If you change this state model, update the docs in the same pass.
+If this state model changes, update the docs in the same pass.
 
 ## Code Standards
 
 - Use TypeScript throughout. Do not introduce `any`.
-- Prefer functional React components and local state where the flow is
-  UI-driven.
-- Keep product rules centralized in `lib/guardian.ts` and avoid duplicating
-  safety logic in multiple places.
-- Keep client-side product state understandable; this flow is already complex
-  enough without hidden abstractions.
-- Preserve the unified feed-filter model. Do not reintroduce separate state
-  for `My Posts` versus emotion pills without a strong reason.
-- Preserve the current visual language defined by `tailwind.config.ts`,
-  `app/globals.css`, and `lib/constants.ts`.
-- Avoid drifting shared models apart. The app currently has both typed shared
-  models in `types/index.ts` and local flow-specific models in `app/page.tsx`;
-  reduce that duplication rather than adding more.
+- Prefer clear functional React components and local state for UI-specific
+  interaction.
+- Keep Guardian rules centralized in `lib/guardian.ts`.
+- Keep Guardian false-positive controls (metaphor shields and name/hospital
+  redaction safeguards) aligned with threat-detection updates.
+- Keep feed data reads and writes centralized through `lib/db.ts` and
+  `lib/posts-context.tsx` rather than scattering Supabase calls through the UI.
+- Keep realtime handlers idempotent and defensive so duplicate or partial
+  events do not break the feed.
+- Preserve the current route split between `/`, `/feed`, and `/admin`.
+- Avoid drifting shared models in `types/index.ts` away from the mounted app.
+- Keep hearts as persisted counters; avoid reintroducing local-only heart
+  behavior.
+- Keep translation behavior honest: feed-card translation is intentionally
+  parked while prayer surfaces can show translated post context.
 
 ## File Conventions
 
-- Put main routed UI in `/app`.
-- Keep reusable flow screens in `/components`.
-- Keep Guardian review and support logic in `/lib`.
+- Put routed UI in `/app`.
+- Keep reusable flow and feed components in `/components`.
+- Keep data access, Guardian logic, reporting, and support logic in `/lib`.
 - Keep shared product types in `/types`.
-- Keep development-only fixtures and scenario data in dedicated helper files
-  such as `lib/testData.ts`.
+- Keep development-only fixtures and scenario data in dedicated helper files.
+- Keep Guardian reference specs in `docs/guardian/` and runtime enforcement in
+  `lib/guardian.ts`.
 
 ## Testing Expectations
 
-- Add unit coverage for crisis, profanity, PII, and malicious-intent checks.
-- Verify the prayer modal uses the same protection standards as post creation.
-- Verify the `+ Share` path and return-to-feed path work end to end.
-- Verify feed filters default to `all` and preserve the dedicated `My Posts`
-  empty state behavior when the device has no posts.
+- Keep `npm run build` passing.
+- Add or update tests when Guardian, reporting, or flow helpers change.
+- Verify prayer submission uses the same protection standards as post creation.
+- Add coverage for any future realtime state-management bug fixes.
+- Add or update moderation helper coverage when report aggregation changes.
 - Keep development-only helpers like `TestDashboard` gated out of production.
 
 ## Documentation Rule
@@ -105,4 +117,4 @@ When implementation changes materially, update these files together:
 - `prd.md`
 - `planning.md`
 - `tasks.md`
-- `claude.md`, when development rules also changed
+- `claude.md`
