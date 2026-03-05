@@ -81,6 +81,17 @@ test("checkSafety flags profanity and PII", () => {
     reason: "pii",
     foundDetail: "hospital/location",
   });
+
+  assert.deepEqual(
+    checkSafety(
+      "I am currently struggling with sickness and currently in a hospital, please call me at and visit me.",
+    ),
+    {
+      isSafe: true,
+      reason: null,
+      foundDetail: null,
+    },
+  );
 });
 
 test("runGuardian sanitizes PII while allowing safe intent", () => {
@@ -130,6 +141,38 @@ test("runGuardian generalizes hospital aliases in normal posting flow", () => {
     assert.equal(result.outcome, "sanitize");
     assert.match(result.sanitizedMessage, /\[location generalized\]/);
   }
+});
+
+test("runGuardian allows generic hospital mentions but sanitizes specific hospital names", () => {
+  const generic = runGuardian(
+    "I am currently struggling with sickness and currently in a hospital, please call me at and visit me.",
+  );
+  assert.equal(generic.outcome, "allow");
+  assert.equal(
+    generic.sanitizedMessage,
+    "I am currently struggling with sickness and currently in a hospital, please call me at and visit me.",
+  );
+
+  const named = runGuardian("Admitted at Makati Medical Center for monitoring.");
+  assert.equal(named.outcome, "sanitize");
+  assert.equal(
+    named.sanitizedMessage,
+    "Admitted at [location generalized] for monitoring.",
+  );
+  assert.deepEqual(named.reasons, ["Hospital/location generalized."]);
+});
+
+test("runGuardian keeps surrounding context when hospital aliases are sanitized", () => {
+  const result = runGuardian(
+    "Please pray for Dad, he is in St lukes for checkup and waiting for results.",
+  );
+
+  assert.equal(result.outcome, "sanitize");
+  assert.equal(
+    result.sanitizedMessage,
+    "Please pray for Dad, he is in [location generalized] for checkup and waiting for results.",
+  );
+  assert.deepEqual(result.reasons, ["Hospital/location generalized."]);
 });
 
 test("canPost enforces cooldown windows", () => {

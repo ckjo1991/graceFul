@@ -172,8 +172,68 @@ const SOCIAL_PATTERN =
   /(@[a-zA-Z0-9._]+)|(facebook\.com\/[a-zA-Z0-9._]+)|(fb\.me\/[a-zA-Z0-9._]+)|(twitter\.com\/[a-zA-Z0-9._]+)/gi;
 const LOCATION_PATTERN =
   /\b(?:street|st\.|barangay|brgy\.|avenue|ave\.|city hall|subdivision)\b/gi;
-const HOSPITAL_LOCATION_PATTERN =
-  /\b(?:[A-Za-z0-9'.-]+(?:\s+[A-Za-z0-9'.-]+){0,8}\s+(?:Hospital|Medical Center|General Hospital|District Hospital|City Hospital|Heart Center|Lung Center|Orthopedic Center|Children(?:'s)? Hospital|Kidney and Transplant Institute)|Ospital ng\s+[A-Za-z0-9'.-]+(?:\s+[A-Za-z0-9'.-]+){0,4}|Philippine General Hospital|University of Santo Tomas Hospital|Manila Doctors Hospital|Chinese General Hospital and Medical Center|Metropolitan Medical Center|Mary Johnston Hospital|Mary Chiles General Hospital|De Ocampo Memorial Medical Center|Hospital of the Infant Jesus|Ospital ng Maynila Medical Center|Sta\.?\s*Ana Hospital|Ospital ng Sampaloc|Tondo Medical Center|Jose R\.?\s*Reyes Memorial Medical Center|San Lazaro Hospital|Dr\.?\s*Jose Fabella Memorial Hospital|St\.?\s*Luke'?s Medical Center(?:\s*-\s*(?:Quezon City|Global City))?|East Avenue Medical Center|Quirino Memorial Medical Center|National Kidney and Transplant Institute|Philippine Heart Center|Lung Center of the Philippines|Philippine Children(?:'s)? Medical Center|Philippine Orthopedic Center|National Children(?:'s)? Hospital|Capitol Medical Center|De Los Santos Medical Center|Dr\.?\s*Fe Del Mundo Medical Center|Commonwealth Hospital and Medical Center|Novaliches District Hospital|Quezon City General Hospital|Makati Medical Center|Ospital ng Makati|Makati Life Medical Center|(?:The\s+)?Medical City|Pasig Doctors Medical Center|Rizal Medical Center|Pasig City General Hospital|Taguig-Pateros District Hospital|Bicutan Medical Center|Taguig City General Hospital|Adventist Medical Center Manila|San Juan De Dios Hospital|Pasay City General Hospital|Paranaque Doctors Hospital|Unihealth Paranaque Hospital and Medical Center|Ospital ng Paranaque|Olivarez General Hospital|University of Perpetual Help Dalta Medical Center|Las Pinas Doctors Hospital|Las Pinas General Hospital and Satellite Trauma Center|Pope John Paul II Hospital and Medical Center|Cardinal Santos Medical Center|San Juan Medical Center|Fatima University Medical Center|Valenzuela Medical Center|Valenzuela City Emergency Hospital|Valenzuela City General Hospital|Ospital ng Malabon|San Lorenzo Ruiz General Hospital|Navotas City Hospital|Ospital ng Muntinlupa|Asian Hospital and Medical Center|Mandaluyong City Medical Center|VRP Medical Center|Dr\.?\s*Jose N\.?\s*Rodriguez Memorial Hospital|up pgh|pgh manila|sa pgh|taft pgh|opd pgh|pgh|ust hospital|usth|ust hosp|ust med|sa ust|manila doctors|mdh|madocs|doctors hospital manila|un ave doctors|chinese gen|chinese hospital|cghmc|cgh|intsik hospital|blumentritt hospital|metro medical|metropolitan|metro hospital|mmc metro|metro binondo|mary johnston|mjh|tondo hospital|mary chiles|mcgh|de ocampo|ocampo hospital|docmmc|infant jesus hospital|hij hospital|osmaynila|os maynila|om|maynila hospital|sta ana hospital|santa ana hospital|sa sta ana|os sampaloc|ossamp|sampaloc hospital|tondo med|tondo medical|tmc tondo|jose reyes|reyes hospital|jrrmmc|jr reyes|san lazaro|lazaro hospital|slh|fabella hospital|fabella|djfmh|jose fabella|st lukes|st lukes qc|st lukes quezon city|slmc qc|st lukes e rodriguez|east ave|east avenue hospital|eamc|sa east ave|quirino hospital|qmmc|labor hospital|nkti|nk ti|kidney center|kidney institute|heart center|phc|sa heart center|lung center|lcp|sa lung center|pcmc|childrens hospital qc|lungsod ng kabataan|q ave childrens|orthopedic hospital|poc|banawe hospital|ortho banawe|nch|national childrens|nch qc|capitol med|cmc qc|capitol hospital|de los santos|dlsmc|de los santos med|fe del mundo|fdmmc|del mundo hospital|childrens medical center banawe|commonwealth hospital|chmc|novaliches district|ndh|nova hospital|qc general|qcgh|quezon city hospital|qc gen|makati med|mmc makati|makati medical|mmc|osmak|os makati|makati life|medical city|tmc|tmc pasig|tmc ortigas|medical city ortigas|pasig doctors|pdmc|rizal med|rmc pasig|rmc|pasig gen|pasig hospital|pcgh|st lukes bgc|slmc bgc|st lukes taguig|tpdh|taguig pateros hospital|bicutan med|bicutan hospital|taguig gen|tcgh|adventist hospital pasay|adventist med|amcm|sjdh|san juan de dios|pasay gen|pasay hospital|pcgh pasay|paranaque doctors|pdh|unihealth paranaque|uphmc|ospar|os paranaque|ospar 1|ospar 2|olivarez hospital|olivarez gen|perpetual las pinas|perpetual hospital|uphdmc|perpetual dalta|las pinas doctors|lpdh|las pinas general|lpgstc|lpgh|john paul hospital|pjpii|cardinal santos|csmc|greenhills hospital|cardinal|san juan med|sjmc|fatima hospital|fumc|fatima valenzuela|vmc valenzuela|vmc|valenzuela emergency|vceh|valenzuela gen|vcgh|osmalabon|malabon hospital|os malabon|san lorenzo|slrgh|navotas hospital|nch navotas|osmuntinlupa|os muntinlupa|osmun|asian hospital|asian hosp|ahmc|asian alabang|mandaluyong hospital|mcmc|mandaluyong city med|vrp hospital|vrp med|vrp|tala hospital|tala|djnrmh|jose rodriguez memorial|ManilaMed - Medical Center Manila|Our Lady of Lourdes Hospital|University of the East Ramon Magsaysay Memorial Medical Center|Diliman Doctors Hospital|Dr\.?\s*Jesus C\.?\s*Delgado Memorial Hospital|Providence Hospital|Fort Bonifacio General Hospital|Manila Naval Hospital|Salve Regina General Hospital|Mission Hospital|St\.?\s*Camillus Medical Center|Medical Center Taguig|Metro Pasay Hospital and Medical Center|Medical Center Paranaque|South Superhighway Medical Center|ACE Medical Center - Pateros|manilamed|manila med|mc manila|med city manila|un ave med|lourdes hospital|lourdes manila|ol lh|sta mesa lourdes|uerm|uerm hospital|uerm med|uerm aurora|sa uerm|diliman docs|ddh|commonwealth doctors|delgado hospital|delgado|kamuning hospital|providence|providence qc|phqc|fort boni hospital|fbgh|navy hospital|afp general|naval hospital|navy med|mnh|salve regina|salve hospital|marcos highway hospital|mission pasig|mission med|st camillus|camillus med|pasig camillus|mct|taguig med|med center taguig|metro pasay|pasay medical|mphmc|mcp|paranaque medical|mcp sucat|ssmc|south superhighway|ssmc paranaque|ace pateros|ace med|ace hospital)\b[^.!?\n]*/gi;
+const HOSPITAL_ALIASES = [
+  "pgh",
+  "up pgh",
+  "pgh manila",
+  "st lukes",
+  "st luke's",
+  "st lukes qc",
+  "st lukes bgc",
+  "slmc",
+  "slmc qc",
+  "slmc bgc",
+  "tmc",
+  "tmc pasig",
+  "tmc ortigas",
+  "medical city",
+  "medical city ortigas",
+  "makati med",
+  "makati medical center",
+  "osmak",
+  "os makati",
+  "nch",
+  "nch qc",
+  "national children's hospital",
+  "national childrens hospital",
+  "usth",
+  "ust hospital",
+  "ust med",
+  "manila doctors",
+  "mary johnston",
+  "tondo med",
+  "jose reyes",
+  "jrrmmc",
+  "east ave",
+  "eamc",
+  "qmmc",
+  "nkti",
+  "phc",
+  "lcp",
+  "pcmc",
+  "poc",
+  "qcgh",
+  "rizal med",
+  "rmc",
+  "tpdh",
+  "ospar",
+  "asian hospital",
+  "vrp",
+  "tala hospital",
+  "uerm",
+];
+
+function escapeRegexLiteral(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const HOSPITAL_ALIAS_PATTERN = new RegExp(
+  String.raw`\b(?:${HOSPITAL_ALIASES.map(escapeRegexLiteral).join("|")})\b`,
+  "gi",
+);
+
+const HOSPITAL_NAMED_PATTERN =
+  /\b(?:[A-Z][A-Za-z0-9'.-]*(?:\s+[A-Z][A-Za-z0-9'.-]*){0,8}\s+(?:Hospital|Medical Center|General Hospital|District Hospital|City Hospital|Heart Center|Lung Center|Orthopedic Center|Children(?:'s)? Hospital|Kidney and Transplant Institute)|Ospital ng\s+[A-Z][A-Za-z0-9'.-]*(?:\s+[A-Za-z0-9'.-]+){0,5})\b/g;
 const NAME_PATTERN = /\b(?:ako si|my name is|name ko si)\s+[a-z][a-z\s'-]{1,30}\b/gi;
 const FULL_NAME_PATTERN =
   /\b([A-Z][a-z]+(?:[-'][A-Z][a-z]+)?\s+[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?)\b/g;
@@ -463,6 +523,13 @@ function hasWeaponLinkedThreat(text: string): boolean {
   return VIOLENT_STEM_PATTERN.test(text) && WEAPON_PATTERN.test(text);
 }
 
+function containsSpecificHospitalLocation(text: string): boolean {
+  return (
+    containsPattern(text, HOSPITAL_ALIAS_PATTERN) ||
+    containsPattern(text, HOSPITAL_NAMED_PATTERN)
+  );
+}
+
 function redactMarkerTriggeredNames(text: string, replacement: string): string {
   return text.replace(MARKER_TRIGGER_PATTERN, (match, name: string) =>
     match.replace(name, replacement),
@@ -559,7 +626,7 @@ export const checkSafety = (
     };
   }
 
-  if (containsPattern(text, HOSPITAL_LOCATION_PATTERN)) {
+  if (containsSpecificHospitalLocation(text)) {
     return {
       isSafe: false,
       reason: "pii",
@@ -581,10 +648,8 @@ export const scrubPII = (text: string): string => {
     sanitized = sanitized.replaceAll(PHONE_PATTERN, "[phone removed]");
     sanitized = sanitized.replaceAll(EMAIL_PATTERN, "[email removed]");
     sanitized = sanitized.replaceAll(SOCIAL_PATTERN, "[social link removed]");
-    sanitized = sanitized.replaceAll(
-      HOSPITAL_LOCATION_PATTERN,
-      "[location generalized]",
-    );
+    sanitized = sanitized.replaceAll(HOSPITAL_NAMED_PATTERN, "[location generalized]");
+    sanitized = sanitized.replaceAll(HOSPITAL_ALIAS_PATTERN, "[location generalized]");
     sanitized = redactMarkerTriggeredNames(sanitized, "[name removed]");
     sanitized = redactSurnameMatches(sanitized, "[name removed]");
     sanitized = redactLikelyFullNames(sanitized, "[name removed]");
@@ -650,10 +715,7 @@ export function runGuardian(rawMessage: string): GuardianResult {
   const hasPhone = containsPattern(sanitizedMessage, PHONE_PATTERN);
   const hasEmail = containsPattern(sanitizedMessage, EMAIL_PATTERN);
   const hasSocial = containsPattern(sanitizedMessage, SOCIAL_PATTERN);
-  const hasHospitalLocation = containsPattern(
-    sanitizedMessage,
-    HOSPITAL_LOCATION_PATTERN,
-  );
+  const hasHospitalLocation = containsSpecificHospitalLocation(sanitizedMessage);
 
   if (hasPhone || hasEmail || hasSocial || hasHospitalLocation) {
     sanitizedMessage = scrubPII(sanitizedMessage);
