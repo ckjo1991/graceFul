@@ -95,7 +95,7 @@ function checkEntry(text: string, lower: string, entry: CompiledEntry): string |
  * crisis > violent_intent > profanity
  *
  * @param text     Raw user input
- * @param langHint Optional BCP-47 language code ("tl", "ceb", "ilo", "en")
+ * @param langHint Optional BCP-47 language code ("en", "tl", "ceb", "ilo", "hil", "es")
  *                 If omitted, all languages are checked.
  */
 export function checkLexicon(text: string, langHint?: string): LexiconMatch {

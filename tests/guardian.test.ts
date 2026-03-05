@@ -18,6 +18,10 @@ test("validateMessageLength enforces minimum and maximum lengths", () => {
 
 test("checkCrisis flags crisis language", () => {
   assert.equal(checkCrisis("I feel hopeless and want to end it all."), true);
+  assert.equal(
+    checkCrisis("I am tired of this life and don't want to push with it."),
+    true,
+  );
   assert.equal(checkCrisis("Please pray for wisdom at work this week."), false);
   assert.equal(
     checkCrisis("Please remove this fear asap and help me rest in Your peace."),
@@ -25,6 +29,18 @@ test("checkCrisis flags crisis language", () => {
   );
   assert.equal(
     checkCrisis("Lord, remove me asap because I can't go on anymore."),
+    true,
+  );
+  assert.equal(
+    checkCrisis("Kapoy na ko sa kinabuhi ug dili na ko mopadayon."),
+    true,
+  );
+  assert.equal(
+    checkCrisis("Kapoy na gid ko sa kabuhi kag indi na ko magpadayon."),
+    true,
+  );
+  assert.equal(
+    checkCrisis("Estoy cansado de esta vida y no quiero seguir."),
     true,
   );
 });

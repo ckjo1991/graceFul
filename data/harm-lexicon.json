@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "description": "GraceFul harm lexicon. Three signal types per language: violent_intent (wishing harm on others), crisis (self-harm, suicidal ideation, emotional exhaustion, implied crisis), profanity (offensive language). Used as Gate 1 before regex and LLM checks. All exact entries lowercase. Patterns are case-insensitive.",
   "languages": {
     "en": {
@@ -138,7 +138,27 @@
           "numb to everything",
           "nothing to live for",
           "no will to live",
-          "can't keep going"
+          "can't keep going",
+          "i am tired of this life and don't want to push with it",
+          "i'm tired of this life and don't want to push with it",
+          "tired of this life and don't want to push with it",
+          "i am tired of life and don't want to continue",
+          "i don't want to push through life anymore",
+          "i don't want to keep pushing anymore",
+          "i don't want to continue living",
+          "i am done trying to stay alive",
+          "i want out of life",
+          "i want out",
+          "i can't push through this life",
+          "i'm exhausted by life and want it to stop",
+          "i don't see a reason to keep living",
+          "i feel like giving up on life completely",
+          "i don't want to wake up tomorrow",
+          "i'm ready to disappear",
+          "i don't want to exist anymore",
+          "this life is too much for me",
+          "i'm done with this life",
+          "i want to stop existing"
         ],
         "patterns": [
           "i (just )?(want|wish|need) (it|this|everything|all of this|life) to (stop|end|be over|go away)",
@@ -157,7 +177,17 @@
           "(tired|exhausted) (of )?(waking up|existing|being alive|fighting|surviving|living)",
           "dread (waking up|existing|living|every day|each day)",
           "(dead|empty|hollow|numb|broken) (inside|within|to the core)",
-          "can't (keep going|hold on|fight anymore|survive|do this)"
+          "can't (keep going|hold on|fight anymore|survive|do this)",
+          "tired of (this|my) life( and)?( i)? (don't|do not) want to (push|continue|go on|carry on|move forward)( with (it|this|life))?",
+          "(don't|do not) want to (push|continue|go on|carry on|move forward)( with (it|this|life))?( anymore)?",
+          "i( am|'m)?( so)? (tired|exhausted|drained) of (this|my) life",
+          "i want out( of (this|my)? life)?",
+          "life is too much( for me)?",
+          "i (can't|cannot) push (through|on) (this|life|anymore)",
+          "not sure i can keep living",
+          "don't want to keep trying anymore",
+          "i am tired of living and don't want to continue",
+          "i don't want to keep going with life"
         ]
       },
       "profanity": {
@@ -266,7 +296,27 @@
           "wala na akong maibigay",
           "masakit na ang lahat",
           "hindi ko na kayang tiisin",
-          "ubos na ang lakas ko"
+          "ubos na ang lakas ko",
+          "pagod na ako sa buhay at ayoko nang magpatuloy",
+          "pagod na ako sa buhay at ayoko na",
+          "pagod na pagod na ako sa buhay",
+          "hindi ko na gustong mabuhay",
+          "ayoko nang ituloy pa ang buhay",
+          "ayoko nang ipagpatuloy ang buhay",
+          "ayoko nang lumaban sa buhay",
+          "ayoko nang itulak pa to",
+          "hindi ko na kayang itulak pa",
+          "di ko na kayang ituloy pa",
+          "suko na ako sa buhay",
+          "suko na ako sa lahat ng to",
+          "pagod na ako mabuhay",
+          "gusto ko nang mawala sa mundo",
+          "ayoko nang gumising bukas",
+          "parang ayoko na mabuhay",
+          "gusto ko na lang matapos ang buhay ko",
+          "wala na akong lakas para mabuhay",
+          "hindi ko na kaya ang buhay",
+          "ayoko na sa buhay na to"
         ],
         "patterns": [
           "(ayoko|ayaw ko) na (talagang )?(mabuhay|magpatuloy|lumaban|umasa|gumising)",
@@ -280,7 +330,17 @@
           "(walang|wala nang) (nagmamalasakit|nagmamahal|naghihintay) (sa akin|para sa akin)?",
           "pabigat (lang |na )?ako (sa lahat|sa mundo|sa kanila)?",
           "pagod (na akong|na ko) (lumaban|sumubok|umasa|magmahal sa sarili)",
-          "(ubos|wala) na (ang )?(lakas|pag-asa|lahat) (ko|niya|nila)?"
+          "(ubos|wala) na (ang )?(lakas|pag-asa|lahat) (ko|niya|nila)?",
+          "pagod na (ako|ko).{0,20}(buhay|mabuhay).{0,20}(ayoko|ayaw ko) na (magpatuloy|ituloy|ipagpatuloy|lumaban)",
+          "(hindi|di) ko na (kaya|kayang) (ituloy|ipagpatuloy|itulak|dalhin) (pa )?(to|ito|ang buhay)",
+          "(ayoko|ayaw ko) na (ituloy|ipagpatuloy|itulak|dalhin) (ang )?(buhay|lahat)",
+          "suko na (ako|ko) (sa )?(buhay|lahat|mundo)",
+          "pagod na (ako|ko) (mabuhay|sa buhay)",
+          "(ayoko|ayaw ko) nang? (gumising|magising) (bukas|pa)",
+          "gusto ko na lang (mawala|maglaho|matapos)",
+          "wala na (akong|kong) lakas para (mabuhay|magpatuloy)",
+          "hindi ko na kaya ang buhay na to",
+          "pagod na ko sa buhay at ayoko na"
         ]
       },
       "profanity": {
@@ -384,7 +444,27 @@
           "kapoy na akong makig-away",
           "wala nay mahimo",
           "sakit na ang tanan",
-          "dili ko na matiis"
+          "dili ko na matiis",
+          "kapoy na ko sa kinabuhi ug dili na ko mopadayon",
+          "kapoy na kaayo ko sa kinabuhi",
+          "dili na ko ganahan mabuhi",
+          "dili na ko gusto mopadayon sa kinabuhi",
+          "di na ko kaya ipadayon",
+          "dili na ko kaya itulod pa",
+          "suko na ko sa kinabuhi",
+          "suko na ko sa tanan",
+          "kapoy na ko mabuhi",
+          "gusto na lang ko mawala",
+          "dili na ko gusto momata ugma",
+          "murag dili na ko gusto mabuhi",
+          "gusto na nako mahuman ang tanan",
+          "wala na koy kusog para mabuhi",
+          "dili na nako kaya ang kinabuhi",
+          "kapoy na kaayo ko sa tanan",
+          "gusto ko nga mohunong na tanan",
+          "gusto ko mopahulay hangtod sa wala na",
+          "wala nay paglaum para nako",
+          "di na ko ganahan magpadayon"
         ],
         "patterns": [
           "(dili|ayaw) (na )?ko (gusto )?(mabuhi|mopadayon|molaban|moasa|makig-away sa kinabuhi)",
@@ -397,7 +477,17 @@
           "surrender (na|na ko) (sa tanan|sa kinabuhi|na)?",
           "(walay|wala nay) (nagtagad|nagmahal|nagpakabana) (nako|para nako)?",
           "pabug-at (lang |na )?ko (sa tanan|sa kalibutan|kanila)?",
-          "kapoy (na akong|na ko) (molaban|mopaningkamot|moasa|magmahal sa kaugalingon)"
+          "kapoy (na akong|na ko) (molaban|mopaningkamot|moasa|magmahal sa kaugalingon)",
+          "kapoy na (ko|kaayo ko).{0,20}(kinabuhi|mabuhi).{0,20}(dili|di) na (ko )?(mopadayon|magpadayon)",
+          "(dili|di) na (ko|nako) (kaya|madala|maagwanta) (mopadayon|magpadayon|itulod|ipadayon)",
+          "(dili|di) na (ko )?(ganahan|gusto) (mabuhi|mopadayon)",
+          "suko na (ko|ako) (sa )?(kinabuhi|tanan)",
+          "gusto na lang (ko|nako) (mawala|maglaho|mahuman ang tanan)",
+          "wala na koy kusog para (mabuhi|mopadayon)",
+          "(dili|di) na (ko )?gusto (momata|mata) (ugma|pa)",
+          "wala nay paglaum para nako",
+          "kapoy na ko sa kinabuhi ug dili na ko",
+          "murag dili na nako kaya ang kinabuhi"
         ]
       },
       "profanity": {
@@ -501,6 +591,164 @@
           "n+a+k+u+r+a+p+a+y+",
           "k+i+n+a+m+"
         ]
+      }
+    },
+    "hil": {
+      "violent_intent": {
+        "exact": [
+          "matay ka",
+          "matay ka koma",
+          "koma matay ka",
+          "mapukaw ka",
+          "koma mapukaw ka",
+          "koma matay isuna",
+          "koma mapukaw isuna",
+          "patayem",
+          "koma masakitan ka",
+          "koma masakitan isuna",
+          "haan ka met lang maikkan ti biag",
+          "koma adda disgrasianto",
+          "koma madadael ka",
+          "koma madadael isuna",
+          "gusto ko nga masakitan isuna",
+          "kayatko ti masakitan isuna",
+          "koma mapukaw isuna iti lubong",
+          "koma parusaren isuna ti dios",
+          "koma agbayad isuna",
+          "saan nga napapaay nga adda isuna"
+        ],
+        "patterns": [
+          "koma (matay|mapukaw|masakitan|mapudot|madadael|parusaren|malipatan) (ka|isuna|isuda|kayo)",
+          "(patayen|sakiten|idissua|ikkaten|parusaren) (ta|tayo|isuna|ka)",
+          "kayat (ko|tayo|da) nga (matay|masakitan|mapukaw|madadael|parusaren) (isuna|ka|isuda)",
+          "mapukaw (ka|isuna|isuda) (iti )?lubong",
+          "haan (ka|isuna|isuda) (met lang )?maikkan ti biag",
+          "koma (parusaren|gantayan) (isuna|ka|isuda) (ti dios|ti karma)?"
+        ]
+      },
+      "crisis": {
+        "exact": [
+          "ayak metten ti biagko",
+          "nalusan ak iti biag",
+          "nalusan ak iti amin",
+          "haan ko metten kaya",
+          "haan ko metten kayat ti agtalinaed",
+          "wada metten ti pagayatanko iti biag",
+          "makapsut ak",
+          "awan ti makunak",
+          "awan ti pagimbagan ko",
+          "paburden ko laeng",
+          "nasaysayaat no awan ak metten",
+          "awan ti agayat kaniak",
+          "awan ti mangserserbi kaniak",
+          "kayatko nga matay",
+          "awan ti paglaumen ko",
+          "awan metten ti rasonko",
+          "nakapungtotko iti biagko",
+          "nalusan ak iti panagbiagko",
+          "haan ko metten kayat ti agtultuloy",
+          "kapoy na gid ko sa kabuhi kag indi na ko magpadayon",
+          "kapoy na ko sa kabuhi",
+          "indi na ko gusto mabuhi",
+          "indi na ko gusto magpadayon",
+          "indi ko na kaya ipadayon",
+          "suko na ko sa kabuhi",
+          "suko na ko sa tanan",
+          "kapoy na ko magkabuhi",
+          "gusto ko na lang madula",
+          "indi na ko gusto magbugtaw buwas",
+          "daw indi na ko gusto mabuhi",
+          "gusto ko na lang matapos ini tanan",
+          "wala na ko sang kusog para mabuhi",
+          "indi ko na kaya ang kabuhi",
+          "kapoy na gid ko sa tanan",
+          "gusto ko nga mag untat na tanan",
+          "wala na paglaum para sa akon",
+          "indi na ko kabalo magpadayon",
+          "gusto ko na lang maglaho",
+          "indi ko na gid kaya"
+        ],
+        "patterns": [
+          "(ayak|saanak nak) (metten )?(ti biag|agtalinaed|agtuloy|agbiag)",
+          "nalusan (ak|tayo) (iti )?(biag|amin|lubong|tudo|panagbiag)",
+          "haan (ko) (metten )?(kaya|kayat|malabsan|maibtur|kayanek)",
+          "awan (ti |metten )?(pagayatan|rason|paglaum|pagimbagan) (ko |kaniak )?(iti biag|metten)?",
+          "(nasaysayaat|nasayaat) (no |kadi )?awan (ak|ka|isuna) (metten)?",
+          "kayat (ko|tayo) nga (matay|umay ti iggem|mapukaw|awan metten)",
+          "paburden (ko laeng|tayo laeng) (amin|iti tudo)?",
+          "nalusan (ak|ko) (iti )?(panagbiag|panagtalinaed|pagayatko)",
+          "kapoy na (gid )?ko.{0,20}(kabuhi|magkabuhi).{0,20}(indi) na (ko )?(magpadayon|mabuhi)",
+          "indi na (ko|ako) (gusto )?(mabuhi|magpadayon)",
+          "indi (ko|ako) na (kaya|kakayanon) (ipadayon|itukmod|dal-on)",
+          "suko na (ko|ako) (sa )?(kabuhi|tanan)",
+          "gusto ko na lang (madula|maglaho|matapos)",
+          "wala na (ko|ako) sang kusog para (mabuhi|magpadayon)",
+          "indi na ko gusto magbugtaw (buwas|pa)",
+          "wala na paglaum para sa akon",
+          "kapoy na gid ko sa kabuhi",
+          "daw indi na ko gusto magpadayon"
+        ]
+      },
+      "profanity": {
+        "exact": [
+          "nakurapay",
+          "nakalagting",
+          "agkamang ka",
+          "ulok",
+          "balbalen ka",
+          "kinam",
+          "puta"
+        ],
+        "patterns": [
+          "n+a+k+u+r+a+p+a+y+",
+          "k+i+n+a+m+"
+        ]
+      }
+    },
+    "es": {
+      "violent_intent": {
+        "exact": [],
+        "patterns": []
+      },
+      "crisis": {
+        "exact": [
+          "estoy cansado de esta vida y no quiero seguir",
+          "estoy cansada de esta vida y no quiero seguir",
+          "estoy cansado de la vida y no quiero continuar",
+          "estoy cansada de la vida y no quiero continuar",
+          "no quiero seguir con la vida",
+          "no quiero seguir viviendo",
+          "ya no quiero vivir",
+          "quiero que todo termine",
+          "quiero que todo se detenga",
+          "quiero desaparecer",
+          "no quiero existir",
+          "estoy harto de vivir",
+          "estoy harta de vivir",
+          "estoy agotado de vivir",
+          "estoy agotada de vivir",
+          "no puedo seguir con esto",
+          "no puedo continuar con la vida",
+          "me quiero rendir con la vida",
+          "no tengo fuerzas para vivir",
+          "la vida ya no tiene sentido"
+        ],
+        "patterns": [
+          "estoy (cansad[oa]|agotad[oa]|hart[oa]) de (esta )?vida( y )?no quiero (seguir|continuar)",
+          "no quiero (seguir|continuar) (con )?(la vida|viviendo|asi)",
+          "ya no quiero vivir",
+          "quiero que (todo|esto|la vida) (termine|se detenga|pare)",
+          "no puedo (seguir|continuar) (con esto|con la vida|asi)",
+          "no tengo (fuerzas|ganas|motivos) para vivir",
+          "la vida (ya )?no tiene sentido",
+          "quiero desaparecer",
+          "no quiero existir",
+          "me quiero rendir( con la vida)?"
+        ]
+      },
+      "profanity": {
+        "exact": [],
+        "patterns": []
       }
     }
   },
