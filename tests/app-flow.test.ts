@@ -124,6 +124,13 @@ test("message submission routes unsafe content into the warning step", () => {
   );
   assert.equal(profanityResult.nextStep, "warning");
   assert.equal(profanityResult.warningReason, "profanity");
+
+  const hospitalResult = submitMessage(
+    createInitialSelection(),
+    "Please pray for my father who is currently in St Lukes tonight.",
+  );
+  assert.equal(hospitalResult.nextStep, "warning");
+  assert.equal(hospitalResult.warningReason, "pii");
 });
 
 test("prayer submissions append a prayer and increment only the targeted post", () => {

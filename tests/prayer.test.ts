@@ -41,6 +41,16 @@ test("validatePrayerSubmission rejects PII", () => {
   );
 });
 
+test("validatePrayerSubmission rejects hospital location aliases as PII", () => {
+  assert.deepEqual(
+    validatePrayerSubmission("Lord, please comfort him tonight at St Lukes."),
+    {
+      allowed: false,
+      reason: "pii",
+    },
+  );
+});
+
 test("validatePrayerSubmission allows safe prayers and trims whitespace", () => {
   const result = validatePrayerSubmission(
     "  Lord, please give this person peace, wisdom, and steady strength today.  ",

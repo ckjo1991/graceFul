@@ -53,6 +53,18 @@ test("checkSafety flags profanity and PII", () => {
     reason: "pii",
     foundDetail: "personal contact info",
   });
+
+  assert.deepEqual(checkSafety("Please pray for him at St Lukes tonight."), {
+    isSafe: false,
+    reason: "pii",
+    foundDetail: "hospital/location",
+  });
+
+  assert.deepEqual(checkSafety("My dad is admitted at TMC pasig right now."), {
+    isSafe: false,
+    reason: "pii",
+    foundDetail: "hospital/location",
+  });
 });
 
 test("runGuardian sanitizes PII while allowing safe intent", () => {
@@ -64,6 +76,19 @@ test("runGuardian sanitizes PII while allowing safe intent", () => {
   assert.match(result.sanitizedMessage, /\[name removed\]/);
   assert.match(result.sanitizedMessage, /\[phone removed\]/);
   assert.match(result.sanitizedMessage, /\[redacted location\]/);
+});
+
+test("runGuardian sanitizes formatted phone numbers and short social links", () => {
+  const result = runGuardian(
+    "Please message me at 0917 555 1234 or +63 917-555-1234 and fb.me/john_doe",
+  );
+
+  assert.equal(result.outcome, "sanitize");
+  assert.equal(result.sanitizedMessage.includes("0917 555 1234"), false);
+  assert.equal(result.sanitizedMessage.includes("+63 917-555-1234"), false);
+  assert.equal(result.sanitizedMessage.includes("fb.me/john_doe"), false);
+  assert.match(result.sanitizedMessage, /\[phone removed\]/);
+  assert.match(result.sanitizedMessage, /\[social link removed\]/);
 });
 
 test("runGuardian blocks malicious intent and redirects crisis content", () => {

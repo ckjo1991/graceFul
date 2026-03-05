@@ -169,7 +169,7 @@ export const PHILIPPINE_RESOURCES = {
 const PHONE_PATTERN = /\b(?:\+?63[-\s]?|0)9\d{2}[-\s]?\d{3}[-\s]?\d{4}\b/g;
 const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const SOCIAL_PATTERN =
-  /(@[a-zA-Z0-9._]+)|(facebook\.com\/[a-zA-Z0-9._]+)|(fb\.me\/[a-zA-Z0-9._]+)/gi;
+  /(@[a-zA-Z0-9._]+)|(facebook\.com\/[a-zA-Z0-9._]+)|(fb\.me\/[a-zA-Z0-9._]+)|(twitter\.com\/[a-zA-Z0-9._]+)/gi;
 const LOCATION_PATTERN =
   /\b(?:street|st\.|barangay|brgy\.|avenue|ave\.|city hall|subdivision)\b/gi;
 const HOSPITAL_LOCATION_PATTERN =
@@ -559,6 +559,14 @@ export const checkSafety = (
     };
   }
 
+  if (containsPattern(text, HOSPITAL_LOCATION_PATTERN)) {
+    return {
+      isSafe: false,
+      reason: "pii",
+      foundDetail: "hospital/location",
+    };
+  }
+
   if (containsLikelyFullName(text)) {
     return { isSafe: false, reason: "pii", foundDetail: "full name" };
   }
@@ -569,14 +577,10 @@ export const checkSafety = (
 export const scrubPII = (text: string): string => {
   let sanitized = text;
 
-  const phonePattern = /(\+?63|0)9\d{9}/g;
-  const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const socialPattern = /(@|facebook\.com\/|twitter\.com\/)[a-zA-Z0-9._-]+/gi;
-
   try {
-    sanitized = sanitized.replaceAll(phonePattern, "[phone removed]");
-    sanitized = sanitized.replaceAll(emailPattern, "[email removed]");
-    sanitized = sanitized.replaceAll(socialPattern, "[social link removed]");
+    sanitized = sanitized.replaceAll(PHONE_PATTERN, "[phone removed]");
+    sanitized = sanitized.replaceAll(EMAIL_PATTERN, "[email removed]");
+    sanitized = sanitized.replaceAll(SOCIAL_PATTERN, "[social link removed]");
     sanitized = sanitized.replaceAll(
       HOSPITAL_LOCATION_PATTERN,
       "[location generalized]",

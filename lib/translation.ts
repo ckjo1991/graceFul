@@ -659,7 +659,7 @@ const EN_UI_COPY: UiCopy = {
     warningMalice:
       "Guardian detected harmful intent toward someone. Prayers should come from a place of compassion, not wishing ill. Please rewrite with genuine care for this person.",
     warningPii:
-      "Guardian found personal details (phone, email, name, or location). Remove these to protect privacy before submitting your prayer.",
+      "Guardian found personal details (phone, email, name, social handle, or location like a hospital name). Remove these to protect privacy before submitting your prayer.",
   },
   prayerList: {
     empty: "No prayers have been shared yet.",
@@ -668,7 +668,7 @@ const EN_UI_COPY: UiCopy = {
   guardianWarning: {
     piiTitle: "Protecting your peace",
     piiMessage:
-      "The Guardian noticed personal details, like a full name, phone number, email, or social handle, in your message. To keep you anonymous and safe, please remove those details before posting.",
+      "The Guardian noticed personal details, like a full name, phone number, email, social handle, or location reference such as a hospital name, in your message. To keep you anonymous and safe, please remove those details before posting.",
     maliceTitle: "Let's keep it GraceFul",
     maliceMessage:
       "GraceFul is a space for healing and peace. Some words in your message do not align with the tone we protect here. Please try rephrasing it with kindness.",
@@ -793,7 +793,7 @@ const TL_UI_COPY: UiCopy = {
     warningMalice:
       "Nakakita ang Guardian ng mapanakit na intensyon laban sa iba. Ang panalangin ay dapat magmula sa habag, hindi sa paghiling ng masama. Pakisulat itong muli nang may tunay na malasakit.",
     warningPii:
-      "Nakakita ang Guardian ng personal na detalye (telepono, email, pangalan, o lokasyon). Alisin ang mga ito para maprotektahan ang privacy bago isumite ang panalangin.",
+      "Nakakita ang Guardian ng personal na detalye (telepono, email, pangalan, social handle, o lokasyon tulad ng pangalan ng ospital). Alisin ang mga ito para maprotektahan ang privacy bago isumite ang panalangin.",
   },
   prayerList: {
     empty: "Wala pang naibabahaging mga panalangin.",
@@ -802,7 +802,7 @@ const TL_UI_COPY: UiCopy = {
   guardianWarning: {
     piiTitle: "Pinoprotektahan ang iyong kapayapaan",
     piiMessage:
-      "May napansin ang Guardian na personal na detalye, gaya ng buong pangalan, numero ng telepono, email, o social handle, sa iyong mensahe. Para manatili kang anonymous at ligtas, pakialis ang mga detalyeng ito bago mag-post.",
+      "May napansin ang Guardian na personal na detalye, gaya ng buong pangalan, numero ng telepono, email, social handle, o reference sa lokasyon tulad ng pangalan ng ospital, sa iyong mensahe. Para manatili kang anonymous at ligtas, pakialis ang mga detalyeng ito bago mag-post.",
     maliceTitle: "Panatilihin nating GraceFul",
     maliceMessage:
       "Ang GraceFul ay lugar para sa paghilom at kapayapaan. May ilang salita sa iyong mensahe na hindi tugma sa tonong pinangangalagaan natin dito. Pakisubukang isulat muli ito nang may kabutihan.",
@@ -926,7 +926,7 @@ const CEB_UI_COPY: UiCopy = {
     warningMalice:
       "Nakamatikod ang Guardian og dautang tinguha batok sa laing tawo. Ang pag-ampo dapat gikan sa kalooy, dili sa paghandum og dautan. Palihug isulat kini pag-usab uban sa tinuod nga pag-atiman.",
     warningPii:
-      "Nakamatikod ang Guardian og personal nga detalye (telepono, email, ngalan, o lokasyon). Tangtanga kini aron maprotektahan ang privacy sa dili pa isumite ang imong pag-ampo.",
+      "Nakamatikod ang Guardian og personal nga detalye (telepono, email, ngalan, social handle, o lokasyon sama sa ngalan sa ospital). Tangtanga kini aron maprotektahan ang privacy sa dili pa isumite ang imong pag-ampo.",
   },
   prayerList: {
     empty: "Wala pay naambit nga mga pag-ampo.",
@@ -935,7 +935,7 @@ const CEB_UI_COPY: UiCopy = {
   guardianWarning: {
     piiTitle: "Pagpanalipod sa imong kalinaw",
     piiMessage:
-      "Namatikdan sa Guardian ang personal nga detalye sama sa tibuok nga ngalan, numero sa telepono, email, o social handle sa imong mensahe. Aron magpabilin kang anonymous ug luwas, palihug tangtanga kini sa dili pa mag-post.",
+      "Namatikdan sa Guardian ang personal nga detalye sama sa tibuok nga ngalan, numero sa telepono, email, social handle, o reference sa lokasyon sama sa ngalan sa ospital sa imong mensahe. Aron magpabilin kang anonymous ug luwas, palihug tangtanga kini sa dili pa mag-post.",
     maliceTitle: "Padayon ta nga GraceFul",
     maliceMessage:
       "Ang GraceFul usa ka luna alang sa kaayohan ug kalinaw. Adunay mga pulong sa imong mensahe nga dili mohaom sa atong gipanalipdan nga tono dinhi. Palihug sulayi og usab sa mas malinawon nga paagi.",
