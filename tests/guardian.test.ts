@@ -76,6 +76,21 @@ test("runGuardian blocks malicious intent and redirects crisis content", () => {
   assert.deepEqual(crisis.reasons, ["Potential crisis language detected."]);
 });
 
+test("runGuardian generalizes hospital aliases in normal posting flow", () => {
+  const samples = [
+    "Please pray for him at TMC pasig tonight.",
+    "She was admitted sa NCH yesterday.",
+    "Nasa TMC siya ngayon.",
+    "Dad is in St lukes for checkup.",
+  ];
+
+  for (const sample of samples) {
+    const result = runGuardian(sample);
+    assert.equal(result.outcome, "sanitize");
+    assert.match(result.sanitizedMessage, /\[location generalized\]/);
+  }
+});
+
 test("canPost enforces cooldown windows", () => {
   assert.deepEqual(canPost(null), { allowed: true, waitTime: 0 });
   assert.equal(canPost(Date.now() - 10_000).allowed, false);
