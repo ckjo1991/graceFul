@@ -353,7 +353,7 @@ export const scrubPII = (text: string): string => {
   const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   const socialPattern = /(@|facebook\.com\/|twitter\.com\/)[a-zA-Z0-9._-]+/gi;
   const locationPattern =
-    /\b(?:St\.|Hospital|Clinic|Avenue|Brgy\.|Medical Center|Medical City|Ospital ng|Cardinal|Philippine General|St\. Luke|Makati Medical|Asian Hospital)\b[^.!?\n]*/gi;
+    /\b(?:[A-Za-z0-9'.-]+(?:\s+[A-Za-z0-9'.-]+){0,8}\s+(?:Hospital|Medical Center|General Hospital|District Hospital|City Hospital|Heart Center|Lung Center|Orthopedic Center|Children(?:'s)? Hospital|Kidney and Transplant Institute)|Ospital ng\s+[A-Za-z0-9'.-]+(?:\s+[A-Za-z0-9'.-]+){0,4}|(?:The\s+)?Medical City|St\.?\s*Luke'?s(?:\s+Medical Center)?(?:\s*-\s*(?:Quezon City|Global City))?|Makati Medical(?: Center)?|Asian Hospital(?: and Medical Center)?|Cardinal Santos Medical Center|Philippine General Hospital|PGH|USTH?|C(?:hinese\s+General|GH)MC|MMC|EAMC|QMMC|NKTI|PHC|LCP|PCMC|POC|NCH|DLSMC|FDMMC|CHMC|NDH|QCGH|OSMAK|PDMC|RMC|TPDH|TCGH|SJDH|UPHMC|OSPAR|UPHDMC|LPGSTC|PJPII|CSMC|SJMC|FUMC|VMC|SLRGH|MCMC|DJNRMH|OSMALABON|OSMUNTINLUPA|JRRMMC|DJFMH|DOCMMC|HIJ|MJH|MCGH)\b[^.!?\n]*/gi;
 
   try {
     sanitized = sanitized.replaceAll(phonePattern, "[phone removed]");
