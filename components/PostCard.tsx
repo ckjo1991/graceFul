@@ -44,6 +44,29 @@ function getPostLabel(emotion: string, category: string): string {
   return cat;
 }
 
+function getHeartedPostIds(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem("graceful_hearted_posts");
+    const parsed = JSON.parse(raw ?? "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function markPostHearted(postId: string): void {
+  try {
+    const existing = getHeartedPostIds();
+    existing.add(postId);
+    window.localStorage.setItem(
+      "graceful_hearted_posts",
+      JSON.stringify(Array.from(existing)),
+    );
+  } catch {
+    // localStorage unavailable — silent fail, optimistic state still works
+  }
+}
+
 export default function PostCard({
   post,
   onPray,
@@ -100,7 +123,10 @@ export default function PostCard({
   }, [post.id]);
 
   React.useEffect(() => {
-    setHasHearted(false);
+    const hearted = typeof window !== "undefined"
+      ? getHeartedPostIds().has(post.id)
+      : false;
+    setHasHearted(hearted);
     setHeartCount(post.hearts);
     setIsHeartPending(false);
   }, [post.id]);
@@ -152,6 +178,7 @@ export default function PostCard({
     void (async () => {
       try {
         await updateHearts(post.id, previousCount + 1);
+        markPostHearted(post.id);
       } catch {
         setHasHearted(previousHearted);
         setHeartCount(previousCount);
