@@ -67,6 +67,19 @@ function markPostHearted(postId: string): void {
   }
 }
 
+function unmarkPostHearted(postId: string): void {
+  try {
+    const existing = getHeartedPostIds();
+    existing.delete(postId);
+    window.localStorage.setItem(
+      "graceful_hearted_posts",
+      JSON.stringify(Array.from(existing)),
+    );
+  } catch {
+    // localStorage unavailable — silent fail, optimistic state still works
+  }
+}
+
 export default function PostCard({
   post,
   onPray,
@@ -129,7 +142,7 @@ export default function PostCard({
     setHasHearted(hearted);
     setHeartCount(post.hearts);
     setIsHeartPending(false);
-  }, [post.id]);
+  }, [post.id, post.hearts]);
 
   React.useEffect(() => {
     if (!isReportMenuOpen) {
@@ -175,11 +188,12 @@ export default function PostCard({
     setHasHearted(true);
     setHeartCount((currentCount) => currentCount + 1);
     setIsHeartPending(true);
+    markPostHearted(post.id);
     void (async () => {
       try {
         await updateHearts(post.id, previousCount + 1);
-        markPostHearted(post.id);
       } catch {
+        unmarkPostHearted(post.id);
         setHasHearted(previousHearted);
         setHeartCount(previousCount);
       } finally {
