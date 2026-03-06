@@ -4,10 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import {
+  fetchAbuseEvents,
   fetchPrayerReportCounts,
   fetchReportCounts,
   fetchReportedPosts,
   fetchReportedPrayers,
+  type AbuseEventRecord,
   type ModerationReportedPost,
   type ModerationReportedPrayer,
 } from "@/lib/db";
@@ -39,6 +41,18 @@ function formatAdminTimestamp(dateInput: string): string {
 
 function truncateText(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
+}
+
+function maskDeviceId(deviceId: string): string {
+  if (!deviceId || deviceId === "unknown") {
+    return "unknown";
+  }
+
+  if (deviceId.length <= 10) {
+    return deviceId;
+  }
+
+  return `${deviceId.slice(0, 6)}...${deviceId.slice(-4)}`;
 }
 
 function formatReasonSummary(
@@ -76,6 +90,7 @@ function AdminPageContent() {
   );
   const [reportedPosts, setReportedPosts] = useState<ModerationReportedPost[]>([]);
   const [reportedPrayers, setReportedPrayers] = useState<ModerationReportedPrayer[]>([]);
+  const [abuseEvents, setAbuseEvents] = useState<AbuseEventRecord[]>([]);
   const [isModerationLoading, setIsModerationLoading] = useState(false);
   const [moderationRefreshKey, setModerationRefreshKey] = useState(0);
   const key = searchParams.get("key");
@@ -146,6 +161,20 @@ function AdminPageContent() {
         if (isActive) {
           setReportedPrayers([]);
         }
+      }
+
+      try {
+        const latestAbuseEvents = await fetchAbuseEvents(120);
+
+        if (isActive) {
+          setAbuseEvents(latestAbuseEvents ?? []);
+        }
+      } catch (error) {
+        console.error("abuse_events query failed:", error);
+
+        if (isActive) {
+          setAbuseEvents([]);
+        }
       } finally {
         if (isActive) {
           setIsModerationLoading(false);
@@ -186,6 +215,33 @@ function AdminPageContent() {
       );
     });
   }, [reportedPosts, reportedPrayers]);
+
+  const abuseReasonSummary = useMemo(() => {
+    const reasonCounts = new Map<string, number>();
+
+    for (const event of abuseEvents) {
+      reasonCounts.set(event.reason, (reasonCounts.get(event.reason) ?? 0) + 1);
+    }
+
+    return [...reasonCounts.entries()]
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 6);
+  }, [abuseEvents]);
+
+  const abuseDeviceSummary = useMemo(() => {
+    const deviceCounts = new Map<string, number>();
+
+    for (const event of abuseEvents) {
+      const device = event.deviceId || "unknown";
+      deviceCounts.set(device, (deviceCounts.get(device) ?? 0) + 1);
+    }
+
+    return [...deviceCounts.entries()]
+      .map(([deviceId, count]) => ({ deviceId, count }))
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 6);
+  }, [abuseEvents]);
 
   const toggleExpandedPost = (postId: string) => {
     setExpandedPostIds((current) =>
@@ -340,7 +396,7 @@ function AdminPageContent() {
             </div>
           </>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {flaggedItems.length > 0 ? (
               flaggedItems.map((item) => (
                 <div
@@ -416,6 +472,64 @@ function AdminPageContent() {
                 No reported or flagged items.
               </div>
             )}
+
+            <div className="rounded-xl border border-[#d4e4cc] bg-white p-4">
+              <h2 className="text-sm font-semibold text-[#2c3a2e]">
+                Abuse attempts (blocked + auto-flagged)
+              </h2>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-[#e5efe0] p-3">
+                  <p className="text-xs font-medium text-[#6b7c6d]">Top reasons</p>
+                  <div className="mt-2 space-y-1 text-sm text-[#2c3a2e]">
+                    {abuseReasonSummary.length > 0 ? abuseReasonSummary.map((entry) => (
+                      <p key={entry.reason}>
+                        {entry.reason}: {entry.count}
+                      </p>
+                    )) : (
+                      <p className="text-[#6b7c6d]">No abuse events found.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-[#e5efe0] p-3">
+                  <p className="text-xs font-medium text-[#6b7c6d]">Top devices</p>
+                  <div className="mt-2 space-y-1 text-sm text-[#2c3a2e]">
+                    {abuseDeviceSummary.length > 0 ? abuseDeviceSummary.map((entry) => (
+                      <p key={entry.deviceId}>
+                        {maskDeviceId(entry.deviceId)}: {entry.count}
+                      </p>
+                    )) : (
+                      <p className="text-[#6b7c6d]">No abuse events found.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                {abuseEvents.slice(0, 20).map((event) => (
+                  <div
+                    key={event.id}
+                    className="rounded-lg border border-[#e5efe0] bg-[#f8faf7] p-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#6b7c6d]">
+                      <span className="rounded-full bg-[#edf5ea] px-2 py-0.5 text-[#2c3a2e]">
+                        {event.entityType}
+                      </span>
+                      <span>{event.reason}</span>
+                      <span>{formatAdminTimestamp(event.createdAt)}</span>
+                      <span>device {maskDeviceId(event.deviceId)}</span>
+                      {event.spamScore !== null ? <span>score {event.spamScore}</span> : null}
+                    </div>
+                    {event.preview ? (
+                      <p className="mt-2 text-sm text-[#2c3a2e]">
+                        {truncateText(event.preview, 120)}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

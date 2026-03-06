@@ -11,26 +11,26 @@ const SLIDES = [
   {
     emoji: "🌿",
     title: "Welcome to GraceFul",
-    body: "A quiet, safe space where you can share what's on your heart anonymously. Whether you're overflowing with gratitude or carrying something heavy, you are welcome here.",
+    body: "A quiet, protected space where you can share what's on your heart anonymously. Whether you're full of gratitude or carrying something heavy, you can begin here.",
     note: null,
   },
   {
     emoji: "🙏",
     title: "Share what's on your heart",
-    body: "Share moments of gratitude or struggles across areas like family, finances, work, and more. Your name is never shown. Just your heart.",
-    note: "You can choose whether your post can be translated for others while keeping your original wording available.",
+    body: "Share something you're grateful for or something you're struggling with across areas like family, work, health, finances, and more. Your name is never shown.",
+    note: "You can choose whether others can translate your post while your original words stay available.",
   },
   {
     emoji: "💛",
     title: "Pray and be prayed for",
-    body: "When someone shares, you can write a real, sincere prayer for them instead of just tapping a button. And when you share, others can lift you up in prayer too.",
-    note: "Prayers are written, personal, and visible to the community.",
+    body: "You can receive written prayers and quiet support from others here. And when someone shares, you can respond with a sincere prayer of your own.",
+    note: "GraceFul makes room for honesty, care, and encouragement without asking you to be seen first.",
   },
   {
     emoji: "🏘️",
     title: "This is not a replacement",
-    body: "GraceFul is a place to share, pray, and encourage, but it is not a substitute for real, physical community. Please stay connected to a local Connect Group, Ministry, or trusted person in your life.",
-    note: "Let this be a supplement to community, not a replacement for it.",
+    body: "GraceFul can be a first step toward connection, but it is not meant to replace the care of people who know you personally.",
+    note: "If you can, consider sharing your journey with a trusted person, Connect Group, or ministry too.",
   },
 ];
 

@@ -93,6 +93,7 @@ type UiCopy = {
     warningCrisis: string;
     warningProfanity: string;
     warningMalice: string;
+    warningSpam: string;
     warningPii: string;
   };
   prayerList: {
@@ -104,6 +105,8 @@ type UiCopy = {
     piiMessage: string;
     maliceTitle: string;
     maliceMessage: string;
+    spamTitle: string;
+    spamMessage: string;
     profanityTitle: string;
     profanityMessage: string;
     edit: string;
@@ -628,13 +631,13 @@ const EN_UI_COPY: UiCopy = {
   reviewStep: {
     title: "Review your message",
     description: "Take one last look before sharing with the community.",
-    initialFeedback: "Guardian is reviewing your message.",
+    initialFeedback: "We're taking a quiet look at your message.",
     fallbackFeedback:
-      "Guardian could not finish analysis, so the original draft is shown.",
+      "We couldn't finish the review, so your original words are shown.",
     reviewing: "Reviewing your message...",
     back: "Back",
     share: "Share Anonymously",
-    checking: "Checking intent...",
+    checking: "Checking that your message fits this space...",
   },
   postCard: {
     pray: "Pray for this",
@@ -651,15 +654,17 @@ const EN_UI_COPY: UiCopy = {
     submit: "Submit Prayer",
     confirmClose: "Are you sure you want to let go of this prayer?",
     warningDefault:
-      "Guardian blocked this prayer. Please review and rephrase before continuing.",
+      "This prayer needs a few changes before it can be shared. Please review and rephrase it.",
     warningCrisis:
-      "We detect you may be in distress. Your safety matters. Please reach out to NCMH (1553) or Hopeline (0917-558-4673) if you need support. Prayers are meant to lift others, not express your own crisis.",
+      "It sounds like you may be going through something very difficult. GraceFul welcomes prayer, but you may also need support beyond this space. If you can, please reach out to NCMH (1553) or Hopeline (0917-558-4673) right now.",
     warningProfanity:
-      "Guardian detected offensive language. Prayers are most powerful when shared with respect and kindness. Please rephrase without profanity.",
+      "GraceFul encourages prayers that feel respectful and caring. Please adjust the language in your prayer before sharing.",
     warningMalice:
-      "Guardian detected harmful intent toward someone. Prayers should come from a place of compassion, not wishing ill. Please rewrite with genuine care for this person.",
+      "GraceFul encourages prayers that come from compassion and care. Please rewrite your prayer in a way that seeks good for this person.",
+    warningSpam:
+      "GraceFul is meant for sincere prayer and encouragement. Please remove promotional or repetitive language before sharing this prayer.",
     warningPii:
-      "Guardian found personal details (phone, email, name, social handle, or location like a hospital name). Remove these to protect privacy before submitting your prayer.",
+      "To keep everyone safe and anonymous, GraceFul does not allow personal contact details or identifying information in prayers. Please remove those details before sharing.",
   },
   prayerList: {
     empty: "No prayers have been shared yet.",
@@ -668,20 +673,23 @@ const EN_UI_COPY: UiCopy = {
   guardianWarning: {
     piiTitle: "Protecting your peace",
     piiMessage:
-      "The Guardian noticed personal details, like a full name, phone number, email, social handle, or location reference such as a hospital name, in your message. To keep you anonymous and safe, please remove those details before posting.",
+      "To keep everyone safe and anonymous, GraceFul does not allow personal contact details or identifying information. Please remove those details before posting.",
     maliceTitle: "Let's keep it GraceFul",
     maliceMessage:
-      "GraceFul is a space for healing and peace. Some words in your message do not align with the tone we protect here. Please try rephrasing it with kindness.",
-    profanityTitle: "Mind the language",
+      "GraceFul is a space for healing and peace. Some parts of your message may come across as hurtful. Please take a moment to rephrase it with care before sharing.",
+    spamTitle: "Keep it sincere",
+    spamMessage:
+      "GraceFul is a place for sincere prayer and support. Please remove promotional or repetitive language before sharing.",
+    profanityTitle: "Let's keep this space respectful",
     profanityMessage:
-      "Guardian detected offensive language in your message. Please rephrase it respectfully before sharing with the community.",
+      "GraceFul is meant to be a respectful and supportive space. Please adjust the language in your message before sharing.",
     edit: "Edit my message",
-    retry: "Try again",
+    retry: "Rephrase my message",
   },
   crisis: {
-    title: "You are not alone.",
+    title: "You are not alone",
     body:
-      "It sounds like you're carrying something very heavy. GraceFul cares about you, and we want to make sure you get real, immediate support.",
+      "It sounds like you may be going through something very difficult. GraceFul is a place where people can pray with you, but you may also need support beyond this space. If you can, consider reaching out to someone who can help right now.",
     primary: "Primary Hotline (PH)",
     alternative: "Alternative Support",
     dial: "Dial",
@@ -792,6 +800,8 @@ const TL_UI_COPY: UiCopy = {
       "Nakakita ang Guardian ng hindi angkop na pananalita. Mas makapangyarihan ang panalangin kung may paggalang at kabutihan. Pakibago ito nang walang pagmumura.",
     warningMalice:
       "Nakakita ang Guardian ng mapanakit na intensyon laban sa iba. Ang panalangin ay dapat magmula sa habag, hindi sa paghiling ng masama. Pakisulat itong muli nang may tunay na malasakit.",
+    warningSpam:
+      "Nakakita ang Guardian ng spam o promo na pananalita. Panatilihing taos-puso ang panalangin at iwasan ang links, ads, o paulit-ulit na sales wording.",
     warningPii:
       "Nakakita ang Guardian ng personal na detalye (telepono, email, pangalan, social handle, o lokasyon tulad ng pangalan ng ospital). Alisin ang mga ito para maprotektahan ang privacy bago isumite ang panalangin.",
   },
@@ -806,6 +816,9 @@ const TL_UI_COPY: UiCopy = {
     maliceTitle: "Panatilihin nating GraceFul",
     maliceMessage:
       "Ang GraceFul ay lugar para sa paghilom at kapayapaan. May ilang salita sa iyong mensahe na hindi tugma sa tonong pinangangalagaan natin dito. Pakisubukang isulat muli ito nang may kabutihan.",
+    spamTitle: "Panatilihing taos-puso",
+    spamMessage:
+      "Mukhang promo o spam ang iyong mensahe. Ang GraceFul ay para sa panalangin at suporta, hindi para sa advertising o paulit-ulit na promotions.",
     profanityTitle: "Bantayan ang pananalita",
     profanityMessage:
       "Nakakita ang Guardian ng nakakasakit na pananalita sa iyong mensahe. Pakisulat itong muli nang may paggalang bago ibahagi sa komunidad.",
@@ -925,6 +938,8 @@ const CEB_UI_COPY: UiCopy = {
       "Nakamatikod ang Guardian og dili angay nga mga pulong. Mas kusgan ang pag-ampo kung adunay pagtahod ug kaayo. Palihug usba kini nga walay pamalikas.",
     warningMalice:
       "Nakamatikod ang Guardian og dautang tinguha batok sa laing tawo. Ang pag-ampo dapat gikan sa kalooy, dili sa paghandum og dautan. Palihug isulat kini pag-usab uban sa tinuod nga pag-atiman.",
+    warningSpam:
+      "Nakamatikod ang Guardian og spam o promo nga sinultihan. Himoang sinsero ang imong pag-ampo ug likayi ang links, ads, ug balik-balik nga sales wording.",
     warningPii:
       "Nakamatikod ang Guardian og personal nga detalye (telepono, email, ngalan, social handle, o lokasyon sama sa ngalan sa ospital). Tangtanga kini aron maprotektahan ang privacy sa dili pa isumite ang imong pag-ampo.",
   },
@@ -939,6 +954,9 @@ const CEB_UI_COPY: UiCopy = {
     maliceTitle: "Padayon ta nga GraceFul",
     maliceMessage:
       "Ang GraceFul usa ka luna alang sa kaayohan ug kalinaw. Adunay mga pulong sa imong mensahe nga dili mohaom sa atong gipanalipdan nga tono dinhi. Palihug sulayi og usab sa mas malinawon nga paagi.",
+    spamTitle: "Himoang sinsero",
+    spamMessage:
+      "Murag promo o spam ang imong mensahe. Ang GraceFul para sa pag-ampo ug suporta, dili para sa advertising o balik-balik nga promotions.",
     profanityTitle: "Bantayi ang pinulongan",
     profanityMessage:
       "Nakamatikod ang Guardian og mapintas nga pinulongan sa imong mensahe. Palihug usba kini nga may pagtahod sa dili pa ipaambit sa komunidad.",
@@ -1071,7 +1089,7 @@ export function localizeGuardianFeedback(
 
   if (
     feedback ===
-    "🆘 Crisis detected. Your safety matters. Redirecting to National Center for Mental Health (1553) and Hopeline support."
+    "You may be carrying something very heavy. GraceFul can hold a quiet moment with you, but you may also need immediate support beyond this space. Please reach out to National Center for Mental Health (1553) or Hopeline if you can."
   ) {
     return language === "tl"
       ? "🆘 May natukoy na krisis. Mahalaga ang iyong kaligtasan. Inililipat ka sa suporta ng National Center for Mental Health (1553) at Hopeline."
@@ -1080,7 +1098,7 @@ export function localizeGuardianFeedback(
 
   if (
     feedback ===
-    "⚠️ Guardian Warning: Offensive language detected. Please rephrase with kindness and respect."
+    "GraceFul is meant to be a respectful and supportive space. Please adjust the language in your message before sharing."
   ) {
     return language === "tl"
       ? "⚠️ Babala ng Guardian: May natukoy na nakakasakit na pananalita. Pakisulat itong muli nang may kabutihan at paggalang."
@@ -1089,11 +1107,20 @@ export function localizeGuardianFeedback(
 
   if (
     feedback ===
-    "⚠️ Guardian Warning: Harmful intent detected (wishing ill on someone). Please share your heart without malice."
+    "GraceFul is a space for healing and peace. Some parts of your message may come across as hurtful. Please rephrase it with care before sharing."
   ) {
     return language === "tl"
       ? "⚠️ Babala ng Guardian: May natukoy na mapanakit na intensyon. Pakibahagi ang iyong puso nang walang masamang hangarin."
       : "⚠️ Pahimangno sa Guardian: Nakamatikod og makadaot nga tinguha. Palihug ipaambit ang imong kasingkasing nga walay pagdumot.";
+  }
+
+  if (
+    feedback ===
+    "GraceFul is for sincere prayer and support. Please remove promotional or repetitive language before sharing."
+  ) {
+    return language === "tl"
+      ? "⚠️ Babala ng Guardian: May natukoy na promo o spam na mensahe. Panatilihing taos-puso at nakatuon sa panalangin ang iyong ibabahagi."
+      : "⚠️ Pahimangno sa Guardian: Nakamatikod og promo o spam nga mensahe. Palihug himoa kini nga sinsero ug naka-focus sa pag-ampo.";
   }
 
   if (feedback === "📱 Phone number removed for privacy.") {
@@ -1128,22 +1155,22 @@ export function localizeGuardianFeedback(
 
   if (
     feedback ===
-    "⚠️ Guardian Warning: Harmful language detected. Please soften your words before sharing."
+    "This space is meant to stay calm, respectful, and sincere. Please soften or revise your message before sharing."
   ) {
     return language === "tl"
       ? "⚠️ Babala ng Guardian: May natukoy na mapanakit na pananalita. Pakihinahon ang iyong mga salita bago ibahagi."
       : "⚠️ Pahimangno sa Guardian: Nakamatikod og makadaot nga pinulongan. Palihug himoa nga mas malinawon ang imong mga pulong sa dili pa ipaambit.";
   }
 
-  if (feedback === "✓ Looks good! Ready to share.") {
+  if (feedback === "This looks ready to share.") {
     return language === "tl"
       ? "✓ Maayos na ito. Handa nang ibahagi."
       : "✓ Maayo na kini. Andam na ipaambit.";
   }
 
-  if (feedback.startsWith("✨ Guardian generalized sensitive details:")) {
+  if (feedback.startsWith("We softened a few sensitive details:")) {
     const details = feedback.replace(
-      "✨ Guardian generalized sensitive details:",
+      "We softened a few sensitive details:",
       "",
     ).trim();
 

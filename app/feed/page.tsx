@@ -379,7 +379,11 @@ export default function GracefulFlow() {
           reason: safety.reason,
         });
         setWarningReason(
-          safety.reason === "profanity" ? "profanity" : "malice",
+          safety.reason === "profanity"
+            ? "profanity"
+            : safety.reason === "spam"
+              ? "spam"
+              : "malice",
         );
         setStep("warning");
         return;
@@ -398,9 +402,9 @@ export default function GracefulFlow() {
         return;
       }
 
-      const didSave = await addPost(result.newPost);
+      const saveResult = await addPost(result.newPost);
 
-      if (!didSave) {
+      if (!saveResult.ok) {
         setCompletionMessage(null);
         setStep(result.nextStep);
         return;
@@ -436,9 +440,9 @@ export default function GracefulFlow() {
         return;
       }
 
-      const didSave = await addPost(result.newPost);
+      const saveResult = await addPost(result.newPost);
 
-      if (!didSave) {
+      if (!saveResult.ok) {
         setCompletionMessage(null);
         setStep(result.nextStep);
         return;
@@ -478,9 +482,9 @@ export default function GracefulFlow() {
   };
 
   const handlePrayerSubmit = async (postId: string, text: string) => {
-    const didSave = await addPrayer(postId, text);
+    const saveResult = await addPrayer(postId, text);
 
-    if (!didSave) {
+    if (!saveResult.ok) {
       return false;
     }
 
@@ -713,6 +717,7 @@ export default function GracefulFlow() {
             onClose={handleClosePrayer}
             onSubmit={handlePrayerSubmit}
             language={viewerLanguage}
+            submissionError={postError}
             onModalVisibilityChange={handleModalVisibilityChange}
             postTranslations={
               activePost
@@ -916,7 +921,7 @@ export default function GracefulFlow() {
           </div>
           {postError ? (
             <p className="mt-4 text-sm text-[#dc2626]">
-              Something went wrong saving your post. Please try again.
+              {postError}
             </p>
           ) : null}
         </ShareStepShell>

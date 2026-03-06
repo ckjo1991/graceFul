@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Flag, HandHeart, X } from "lucide-react";
 
-import { insertPrayerReport } from "@/lib/db";
+import { GuardedWriteError, insertPrayerReport } from "@/lib/db";
 import { REPORT_REASONS, type ReportReason } from "@/lib/reporting";
 import {
   getDisplayTranslatedMessage,
@@ -79,15 +79,25 @@ export default function PrayerListModal({
     setPrayerReportError(null);
 
     try {
-      await insertPrayerReport(prayerId, currentPost.id, selectedReportReason);
+      const deviceId = window.localStorage.getItem("graceful_device_id") ?? undefined;
+      await insertPrayerReport(
+        prayerId,
+        currentPost.id,
+        selectedReportReason,
+        deviceId,
+      );
       setReportedPrayerIds((current) => ({
         ...current,
         [getPrayerReportKey(prayerId)]: true,
       }));
       setConfirmingPrayerId(null);
       setSelectedReportReason(REPORT_REASONS[0]);
-    } catch {
-      setPrayerReportError("Could not submit this prayer report. Please try again.");
+    } catch (error) {
+      if (error instanceof GuardedWriteError && error.reason === "rate_limited") {
+        setPrayerReportError("Too many reports from this device. Please try again later.");
+      } else {
+        setPrayerReportError("Could not submit this prayer report. Please try again.");
+      }
     } finally {
       setSubmittingPrayerId(null);
     }

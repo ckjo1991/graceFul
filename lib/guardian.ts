@@ -68,7 +68,83 @@ const FAITH_PATTERNS = [
   /\balign with you\b/i,
 ];
 
-const FORBIDDEN_WORDS = ["fuck", "gago", "puta", "tangina"];
+const FORBIDDEN_WORDS = [
+  "fuck",
+  "gago",
+  "puta",
+  "tangina",
+  "hell",
+  "crap",
+  "pissed",
+];
+const SPAM_PROMO_TERMS = [
+  "buy now",
+  "pm me",
+  "guaranteed",
+  "investment",
+  "crypto",
+  "forex",
+  "casino",
+  "loan",
+  "sign up",
+  "earn money",
+  "passive income",
+  "coaching program",
+  "make money from home",
+  "deliverance sessions",
+  "deliverance session",
+  "online coaching program",
+];
+const SPAM_SOLICITATION_PATTERNS = [
+  /\bdonate\b/i,
+  /\braising funds?\b/i,
+  /\bpaypal\b/i,
+  /\bgcash\b/i,
+  /\bany amount helps\b/i,
+  /\bsend support\b/i,
+];
+const SPAM_RECRUITMENT_PATTERNS = [
+  /\bjoin\b[\s\S]{0,30}\b(?:facebook|discord|telegram|group|circle)\b/i,
+  /\bfacebook group\b/i,
+  /\bchurch discord\b/i,
+  /\bprayer circle\b/i,
+  /\bsearch\b[\s\S]{0,40}\b(?:prayer circle|group)\b/i,
+];
+const SPAM_CHAIN_MESSAGE_PATTERNS = [
+  /\bshare this with five people\b/i,
+  /\btype amen\b/i,
+  /\bpass this message along\b/i,
+  /\bwatch what happens\b/i,
+];
+const SPAM_AFFILIATE_PATTERNS = [
+  /\bthis program helped me earn money online\b/i,
+  /\bearn money online\b/i,
+  /\bhighly recommended\b/i,
+];
+const SPAM_LINK_OR_HANDLE_PATTERN =
+  /(?:https?:\/\/|www\.|t\.me\/|wa\.me\/|(?:^|\s)@[a-z0-9_]{2,})/i;
+const SPAM_PUNCTUATION_PATTERN = /[!?]/g;
+const SPAM_UPPERCASE_PATTERN = /[A-Z]/g;
+const SPAM_ALPHA_PATTERN = /[A-Za-z]/g;
+const SPAM_TOKEN_PATTERN = /[a-z0-9]+/g;
+
+export type SpamSignal =
+  | "url_or_handle"
+  | "promo_keywords"
+  | "solicitation_keywords"
+  | "recruitment_keywords"
+  | "chain_message"
+  | "affiliate_style"
+  | "repeated_token_burst"
+  | "excess_punctuation"
+  | "high_caps_ratio";
+
+export type SpamAssessment = {
+  score: number;
+  signals: SpamSignal[];
+  shouldBlock: boolean;
+  shouldFlag: boolean;
+};
 
 const LOWERCASE_TARGET_PATTERN =
   /\b(him|her|them|someone|somebody|that person|this person|my\s+(?:dad|mom|mother|father|boss|sister|brother|friend|wife|husband|partner))\b/;
@@ -92,9 +168,14 @@ const SELF_HARM_URGENCY_PATTERN =
   /\b(remove me|end this|end it all|end my life|take my life|take my own life|kill myself|hurt myself|let me die|i can't go on|i can't do this anymore|don't want to live|don't want to be here|cease to exist)\b/i;
 const CRISIS_CONTEXT_PATTERN =
   /\b(i can't go on|i can't do this anymore|don't want to live|don't want to be here|want to die|end my life|kill myself|hurt myself|self-harm|hopeless|no hope|give up|worthless|burden)\b/i;
+const PASSIVE_CRISIS_PATTERNS = [
+  /\b(?:i\s+)?don't see a reason to keep going(?: anymore)?\b/i,
+  /\bit would be easier if i(?: just)? disappeared\b/i,
+  /\bdon't know how much longer i can keep doing this\b/i,
+];
 
 const DIRECTED_TARGET_SOURCE =
-  String.raw`(?:he|she|they|him|her|them|someone|somebody|that\s+person|this\s+person|my\s+(?:dad|mom|mother|father|boss|sister|brother|friend|wife|husband|partner)|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)`;
+  String.raw`(?:you(?:\s+and\s+(?:your\s+)?family)?|your\s+family|he|she|they|him|her|them|someone|somebody|that\s+person|this\s+person|my\s+(?:dad|mom|mother|father|boss|sister|brother|friend|wife|husband|partner)|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)`;
 
 const DIRECTED_REMOVAL_PATTERN =
   new RegExp(
@@ -104,13 +185,13 @@ const DIRECTED_REMOVAL_PATTERN =
 
 const DIRECTED_HARM_PATTERN =
   new RegExp(
-    String.raw`\b(?:i\s+)?(?:pray|hope|wish|want)\s+(?:that\s+)?${DIRECTED_TARGET_SOURCE}\s+(?:gets?\s+|be\s+|is\s+|would\s+be\s+)?(?:kill(?:ed)?|hurt|dead|die(?:s)?|murder(?:ed)?|shot|stabbed|punished|suffer(?:s)?|burn(?:ed)?|beaten)\b`,
+    String.raw`\b(?:i\s+)?(?:pray|hope|wish|want)\s+(?:that\s+)?${DIRECTED_TARGET_SOURCE}\s+(?:gets?\s+|get\s+|be\s+|is\s+|are\s+|would\s+be\s+|will\s+be\s+|will\s+get\s+)?(?:kill(?:ed)?|hurt|dead|die(?:s)?|murder(?:ed)?|shot|stabbed|punished|suffer(?:s)?|burn(?:ed)?|beaten|poison(?:ed|ing)?)\b`,
     "i",
   );
 
 const ALT_VIOLENT_INTENT_PATTERN =
   new RegExp(
-    String.raw`\b(?:hope|wish|pray)\b[\s\S]{0,60}\b${DIRECTED_TARGET_SOURCE}\b[\s\S]{0,40}\b(?:die|dies|dead|gone|removed|erased|eliminated|taken)\b`,
+    String.raw`\b(?:hope|wish|pray)\b[\s\S]{0,60}\b${DIRECTED_TARGET_SOURCE}\b[\s\S]{0,40}\b(?:die|dies|dead|gone|removed|erased|eliminated|taken|poison(?:ed|ing)?)\b`,
     "i",
   );
 
@@ -128,9 +209,13 @@ const DIRECT_THREAT_PH_PATTERN = new RegExp(
 );
 
 const MALICIOUS_WISH_PATTERN = new RegExp(
-  String.raw`\b(?:hope|wish|pray|karma|let|i\s+want|sana|karmahin|mabulok)\b[\s\S]{0,50}\b(?:you|him|her|them|that\s+person|this\s+person|si|ka|yung|kita|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b[\s\S]{0,30}\b(?:die|dead|accident|crash|fall|mamatay|maaksidente|malunod|mabulok|masagasaan)\b`,
+  String.raw`\b(?:hope|wish|pray|karma|let|i\s+want|sana|karmahin|mabulok)\b[\s\S]{0,50}\b(?:you|your\s+family|him|her|them|that\s+person|this\s+person|si|ka|yung|kita|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b[\s\S]{0,30}\b(?:die|dead|accident|crash|fall|mamatay|maaksidente|malunod|mabulok|masagasaan|poison(?:ed|ing)?)\b`,
   "i",
 );
+const DESERVED_SUFFERING_PATTERN =
+  /\b(?:i\s+)?hope\b[\s\S]{0,80}\bgets?\s+what\s+(?:he|she|they)\s+deserve(?:s)?\b[\s\S]{0,40}\bsuffer(?:s|ing)?\b/i;
+const BAD_THINGS_WISH_PATTERN =
+  /\b(?:i\s+)?wish\s+something\s+bad\s+would\s+happen\s+to\s+(?:him|her|them|you|that\s+person|this\s+person|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/i;
 
 const VIOLENT_STEM_PATTERN = new RegExp(String.raw`\b${VIOLENT_VERB_STEM_SOURCE}\b`, "i");
 
@@ -151,6 +236,7 @@ const METAPHOR_SHIELD_PATTERNS = [
   /\bkilling it\b/i,
   /\bcrushing it\b/i,
   /\bslaying\b/i,
+  /\bburned out\b/i,
 ];
 
 export const PHILIPPINE_RESOURCES = {
@@ -427,9 +513,28 @@ function isLikelyFullName(candidate: string): boolean {
   return parts.length === 2 && parts.every((part) => !FULL_NAME_EXCLUSIONS.has(part));
 }
 
+function hasAdjacentCapitalizedWord(
+  text: string,
+  matchStart: number,
+  matchEnd: number,
+): boolean {
+  const before = text.slice(0, matchStart).match(/[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?\s*$/);
+  const after = text.slice(matchEnd).match(/^\s*[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?/);
+
+  return Boolean(before || after);
+}
+
 function containsLikelyFullName(text: string): boolean {
   for (const match of text.matchAll(FULL_NAME_PATTERN)) {
-    if (match[1] && isLikelyFullName(match[1])) {
+    const candidate = match[1];
+    const start = match.index ?? -1;
+
+    if (
+      candidate &&
+      isLikelyFullName(candidate) &&
+      start >= 0 &&
+      !hasAdjacentCapitalizedWord(text, start, start + match[0].length)
+    ) {
       return true;
     }
   }
@@ -438,8 +543,10 @@ function containsLikelyFullName(text: string): boolean {
 }
 
 function redactLikelyFullNames(text: string, replacement: string): string {
-  return text.replace(FULL_NAME_PATTERN, (match) =>
-    isLikelyFullName(match) ? replacement : match,
+  return text.replace(FULL_NAME_PATTERN, (match, _candidate, offset: number, source: string) =>
+    isLikelyFullName(match) && !hasAdjacentCapitalizedWord(source, offset, offset + match.length)
+      ? replacement
+      : match,
   );
 }
 
@@ -466,14 +573,27 @@ export const checkCrisis = (text: string): boolean => {
   // Gate 1.5: urgency only counts when paired with self-harm or crisis language.
   if (hasUrgentCrisisContext(text)) return true;
 
+  if (PASSIVE_CRISIS_PATTERNS.some((pattern) => pattern.test(text))) return true;
+
   // Gate 2: hardcoded keywords as fallback
   return CRISIS_KEYWORDS.some((keyword) => lowerText.includes(keyword));
 };
 
 export const checkProfanity = (text: string): boolean => {
-  const lowerText = text.toLowerCase();
-  return FORBIDDEN_WORDS.some((word) => lowerText.includes(word));
+  return matchProfanity(text) !== null;
 };
+
+function matchProfanity(text: string): string | null {
+  for (const word of FORBIDDEN_WORDS) {
+    const pattern = new RegExp(`\\b${escapeRegexLiteral(word)}\\b`, "i");
+
+    if (pattern.test(text)) {
+      return word;
+    }
+  }
+
+  return null;
+}
 
 function hasFaithDeclaration(text: string): boolean {
   return FAITH_PATTERNS.some((pattern) => pattern.test(text));
@@ -523,6 +643,87 @@ function hasWeaponLinkedThreat(text: string): boolean {
   return VIOLENT_STEM_PATTERN.test(text) && WEAPON_PATTERN.test(text);
 }
 
+function hasRepeatedTokenBurst(text: string): boolean {
+  const tokens = text.toLowerCase().match(SPAM_TOKEN_PATTERN) ?? [];
+  const tokenCounts = new Map<string, number>();
+
+  for (const token of tokens) {
+    if (token.length <= 1) {
+      continue;
+    }
+
+    tokenCounts.set(token, (tokenCounts.get(token) ?? 0) + 1);
+  }
+
+  return [...tokenCounts.values()].some((count) => count >= 4);
+}
+
+function matchesAnyPattern(text: string, patterns: RegExp[]): boolean {
+  return patterns.some((pattern) => pattern.test(text));
+}
+
+export function analyzeSpam(text: string): SpamAssessment {
+  const signals: SpamSignal[] = [];
+  let score = 0;
+  const lowerText = text.toLowerCase();
+
+  if (SPAM_LINK_OR_HANDLE_PATTERN.test(text)) {
+    signals.push("url_or_handle");
+    score += 4;
+  }
+
+  if (SPAM_PROMO_TERMS.some((term) => lowerText.includes(term))) {
+    signals.push("promo_keywords");
+    score += 2;
+  }
+
+  if (matchesAnyPattern(text, SPAM_SOLICITATION_PATTERNS)) {
+    signals.push("solicitation_keywords");
+    score += 4;
+  }
+
+  if (matchesAnyPattern(text, SPAM_RECRUITMENT_PATTERNS)) {
+    signals.push("recruitment_keywords");
+    score += 4;
+  }
+
+  if (matchesAnyPattern(text, SPAM_CHAIN_MESSAGE_PATTERNS)) {
+    signals.push("chain_message");
+    score += 4;
+  }
+
+  if (matchesAnyPattern(text, SPAM_AFFILIATE_PATTERNS)) {
+    signals.push("affiliate_style");
+    score += 2;
+  }
+
+  if (hasRepeatedTokenBurst(text)) {
+    signals.push("repeated_token_burst");
+    score += 2;
+  }
+
+  const punctuationCount = (text.match(SPAM_PUNCTUATION_PATTERN) ?? []).length;
+  if (punctuationCount >= 6) {
+    signals.push("excess_punctuation");
+    score += 1;
+  }
+
+  const uppercaseCount = (text.match(SPAM_UPPERCASE_PATTERN) ?? []).length;
+  const alphaCount = (text.match(SPAM_ALPHA_PATTERN) ?? []).length;
+  const capsRatio = alphaCount === 0 ? 0 : uppercaseCount / alphaCount;
+  if (text.length >= 30 && capsRatio >= 0.6) {
+    signals.push("high_caps_ratio");
+    score += 1;
+  }
+
+  return {
+    score,
+    signals,
+    shouldBlock: score >= 4,
+    shouldFlag: score >= 2 && score <= 3,
+  };
+}
+
 function containsSpecificHospitalLocation(text: string): boolean {
   return (
     containsPattern(text, HOSPITAL_ALIAS_PATTERN) ||
@@ -555,14 +756,23 @@ function redactSurnameMatches(text: string, replacement: string): string {
 
 export function hasViolentIntent(text: string): boolean {
   const lowerText = text.toLowerCase();
+  if (/\bburned out\b/i.test(text)) {
+    return false;
+  }
+
   const hasFaithContext = hasFaithDeclaration(text);
   const directThreatHit =
     DIRECT_THREAT_EN_PATTERN.test(text) || DIRECT_THREAT_PH_PATTERN.test(text);
   const maliciousWishHit = MALICIOUS_WISH_PATTERN.test(text);
+  const deservedSufferingHit = DESERVED_SUFFERING_PATTERN.test(text);
+  const badThingsWishHit = BAD_THINGS_WISH_PATTERN.test(text);
   const weaponLinkedThreatHit = hasWeaponLinkedThreat(text);
   const metaphorShieldHit = hasMetaphorShield(text);
 
-  if (metaphorShieldHit && !(directThreatHit || maliciousWishHit || weaponLinkedThreatHit)) {
+  if (
+    metaphorShieldHit &&
+    !(directThreatHit || maliciousWishHit || deservedSufferingHit || badThingsWishHit || weaponLinkedThreatHit)
+  ) {
     return false;
   }
 
@@ -572,7 +782,13 @@ export function hasViolentIntent(text: string): boolean {
   }
 
   // Gate A/B: direct threats and malicious wishes
-  if (directThreatHit || maliciousWishHit || weaponLinkedThreatHit) {
+  if (
+    directThreatHit ||
+    maliciousWishHit ||
+    deservedSufferingHit ||
+    badThingsWishHit ||
+    weaponLinkedThreatHit
+  ) {
     return true;
   }
 
@@ -599,19 +815,25 @@ export const checkSafety = (
   text: string,
 ): {
   isSafe: boolean;
-  reason: "malice" | "pii" | "profanity" | null;
+  reason: "malice" | "pii" | "profanity" | "spam" | null;
   foundDetail: string | null;
 } => {
-  const lowerText = text.toLowerCase();
-
-  for (const word of FORBIDDEN_WORDS) {
-    if (lowerText.includes(word)) {
-      return { isSafe: false, reason: "profanity", foundDetail: word };
-    }
+  const matchedProfanity = matchProfanity(text);
+  if (matchedProfanity) {
+    return { isSafe: false, reason: "profanity", foundDetail: matchedProfanity };
   }
 
   if (hasViolentIntent(text)) {
     return { isSafe: false, reason: "malice", foundDetail: "violent intent" };
+  }
+
+  const spamAssessment = analyzeSpam(text);
+  if (spamAssessment.shouldBlock) {
+    return {
+      isSafe: false,
+      reason: "spam",
+      foundDetail: spamAssessment.signals.join(","),
+    };
   }
 
   if (
@@ -705,6 +927,14 @@ export function runGuardian(rawMessage: string): GuardianResult {
         outcome: "block",
         sanitizedMessage: rawMessage.trim(),
         reasons: ["Offensive language detected. Please rephrase."],
+      };
+    }
+
+    if (safety.reason === "spam") {
+      return {
+        outcome: "block",
+        sanitizedMessage: rawMessage.trim(),
+        reasons: ["Likely spam or promotional content detected. Please rephrase."],
       };
     }
   }

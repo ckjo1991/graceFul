@@ -131,6 +131,13 @@ test("message submission routes unsafe content into the warning step", () => {
   );
   assert.equal(hospitalResult.nextStep, "warning");
   assert.equal(hospitalResult.warningReason, "pii");
+
+  const spamResult = submitMessage(
+    createInitialSelection(),
+    "WWW.PROMO-HYPE.COM!!!!!! BUY NOW GUARANTEED CRYPTO LOAN",
+  );
+  assert.equal(spamResult.nextStep, "warning");
+  assert.equal(spamResult.warningReason, "spam");
 });
 
 test("prayer submissions append a prayer and increment only the targeted post", () => {

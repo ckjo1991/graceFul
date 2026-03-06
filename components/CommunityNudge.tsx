@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 const NUDGE_COPIES = [
-  "You don't have to carry this alone offline either.",
-  "If you're part of a church community, consider sharing this with someone you trust.",
-  "GraceFul is here for you — and so is your community.",
+  "Take a moment to pause. If something here resonated with you, consider reaching out to someone you trust today.",
+  "If you're part of a church community, consider letting someone there pray with you too.",
+  "GraceFul can hold a quiet moment with you. Real support can walk with you beyond it.",
 ];
 
 type CommunityNudgeProps = {

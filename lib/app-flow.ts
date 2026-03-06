@@ -12,7 +12,7 @@ import type {
   SupportType,
 } from "@/types";
 
-export type WarningReason = "pii" | "malice" | "profanity" | null;
+export type WarningReason = "pii" | "malice" | "profanity" | "spam" | null;
 
 export const INITIAL_SELECTION: AppFlowSelection = {
   emotion: "",

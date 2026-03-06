@@ -6,7 +6,7 @@ import { getUiCopy } from "@/lib/translation";
 import type { LanguageCode } from "@/types";
 
 interface GuardianWarningProps {
-  reason: "pii" | "malice" | "profanity";
+  reason: "pii" | "malice" | "profanity" | "spam";
   onRedo: () => void;
   language: LanguageCode;
 }
@@ -27,6 +27,11 @@ export default function GuardianWarning({
       title: copy.guardianWarning.maliceTitle,
       message: copy.guardianWarning.maliceMessage,
       button: copy.guardianWarning.retry,
+    },
+    spam: {
+      title: copy.guardianWarning.spamTitle,
+      message: copy.guardianWarning.spamMessage,
+      button: copy.guardianWarning.edit,
     },
     profanity: {
       title: copy.guardianWarning.profanityTitle,

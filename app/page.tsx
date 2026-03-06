@@ -104,14 +104,19 @@ export default function LandingPage() {
           </h1>
           <p className="mt-6 max-w-md text-[1rem] leading-8 text-[var(--muted-ink)] sm:text-[1.05rem]">
             GraceFul is not a replacement for community. It&apos;s a doorway into
-            it — for those still finding their way to the front.
+            it for those not ready to share openly yet.
           </p>
           <Link
             href="/feed"
             className="mt-8 inline-flex h-12 items-center justify-center rounded-[0.95rem] bg-[var(--brand)] px-6 text-[0.98rem] font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
           >
-            Find your footing →
+            Enter the space
           </Link>
+          <p className="mt-5 max-w-lg text-sm leading-7 text-[var(--muted-ink)] sm:text-[0.98rem]">
+            Inside GraceFul you can share something you&apos;re grateful for,
+            share something you&apos;re struggling with, and receive prayers or
+            quiet support.
+          </p>
         </div>
       </section>
 
@@ -139,12 +144,11 @@ export default function LandingPage() {
       <section className="bg-white">
         <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
           <p className="text-sm font-medium uppercase tracking-[0.14em] text-[var(--muted-ink)]">
-            Is vulnerability only valid when visible?
+            Is honesty only real when it&apos;s public?
           </p>
           <p className="mx-auto mt-5 max-w-lg text-[1.05rem] leading-8 text-[var(--muted-ink)]">
-            We don&apos;t think so. Humility can look like stepping forward
-            publicly — or quietly admitting you need help before you&apos;re ready
-            to say it out loud.
+            We don&apos;t think so. Sometimes honesty begins quietly, before
+            you&apos;re ready to say it out loud to people who know you.
           </p>
         </div>
       </section>
@@ -155,13 +159,13 @@ export default function LandingPage() {
             You don&apos;t have to have it together.
           </h2>
           <p className="mt-4 max-w-xl text-[1.02rem] leading-8 text-white/78">
-            GraceFul is open. Anonymous. And waiting.
+            GraceFul is open. Anonymous. A quiet place to begin.
           </p>
           <Link
             href="/feed"
             className="mt-8 inline-flex h-12 items-center justify-center rounded-[0.95rem] bg-white px-6 text-[0.98rem] font-semibold text-[#2c3a2e] transition-colors hover:bg-[var(--brand-soft)]"
           >
-            Find your footing →
+            Enter the space
           </Link>
         </div>
       </section>

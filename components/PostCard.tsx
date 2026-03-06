@@ -4,7 +4,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { HandHeart, MoreHorizontal, Sparkles } from "lucide-react";
 
-import { insertReport, updateHearts } from "@/lib/db";
+import { GuardedWriteError, insertReport, updateHearts } from "@/lib/db";
 import { REPORT_REASONS } from "@/lib/reporting";
 import {
   getViewPrayerLabel,
@@ -177,11 +177,15 @@ export default function PostCard({
     setReportError(null);
 
     try {
-      await insertReport(post.id, selectedReportReason);
+      await insertReport(post.id, selectedReportReason, deviceId ?? undefined);
       setIsReported(true);
       setReportState("idle");
-    } catch {
-      setReportError("Could not submit this report. Please try again.");
+    } catch (error) {
+      if (error instanceof GuardedWriteError && error.reason === "rate_limited") {
+        setReportError("Too many reports from this device. Please try again later.");
+      } else {
+        setReportError("Could not submit this report. Please try again.");
+      }
       setReportState("confirming");
     }
   };

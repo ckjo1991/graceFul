@@ -849,7 +849,8 @@
         "better (off|without) (dead|you|him|her|them)",
         "do (us|the world|everyone) a favor and (die|disappear|leave forever)",
         "nobody (wants|needs|likes) (you|him|her|them) (here|anymore|around)",
-        "i (hope|wish|pray) (a |an )?(car|truck|bus|vehicle|accident) (hits?|crashes? into|runs? over) (him|her|them|you|that person)"
+        "i (hope|wish|pray) (a |an )?(car|truck|bus|vehicle|accident) (hits?|crashes? into|runs? over) (him|her|them|you|that person)",
+        "i (hope|wish|pray)( that)? (you|he|she|they|him|her|them|your family|you and your family) (will )?(get )?(poison(ed|ing)?|hurt|killed|stabbed|shot|burned|beaten)"
       ]
     },
     "crisis": {

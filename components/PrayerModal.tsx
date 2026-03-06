@@ -23,9 +23,10 @@ interface PrayerModalProps {
   onSubmit: (postId: string, prayerText: string) => boolean | Promise<boolean>;
   language: LanguageCode;
   postTranslations?: FeedPost["translations"];
+  submissionError?: string | null;
 }
 
-type GuardianWarning = "crisis" | "malice" | "profanity" | "pii" | null;
+type GuardianWarning = "crisis" | "malice" | "profanity" | "pii" | "spam" | null;
 
 export default function PrayerModal({
   post,
@@ -35,6 +36,7 @@ export default function PrayerModal({
   onSubmit,
   language,
   postTranslations = {},
+  submissionError = null,
 }: PrayerModalProps) {
   const copy = getUiCopy(language);
   const [prayerText, setPrayerText] = useState("");
@@ -112,6 +114,8 @@ export default function PrayerModal({
         return copy.prayerModal.warningProfanity;
       case "malice":
         return copy.prayerModal.warningMalice;
+      case "spam":
+        return copy.prayerModal.warningSpam;
       case "pii":
         return copy.prayerModal.warningPii;
       default:
@@ -194,6 +198,13 @@ export default function PrayerModal({
             <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-crisis">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p className="leading-relaxed">{getWarningMessage()}</p>
+            </div>
+          ) : null}
+
+          {!guardianReason && submissionError ? (
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-crisis">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p className="leading-relaxed">{submissionError}</p>
             </div>
           ) : null}
 

@@ -1,4 +1,5 @@
 import {
+  analyzeSpam,
   checkCrisis,
   checkProfanity,
   checkSafety,
@@ -15,7 +16,7 @@ export interface GuardianAIResult {
 
 export interface IntentResult {
   isSafe: boolean;
-  reason: "malice" | "profanity" | "safe";
+  reason: "malice" | "profanity" | "spam" | "safe";
 }
 
 /**
@@ -40,6 +41,11 @@ export async function analyzeIntent(message: string): Promise<IntentResult> {
     return { isSafe: false, reason: "malice" };
   }
 
+  const spamAssessment = analyzeSpam(translated);
+  if (spamAssessment.shouldBlock) {
+    return { isSafe: false, reason: "spam" };
+  }
+
   return { isSafe: true, reason: "safe" };
 }
 
@@ -62,7 +68,7 @@ export async function runGuardianReview(
       isCrisis: true,
       isSafe: false,
       feedback:
-        "🆘 Crisis detected. Your safety matters. Redirecting to National Center for Mental Health (1553) and Hopeline support.",
+        "You may be carrying something very heavy. GraceFul can hold a quiet moment with you, but you may also need immediate support beyond this space. Please reach out to National Center for Mental Health (1553) or Hopeline if you can.",
     };
   }
 
@@ -74,7 +80,7 @@ export async function runGuardianReview(
         isCrisis: false,
         isSafe: false,
         feedback:
-          "⚠️ Guardian Warning: Offensive language detected. Please rephrase with kindness and respect.",
+          "GraceFul is meant to be a respectful and supportive space. Please adjust the language in your message before sharing.",
       };
     }
 
@@ -84,7 +90,17 @@ export async function runGuardianReview(
         isCrisis: false,
         isSafe: false,
         feedback:
-          "⚠️ Guardian Warning: Harmful intent detected (wishing ill on someone). Please share your heart without malice.",
+          "GraceFul is a space for healing and peace. Some parts of your message may come across as hurtful. Please rephrase it with care before sharing.",
+      };
+    }
+
+    if (intentResult.reason === "spam") {
+      return {
+        scrubbedMessage: guardianResult.sanitizedMessage,
+        isCrisis: false,
+        isSafe: false,
+        feedback:
+          "GraceFul is for sincere prayer and support. Please remove promotional or repetitive language before sharing.",
       };
     }
   }
@@ -110,13 +126,17 @@ export async function runGuardianReview(
       };
     }
 
-    if (safety.reason === "malice" || safety.reason === "profanity") {
+    if (
+      safety.reason === "malice" ||
+      safety.reason === "profanity" ||
+      safety.reason === "spam"
+    ) {
       return {
         scrubbedMessage: guardianResult.sanitizedMessage,
         isCrisis: false,
         isSafe: false,
         feedback:
-          "⚠️ Guardian Warning: Harmful language detected. Please soften your words before sharing.",
+          "This space is meant to stay calm, respectful, and sincere. Please soften or revise your message before sharing.",
       };
     }
   }
@@ -127,7 +147,7 @@ export async function runGuardianReview(
     isSafe: true,
     feedback:
       guardianResult.reasons.length > 0
-        ? `✨ Guardian generalized sensitive details: ${guardianResult.reasons.join(" ")}`
-        : "✓ Looks good! Ready to share.",
+        ? `We softened a few sensitive details: ${guardianResult.reasons.join(" ")}`
+        : "This looks ready to share.",
   };
 }

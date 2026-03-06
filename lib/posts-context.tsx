@@ -11,6 +11,8 @@ import {
 
 import { createInitialPosts } from "@/lib/app-flow";
 import {
+  GuardedWriteError,
+  type GuardedWriteFailureReason,
   deleteAllPosts as deleteAllPostsFromDb,
   deletePrayer as deletePrayerFromDb,
   deletePostById,
@@ -23,12 +25,16 @@ import {
 import type { FeedPost, Prayer } from "@/types";
 import { supabase } from "@/lib/supabase";
 
+type SaveResult =
+  | { ok: true }
+  | { ok: false; reason: GuardedWriteFailureReason | "unknown" };
+
 type PostsContextType = {
   posts: FeedPost[];
   isLoading: boolean;
   postError: string | null;
-  addPost: (post: FeedPost) => Promise<boolean>;
-  addPrayer: (postId: string, prayerText: string) => Promise<boolean>;
+  addPost: (post: FeedPost) => Promise<SaveResult>;
+  addPrayer: (postId: string, prayerText: string) => Promise<SaveResult>;
   deletePost: (id: string) => void;
   deletePrayer: (id: string) => void;
   deleteAllPosts: () => void;
@@ -288,11 +294,23 @@ export function PostsProvider({ children }: { children: ReactNode }) {
     try {
       await insertPost(post);
       pushPost(post);
-      return true;
+      return { ok: true } as const;
     } catch (error) {
       console.error("[GraceFul] Post save failed:", error);
+
+      if (error instanceof GuardedWriteError) {
+        const message =
+          error.reason === "rate_limited"
+            ? "You're posting too quickly. Please wait a bit before sharing again."
+            : error.reason === "duplicate"
+              ? "This looks like a duplicate post from the past 24 hours. Please edit before sharing."
+              : "This message looks like spam or promo content. Please rewrite it as a sincere prayer update.";
+        setTimedPostError(message);
+        return { ok: false, reason: error.reason } as const;
+      }
+
       setTimedPostError("Something went wrong saving your post. Please try again.");
-      return false;
+      return { ok: false, reason: "unknown" } as const;
     }
   }, [pushPost, setTimedPostError]);
 
@@ -310,13 +328,26 @@ export function PostsProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      await insertPrayer(postId, prayer);
+      const deviceId = window.localStorage.getItem("graceful_device_id") ?? undefined;
+      await insertPrayer(postId, prayer, deviceId);
       attachPrayer({ ...prayer, postId });
-      return true;
+      return { ok: true } as const;
     } catch (error) {
       console.error("[GraceFul] Prayer save failed:", error);
-      setTimedPostError("Something went wrong saving your post. Please try again.");
-      return false;
+
+      if (error instanceof GuardedWriteError) {
+        const message =
+          error.reason === "rate_limited"
+            ? "You're submitting prayers too quickly. Please pause for a moment."
+            : error.reason === "duplicate"
+              ? "That prayer appears to be a duplicate from the past 24 hours. Please revise it."
+              : "This prayer looks promotional or spam-like. Please keep it focused on support.";
+        setTimedPostError(message);
+        return { ok: false, reason: error.reason } as const;
+      }
+
+      setTimedPostError("Something went wrong saving your prayer. Please try again.");
+      return { ok: false, reason: "unknown" } as const;
     }
   }, [attachPrayer, setTimedPostError]);
 

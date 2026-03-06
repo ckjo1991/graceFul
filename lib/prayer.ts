@@ -11,6 +11,7 @@ export type PrayerValidationFailureReason =
   | "crisis"
   | "profanity"
   | "malice"
+  | "spam"
   | "pii";
 
 export type PrayerValidationResult =
@@ -44,7 +45,10 @@ export function validatePrayerSubmission(prayerText: string): PrayerValidationRe
 
   const safety = checkSafety(trimmedPrayer);
   if (!safety.isSafe) {
-    return { allowed: false, reason: safety.reason as "pii" | "profanity" | "malice" };
+    return {
+      allowed: false,
+      reason: safety.reason as "pii" | "profanity" | "malice" | "spam",
+    };
   }
 
   return {
