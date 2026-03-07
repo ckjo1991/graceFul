@@ -8,6 +8,11 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import type {
+  RealtimePostgresDeletePayload,
+  RealtimePostgresInsertPayload,
+  RealtimePostgresUpdatePayload,
+} from "@supabase/realtime-js";
 
 import { createInitialPosts } from "@/lib/app-flow";
 import {
@@ -24,6 +29,62 @@ import {
 } from "@/lib/db";
 import type { FeedPost, Prayer } from "@/types";
 import { supabase } from "@/lib/supabase";
+
+type RealtimePostRow = {
+  id: string;
+  emotion: string;
+  category: string;
+  message: string;
+  support: string;
+  created_at: string | null;
+  device_id: string | null;
+  wants_follow_up: boolean | null;
+  hearts: number | null;
+  allow_translation: boolean | null;
+};
+
+type RealtimePrayerRow = {
+  id: string;
+  post_id: string | null;
+  message: string;
+  created_at: string | null;
+  device_id: string | null;
+};
+
+type RealtimePostInsertDeletePayload =
+  {
+    schema: string;
+    table: string;
+    commit_timestamp: string;
+    errors: string[];
+    eventType: string;
+    new?: RealtimePostRow;
+    old: { id?: string };
+    [key: string]: unknown;
+  };
+
+type RealtimePostUpdatePayload = {
+  schema: string;
+  table: string;
+  commit_timestamp: string;
+  errors: string[];
+  eventType: string;
+  new: RealtimePostRow;
+  old?: { id?: string };
+  [key: string]: unknown;
+};
+
+type RealtimePrayerInsertDeletePayload =
+  {
+    schema: string;
+    table: string;
+    commit_timestamp: string;
+    errors: string[];
+    eventType: string;
+    new?: RealtimePrayerRow;
+    old: { id?: string };
+    [key: string]: unknown;
+  };
 
 type SaveResult =
   | { ok: true }
@@ -112,8 +173,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "posts" },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (event: any) => {
+          ((event: RealtimePostInsertDeletePayload) => {
             if (!event || typeof event !== "object") {
               return;
             }
@@ -132,13 +192,12 @@ export function PostsProvider({ children }: { children: ReactNode }) {
 
               return [newPost, ...prev];
             });
-          },
+          }) as (payload: RealtimePostgresInsertPayload<RealtimePostRow>) => void,
         )
         .on(
           "postgres_changes",
           { event: "UPDATE", schema: "public", table: "posts" },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (event: any) => {
+          ((event: RealtimePostUpdatePayload) => {
             if (!event?.new?.id || !("hearts" in event.new)) {
               return;
             }
@@ -150,13 +209,12 @@ export function PostsProvider({ children }: { children: ReactNode }) {
                   : post,
               ),
             );
-          },
+          }) as (payload: RealtimePostgresUpdatePayload<RealtimePostRow>) => void,
         )
         .on(
           "postgres_changes",
           { event: "DELETE", schema: "public", table: "posts" },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (event: any) => {
+          ((event: RealtimePostInsertDeletePayload) => {
             if (!event || typeof event !== "object") {
               return;
             }
@@ -168,13 +226,12 @@ export function PostsProvider({ children }: { children: ReactNode }) {
             }
 
             setPosts((prev) => prev.filter((post) => post.id !== payload.old.id));
-          },
+          }) as (payload: RealtimePostgresDeletePayload<RealtimePostRow>) => void,
         )
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "prayers" },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (event: any) => {
+          ((event: RealtimePrayerInsertDeletePayload) => {
             if (!event || typeof event !== "object") {
               return;
             }
@@ -203,13 +260,12 @@ export function PostsProvider({ children }: { children: ReactNode }) {
                   : post,
               ),
             );
-          },
+          }) as (payload: RealtimePostgresInsertPayload<RealtimePrayerRow>) => void,
         )
         .on(
           "postgres_changes",
           { event: "DELETE", schema: "public", table: "prayers" },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (event: any) => {
+          ((event: RealtimePrayerInsertDeletePayload) => {
             if (!event || typeof event !== "object") {
               return;
             }
@@ -226,7 +282,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
                 prayers: post.prayers.filter((prayer) => prayer.id !== payload.old.id),
               })),
             );
-          },
+          }) as (payload: RealtimePostgresDeletePayload<RealtimePrayerRow>) => void,
         )
         .subscribe();
     };
