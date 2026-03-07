@@ -879,7 +879,20 @@
         "i give up on everything",
         "no one cares if i live or die",
         "i am a burden to everyone",
-        "i make everything worse"
+        "i make everything worse",
+        "so pagod na ako",
+        "so pagod na ko",
+        "sobrang pagod na ako",
+        "sobrang tired na ko",
+        "wala na akong lakas at ayoko nang magpatuloy",
+        "i can't na talaga",
+        "ayoko na magpatuloy i give up",
+        "i give up na talaga",
+        "want lahat to matapos na",
+        "i don't want to go on na",
+        "surrender na ako sa lahat",
+        "hindi ko na alam kung bakit ako nandito",
+        "wala na akong pakialam sa lahat"
       ],
       "patterns": [
         "\\b(unalive|rope) (myself|yourself)\\b",

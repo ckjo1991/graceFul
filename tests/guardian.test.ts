@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import test from "node:test";
+import test, { describe } from "node:test";
 import assert from "node:assert/strict";
 
 import {
@@ -584,4 +584,40 @@ test("guarded write migration keeps duplicate protections and spam keywords alig
   assert.match(sql, /gcash/);
   assert.match(sql, /discord/);
   assert.match(sql, /prayer circle/);
+});
+
+describe("passive distress patterns (Gap 1)", () => {
+  const passivelyCrisisMessages = [
+    "I don't know why I keep waking up.",
+    "Just going through the motions these days.",
+    "What's even the point of any of this.",
+    "I'm tired of pretending everything's fine.",
+    "I don't care about anything anymore.",
+    "Just existing now, nothing more.",
+    "Can't remember the last time I felt okay.",
+    "I don't know what I'm still doing here.",
+  ];
+
+  passivelyCrisisMessages.forEach((msg) => {
+    test(`detects passive crisis: "${msg.slice(0, 40)}..."`, () => {
+      assert.equal(checkCrisis(msg), true);
+    });
+  });
+});
+
+describe("code-switching crisis patterns (Gap 2)", () => {
+  const codeSwitchedMessages = [
+    "So pagod na ako, I just can't anymore.",
+    "Wala na akong lakas, I don't want to go on.",
+    "I can't na talaga, everything is too much.",
+    "Ayoko na magpatuloy, I give up na.",
+    "Sobrang tired na ko sa lahat.",
+    "I surrender na sa lahat, wala na.",
+  ];
+
+  codeSwitchedMessages.forEach((msg) => {
+    test(`detects code-switched crisis: "${msg.slice(0, 40)}..."`, () => {
+      assert.equal(checkCrisis(msg), true);
+    });
+  });
 });
