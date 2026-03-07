@@ -110,13 +110,6 @@ export function handleEscalationRequest(post: FeedPost): void {
   // The post.id and post.category are available for routing.
   // The poster remains anonymous - no contact info is collected.
   // The prayer team reaches out through existing church channels.
-  console.log("[GraceFul] Escalation requested for post:", {
-    postId: post.id,
-    category: post.category,
-    emotion: post.emotion,
-    wantsFollowUp: post.wantsFollowUp,
-    createdAt: post.createdAt,
-  });
 }
 
 export function createFeedPost(

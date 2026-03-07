@@ -139,7 +139,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
           { event: "UPDATE", schema: "public", table: "posts" },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (event: any) => {
-            if (!event?.new?.id) {
+            if (!event?.new?.id || !("hearts" in event.new)) {
               return;
             }
 
@@ -228,9 +228,7 @@ export function PostsProvider({ children }: { children: ReactNode }) {
             );
           },
         )
-        .subscribe((status) => {
-          console.log("[GraceFul] Realtime status:", status);
-        });
+        .subscribe();
     };
 
     async function loadPosts() {

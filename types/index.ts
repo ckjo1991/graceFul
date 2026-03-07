@@ -13,10 +13,13 @@ export type SupportType =
   | "both"
   | "encouragement";
 
-export type LanguageCode =
+export type UiLanguageCode =
   | "en"
   | "tl"
-  | "ceb"
+  | "ceb";
+
+export type LanguageCode =
+  | UiLanguageCode
   | "hil"
   | "es";
 

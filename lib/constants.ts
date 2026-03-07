@@ -2,9 +2,9 @@ import type {
   AppFlowStep,
   Category,
   Emotion,
-  LanguageCode,
   PrototypeShareStep,
   SupportType,
+  UiLanguageCode,
 } from "@/types";
 
 export const COLORS = {
@@ -33,12 +33,10 @@ export const SUPPORT_OPTIONS: readonly SupportType[] = [
   "both",
 ];
 
-export const SUPPORTED_LANGUAGES: Readonly<Record<LanguageCode, string>> = {
+export const SUPPORTED_LANGUAGES: Readonly<Record<UiLanguageCode, string>> = {
   en: "English",
   tl: "Tagalog",
   ceb: "Bisaya",
-  hil: "Hiligaynon",
-  es: "Spanish",
 };
 
 export const FLOW_STEPS: readonly AppFlowStep[] = [

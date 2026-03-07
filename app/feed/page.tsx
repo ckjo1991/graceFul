@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Globe2, Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
@@ -16,7 +17,6 @@ import ShareStepShell, {
   type ShareStepShellExitConfirmation,
 } from "@/components/ShareStepShell";
 import SupportStep from "@/components/SupportStep";
-import TestDashboard from "@/components/TestDashboard";
 import { analyzeIntent } from "@/lib/ai";
 import {
   completeSuccessfulPost,
@@ -52,6 +52,8 @@ import type {
 
 type EmotionFilter = "all" | Emotion;
 type TopicFilter = "all_topics" | Category;
+
+const TestDashboard = dynamic(() => import("@/components/TestDashboard"));
 
 const DEVICE_ID_STORAGE_KEY = "graceful_device_id";
 const DEFAULT_EMOTION_FILTER: EmotionFilter = "all";
@@ -102,6 +104,7 @@ export default function GracefulFlow() {
   const [isPosting, setIsPosting] = useState(false);
   const [selection, setSelection] = useState<AppFlowSelection>(createInitialSelection);
   const [completionMessage, setCompletionMessage] = useState<ThankYouMessage | null>(null);
+  const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
   const [warningReason, setWarningReason] = useState<WarningReason>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -275,6 +278,7 @@ export default function GracefulFlow() {
     isModalOpen.current = false;
     setShowExitConfirm(false);
     setCompletionMessage(null);
+    setCooldownMessage(null);
     setSelection(createInitialSelection());
     setWarningReason(null);
     setStep(returnToFeed());
@@ -313,11 +317,12 @@ export default function GracefulFlow() {
     const result = startShareFlow(lastPostTime);
 
     if (!result.allowed) {
-      alert(`🌿 ${copy.feed.cooldown(result.waitTime)}`);
+      setCooldownMessage(copy.feed.cooldown(result.waitTime));
       return;
     }
 
     isModalOpen.current = true;
+    setCooldownMessage(null);
     setCompletionMessage(null);
     setSelection(result.selection);
     setWarningReason(result.warningReason);
@@ -918,6 +923,11 @@ export default function GracefulFlow() {
             >
               {copy.feed.shareAgain}
             </button>
+            {cooldownMessage ? (
+              <p className="mt-3 text-center text-sm leading-6 text-[var(--muted-ink)] italic">
+                🌿 {cooldownMessage}
+              </p>
+            ) : null}
           </div>
           {postError ? (
             <p className="mt-4 text-sm text-[#dc2626]">
@@ -962,7 +972,9 @@ export default function GracefulFlow() {
       {showNudge ? (
         <CommunityNudge onDismiss={() => setShowNudge(false)} />
       ) : null}
-      <TestDashboard onInject={injectScenario} />
+      {process.env.NEXT_PUBLIC_ENABLE_TEST_DASHBOARD === "true" ? (
+        <TestDashboard onInject={injectScenario} />
+      ) : null}
     </div>
   );
 }
