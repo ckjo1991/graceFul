@@ -358,7 +358,7 @@ export default function PostCard({
                   Report &quot;<span className="italic">{truncatedPostLabel}</span>
                   &quot;?
                 </h2>
-                <p className="mt-3 text-[0.96rem] leading-7 text-[var(--muted-ink)]">
+                <p className="mt-3 text-[0.96rem] leading-7 text-[var(--text-body)]">
                   This will flag it for review.
                   <br />
                   The post stays visible until reviewed.
@@ -367,7 +367,7 @@ export default function PostCard({
                   <p className="text-sm font-medium text-[var(--brand-dark)]">
                     {postLabel}
                   </p>
-                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--muted-ink)]">
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--text-body)]">
                     {displayMessage}
                   </p>
                 </div>

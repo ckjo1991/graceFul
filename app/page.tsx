@@ -102,7 +102,7 @@ export default function LandingPage() {
             <br />
             to be seen.
           </h1>
-          <p className="mt-6 max-w-md text-[1rem] leading-8 text-[var(--muted-ink)] sm:text-[1.05rem]">
+          <p className="mt-6 max-w-md text-[1rem] leading-8 text-[var(--text-body)] sm:text-[1.05rem]">
             GraceFul is not a replacement for community. It&apos;s a doorway into
             it for those not ready to share openly yet.
           </p>
@@ -112,7 +112,7 @@ export default function LandingPage() {
           >
             Enter the space
           </Link>
-          <p className="mt-5 max-w-lg text-sm leading-7 text-[var(--muted-ink)] sm:text-[0.98rem]">
+          <p className="mt-5 max-w-lg text-sm leading-7 text-[var(--text-body)] sm:text-[0.98rem]">
             Inside GraceFul you can share something you&apos;re grateful for,
             share something you&apos;re struggling with, and receive prayers or
             quiet support.
@@ -132,7 +132,7 @@ export default function LandingPage() {
                 <h2 className="mt-5 text-2xl font-semibold leading-tight text-[var(--ink)]">
                   {pillar.title}
                 </h2>
-                <p className="mt-3 text-[1rem] leading-8 text-[var(--muted-ink)]">
+                <p className="mt-3 text-[1rem] leading-8 text-[var(--text-body)]">
                   {pillar.body}
                 </p>
               </article>
@@ -146,7 +146,7 @@ export default function LandingPage() {
           <p className="text-sm font-medium uppercase tracking-[0.14em] text-[var(--muted-ink)]">
             Is honesty only real when it&apos;s public?
           </p>
-          <p className="mx-auto mt-5 max-w-lg text-[1.05rem] leading-8 text-[var(--muted-ink)]">
+          <p className="mx-auto mt-5 max-w-lg text-[1.05rem] leading-8 text-[var(--text-body)]">
             We don&apos;t think so. Sometimes honesty begins quietly, before
             you&apos;re ready to say it out loud to people who know you.
           </p>

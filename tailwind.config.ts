@@ -24,6 +24,8 @@ const config: Config = {
         muted: "#8fad88",
         text: {
           DEFAULT: "#2c3a2e",
+          body: "#555555",
+          /* AA-safe: 5.89:1 on #E8E4DE */
           light: "#526457",
         },
         border: "#c8bea7",
