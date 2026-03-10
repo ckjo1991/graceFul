@@ -103,3 +103,13 @@
 - [x] Add Guardian crisis reference spec in `docs/guardian/GUARDIAN_CRISIS_DETECTION_V1.md`.
 - [ ] Eliminate stale prototype assumptions from remaining reference code and
   comments.
+
+## Design System
+
+- [x] Extract design system from live UI at graceful-space.vercel.app
+- [x] Audit color contrast across all palette pairs (WCAG AA)
+- [x] Fix body text contrast: darken --text-body to #555555 (was #6B6B6B, 4.21:1 → 5.89:1)
+- [x] Commit design system token reference to docs/design-system/TOKENS.md
+- [x] Configure Codex to treat TOKENS.md as forward-only UI source of truth
+- [ ] Align existing component files to TOKENS.md token names (incremental — do per component when touched)
+- [ ] Audit tailwind.config.ts and globals.css for full token name alignment

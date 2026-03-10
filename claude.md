@@ -55,6 +55,12 @@ Other current architecture rules:
 9. **Deduplicate Safety Data**
    Before adding new Guardian phrases, aliases, or regex alternatives, check
    existing entries first and merge without introducing duplicates.
+10. **Design System as UI Source of Truth**
+    Before writing or modifying any UI code, read
+    `docs/design-system/TOKENS.md`. Do not hardcode hex values, spacing,
+    radius, or shadow values. Use the token names defined there. If a token
+    does not exist for your use case, add it to TOKENS.md first before
+    adding it to code.
 
 ## Current Step Model
 
@@ -100,6 +106,8 @@ If this state model changes, update the docs in the same pass.
 - Keep development-only fixtures and scenario data in dedicated helper files.
 - Keep Guardian reference specs in `docs/guardian/` and runtime enforcement in
   `lib/guardian.ts`.
+- Keep the design system token reference in `docs/design-system/TOKENS.md`.
+  Update it whenever a new token is introduced or an existing value changes.
 
 ## Testing Expectations
 
