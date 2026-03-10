@@ -48,13 +48,13 @@ test("share flow supports the happy path from feed to done and back to feed", ()
   assert.equal(support.nextStep, "review");
 
   const posts = createInitialPosts();
-  const completed = completeSuccessfulPost(
+  const completed = completeSuccessfulPost({
     posts,
     selection,
-    selection.message,
-    1_700_000_000_000,
-    "device-123",
-  );
+    finalMessage: selection.message,
+    postedAt: 1_700_000_000_000,
+    deviceId: "device-123",
+  });
   assert.ok(completed);
   if (!completed) {
     assert.fail("Expected successful completion.");
@@ -142,12 +142,12 @@ test("message submission routes unsafe content into the warning step", () => {
 
 test("prayer submissions append a prayer and increment only the targeted post", () => {
   const posts = samplePosts.map((post) => ({ ...post, prayers: [...post.prayers] }));
-  const updated = addPrayerToPost(
+  const updated = addPrayerToPost({
     posts,
-    "post-2",
-    "Lord, please provide peace and daily provision for this person.",
-    "Just now",
-  );
+    postId: "post-2",
+    prayerText: "Lord, please provide peace and daily provision for this person.",
+    createdAt: "Just now",
+  });
 
   assert.equal(updated[0].prayers.length, posts[0].prayers.length);
   assert.equal(updated[1].prayers.length, posts[1].prayers.length + 1);

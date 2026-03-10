@@ -395,13 +395,13 @@ export default function GracefulFlow() {
       }
 
       const postedAt = Date.now();
-      const result = completeSuccessfulPost(
+      const result = completeSuccessfulPost({
         posts,
         selection,
         finalMessage,
         postedAt,
-        deviceId ?? undefined,
-      );
+        deviceId: deviceId ?? undefined,
+      });
 
       if (!result) {
         return;
@@ -433,13 +433,13 @@ export default function GracefulFlow() {
       }
 
       const postedAt = Date.now();
-      const result = completeSuccessfulPost(
+      const result = completeSuccessfulPost({
         posts,
         selection,
         finalMessage,
         postedAt,
-        deviceId ?? undefined,
-      );
+        deviceId: deviceId ?? undefined,
+      });
 
       if (!result) {
         return;

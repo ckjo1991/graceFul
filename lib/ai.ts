@@ -1,11 +1,4 @@
-import {
-  analyzeSpam,
-  checkCrisis,
-  checkProfanity,
-  checkSafety,
-  hasViolentIntent,
-  runGuardian,
-} from "@/lib/guardian";
+import { checkSafety, runGuardian } from "@/lib/guardian";
 
 export interface GuardianAIResult {
   scrubbedMessage: string;
@@ -19,124 +12,118 @@ export interface IntentResult {
   reason: "malice" | "profanity" | "spam" | "safe";
 }
 
-/**
- * Analyzes message for harmful intent across multiple languages.
- * Detects:
- * - Direct harm wishes: "I hope he dies" (English)
- * - Implicit curses: "Sana karmahin siya" (Tagalog - I hope karma gets him)
- * - Vehicle/accident harm: "I wish a car hits him" (any language)
- * - Wishes for loss: "I hope they lose everything" (any language)
- * - Profanity attacks: "gago", "fuck", etc.
- */
+type IntentUnsafeReason = Exclude<IntentResult["reason"], "safe">;
+type UnsafeReviewReason =
+  | "malice"
+  | "profanity"
+  | "spam"
+  | "pii_phone"
+  | "pii_email"
+  | "pii_social"
+  | "pii_full_name"
+  | "pii_location"
+  | "fallback";
+
+const REVIEW_FEEDBACK = {
+  crisis: {
+    crisis:
+      "You may be carrying something very heavy. GraceFul can hold a quiet moment with you, but you may also need immediate support beyond this space. Please reach out to National Center for Mental Health (1553) or Hopeline if you can.",
+  },
+  unsafe: {
+    profanity:
+      "GraceFul is meant to be a respectful and supportive space. Please adjust the language in your message before sharing.",
+    malice:
+      "GraceFul is a space for healing and peace. Some parts of your message may come across as hurtful. Please rephrase it with care before sharing.",
+    spam: "GraceFul is for sincere prayer and support. Please remove promotional or repetitive language before sharing.",
+    pii_phone: "📱 Phone number removed for privacy.",
+    pii_email: "📧 Email address removed for privacy.",
+    pii_social: "👥 Social media handle removed for privacy.",
+    pii_full_name: "🪪 Full name removed for anonymity.",
+    pii_location: "📍 Specific location removed for safety.",
+    fallback:
+      "This space is meant to stay calm, respectful, and sincere. Please soften or revise your message before sharing.",
+  },
+  safe: {
+    clean: "This looks ready to share.",
+    sanitizedPrefix: "We softened a few sensitive details:",
+  },
+} as const;
+
 export async function analyzeIntent(message: string): Promise<IntentResult> {
-  const translated = message; // placeholder for future multilingual support
+  const safety = checkSafety(message);
 
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  if (checkProfanity(translated)) {
-    return { isSafe: false, reason: "profanity" };
-  }
-
-  if (hasViolentIntent(translated)) {
-    return { isSafe: false, reason: "malice" };
-  }
-
-  const spamAssessment = analyzeSpam(translated);
-  if (spamAssessment.shouldBlock) {
-    return { isSafe: false, reason: "spam" };
+  if (!safety.isSafe && safety.reason && safety.reason !== "pii") {
+    return { isSafe: false, reason: safety.reason };
   }
 
   return { isSafe: true, reason: "safe" };
 }
 
-// Simulated review pass used by the review screen before local posting.
+function getPiiReviewReason(foundDetail: string | null): UnsafeReviewReason {
+  if (foundDetail?.includes("phone")) {
+    return "pii_phone";
+  }
+
+  if (foundDetail?.includes("email")) {
+    return "pii_email";
+  }
+
+  if (foundDetail?.includes("social")) {
+    return "pii_social";
+  }
+
+  if (foundDetail?.includes("full name")) {
+    return "pii_full_name";
+  }
+
+  return "pii_location";
+}
+
+// TODO: Replace simulated review with server-backed Guardian decision.
+// See planning.md Phase 2 — Guardian backend boundary.
 export async function runGuardianReview(
   userMessage: string,
 ): Promise<GuardianAIResult> {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
   const guardianResult = runGuardian(userMessage);
-  const isCrisis =
-    guardianResult.outcome === "redirect_crisis" || checkCrisis(userMessage);
   const safety = checkSafety(userMessage);
   const intentResult = await analyzeIntent(userMessage);
 
-  // Level 3: CRISIS (Most Critical)
-  if (isCrisis) {
+  if (guardianResult.outcome === "redirect_crisis") {
     return {
       scrubbedMessage: guardianResult.sanitizedMessage,
       isCrisis: true,
       isSafe: false,
-      feedback:
-        "You may be carrying something very heavy. GraceFul can hold a quiet moment with you, but you may also need immediate support beyond this space. Please reach out to National Center for Mental Health (1553) or Hopeline if you can.",
+      feedback: REVIEW_FEEDBACK.crisis.crisis,
     };
   }
 
-  // Level 2: MALICE & INTENT (Safety)
   if (!intentResult.isSafe) {
-    if (intentResult.reason === "profanity") {
-      return {
-        scrubbedMessage: guardianResult.sanitizedMessage,
-        isCrisis: false,
-        isSafe: false,
-        feedback:
-          "GraceFul is meant to be a respectful and supportive space. Please adjust the language in your message before sharing.",
-      };
-    }
+    const unsafeReason = intentResult.reason as IntentUnsafeReason;
 
-    if (intentResult.reason === "malice") {
-      return {
-        scrubbedMessage: guardianResult.sanitizedMessage,
-        isCrisis: false,
-        isSafe: false,
-        feedback:
-          "GraceFul is a space for healing and peace. Some parts of your message may come across as hurtful. Please rephrase it with care before sharing.",
-      };
-    }
-
-    if (intentResult.reason === "spam") {
-      return {
-        scrubbedMessage: guardianResult.sanitizedMessage,
-        isCrisis: false,
-        isSafe: false,
-        feedback:
-          "GraceFul is for sincere prayer and support. Please remove promotional or repetitive language before sharing.",
-      };
-    }
+    return {
+      scrubbedMessage: guardianResult.sanitizedMessage,
+      isCrisis: false,
+      isSafe: false,
+      feedback: REVIEW_FEEDBACK.unsafe[unsafeReason],
+    };
   }
 
-  // Level 1: PII (Privacy)
   if (!safety.isSafe) {
     if (safety.reason === "pii") {
-      const feedback = safety.foundDetail?.includes("phone")
-        ? "📱 Phone number removed for privacy."
-        : safety.foundDetail?.includes("email")
-          ? "📧 Email address removed for privacy."
-          : safety.foundDetail?.includes("social")
-            ? "👥 Social media handle removed for privacy."
-            : safety.foundDetail?.includes("full name")
-              ? "🪪 Full name removed for anonymity."
-              : "📍 Specific location removed for safety.";
-
       return {
         scrubbedMessage: guardianResult.sanitizedMessage,
         isCrisis: false,
         isSafe: false,
-        feedback,
+        feedback: REVIEW_FEEDBACK.unsafe[getPiiReviewReason(safety.foundDetail)],
       };
     }
 
-    if (
-      safety.reason === "malice" ||
-      safety.reason === "profanity" ||
-      safety.reason === "spam"
-    ) {
+    if (safety.reason === "malice" || safety.reason === "profanity" || safety.reason === "spam") {
       return {
         scrubbedMessage: guardianResult.sanitizedMessage,
         isCrisis: false,
         isSafe: false,
-        feedback:
-          "This space is meant to stay calm, respectful, and sincere. Please soften or revise your message before sharing.",
+        feedback: REVIEW_FEEDBACK.unsafe.fallback,
       };
     }
   }
@@ -147,7 +134,7 @@ export async function runGuardianReview(
     isSafe: true,
     feedback:
       guardianResult.reasons.length > 0
-        ? `We softened a few sensitive details: ${guardianResult.reasons.join(" ")}`
-        : "This looks ready to share.",
+        ? `${REVIEW_FEEDBACK.safe.sanitizedPrefix} ${guardianResult.reasons.join(" ")}`
+        : REVIEW_FEEDBACK.safe.clean,
   };
 }

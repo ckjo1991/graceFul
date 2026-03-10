@@ -14,6 +14,28 @@ import type {
 
 export type WarningReason = "pii" | "malice" | "profanity" | "spam" | null;
 
+export interface CreateFeedPostParams {
+  selection: AppFlowSelection;
+  finalMessage: string;
+  postedAt: number;
+  deviceId?: string;
+}
+
+export interface CompletePostParams {
+  posts: FeedPost[];
+  selection: AppFlowSelection;
+  finalMessage: string;
+  postedAt: number;
+  deviceId?: string;
+}
+
+export interface AddPrayerParams {
+  posts: FeedPost[];
+  postId: string;
+  prayerText: string;
+  createdAt: string;
+}
+
 export const INITIAL_SELECTION: AppFlowSelection = {
   emotion: "",
   category: "",
@@ -112,12 +134,12 @@ export function handleEscalationRequest(post: FeedPost): void {
   // The prayer team reaches out through existing church channels.
 }
 
-export function createFeedPost(
-  selection: AppFlowSelection,
-  finalMessage: string,
-  postedAt: number,
-  deviceId?: string,
-): FeedPost | null {
+export function createFeedPost({
+  selection,
+  finalMessage,
+  postedAt,
+  deviceId,
+}: CreateFeedPostParams): FeedPost | null {
   if (!selection.emotion || !selection.category || !selection.support) {
     return null;
   }
@@ -141,14 +163,14 @@ export function createFeedPost(
   };
 }
 
-export function completeSuccessfulPost(
-  posts: FeedPost[],
-  selection: AppFlowSelection,
-  finalMessage: string,
-  postedAt: number,
-  deviceId?: string,
-) {
-  const newPost = createFeedPost(selection, finalMessage, postedAt, deviceId);
+export function completeSuccessfulPost({
+  posts,
+  selection,
+  finalMessage,
+  postedAt,
+  deviceId,
+}: CompletePostParams) {
+  const newPost = createFeedPost({ selection, finalMessage, postedAt, deviceId });
 
   if (!newPost) {
     return null;
@@ -164,12 +186,12 @@ export function completeSuccessfulPost(
   };
 }
 
-export function addPrayerToPost(
-  posts: FeedPost[],
-  postId: string,
-  prayerText: string,
-  createdAt: string,
-) {
+export function addPrayerToPost({
+  posts,
+  postId,
+  prayerText,
+  createdAt,
+}: AddPrayerParams) {
   return posts.map((post) =>
     post.id === postId
       ? {

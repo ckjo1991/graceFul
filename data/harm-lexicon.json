@@ -918,20 +918,6 @@
         "s+h+[i*]+t+",
         "b+[i*]+t+c+h+"
       ]
-    },
-    "exceptions": {
-      "exact": [
-        "killed by boredom",
-        "dying of boredom",
-        "bored to death",
-        "this homework is killing me",
-        "this traffic is killing me",
-        "that joke killed me",
-        "i'm dead tired",
-        "dead serious",
-        "drop dead gorgeous",
-        "this is killing me"
-      ]
     }
   }
 }
