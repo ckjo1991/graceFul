@@ -60,6 +60,18 @@ export type SpamSignal =
   | "excess_punctuation"
   | "high_caps_ratio";
 
+export const SPAM_SIGNAL_NAMES: readonly SpamSignal[] = [
+  "url_or_handle",
+  "promo_keywords",
+  "solicitation_keywords",
+  "recruitment_keywords",
+  "chain_message",
+  "affiliate_style",
+  "repeated_token_burst",
+  "excess_punctuation",
+  "high_caps_ratio",
+] as const;
+
 export type SpamAssessment = {
   score: number;
   signals: SpamSignal[];

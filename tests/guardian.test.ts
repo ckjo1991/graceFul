@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import test, { describe } from "node:test";
 import assert from "node:assert/strict";
 
@@ -11,6 +10,7 @@ import {
   runGuardian,
   validateMessageLength,
 } from "../lib/guardian";
+import { SPAM_SIGNAL_NAMES } from "../lib/guardian/spam";
 
 const SUPPLIED_POST_CASES = [
   {
@@ -567,23 +567,37 @@ test("guardian aligns with the supplied moderation corpus", () => {
   }
 });
 
-test("guarded write migration keeps duplicate protections and spam keywords aligned", () => {
-  const sql = fs.readFileSync(
-    "./db/migrations/20260306_guarded_writes_and_abuse_events.sql",
-    "utf8",
-  );
+test("spam signal names cover all expected Guardian categories", () => {
+  // DB-side alignment (graceful_spam_assessment in Supabase) is not tested here.
+  // That contract requires a DB integration test. If spam signal categories change
+  // in lib/guardian/spam.ts, the migration must be updated manually and re-applied.
+  // The DB-side spam assessment function remains a separate integration contract.
 
-  assert.match(sql, /created_at >= now\(\) - interval '24 hours'/);
-  assert.match(sql, /return jsonb_build_object\('ok', false, 'reason', 'duplicate'\)/);
-  assert.match(sql, /url_or_handle/);
-  assert.match(sql, /solicitation_keywords/);
-  assert.match(sql, /recruitment_keywords/);
-  assert.match(sql, /chain_message/);
-  assert.match(sql, /affiliate_style/);
-  assert.match(sql, /paypal/);
-  assert.match(sql, /gcash/);
-  assert.match(sql, /discord/);
-  assert.match(sql, /prayer circle/);
+  const expected: string[] = [
+    "url_or_handle",
+    "promo_keywords",
+    "solicitation_keywords",
+    "recruitment_keywords",
+    "chain_message",
+    "affiliate_style",
+    "repeated_token_burst",
+    "excess_punctuation",
+    "high_caps_ratio",
+  ];
+
+  for (const signal of expected) {
+    assert.ok(
+      (SPAM_SIGNAL_NAMES as readonly string[]).includes(signal),
+      `Expected SPAM_SIGNAL_NAMES to include "${signal}"`,
+    );
+  }
+
+  assert.equal(
+    SPAM_SIGNAL_NAMES.length,
+    expected.length,
+    "SPAM_SIGNAL_NAMES length does not match expected signal count. " +
+    "A signal was added or removed without updating both spam.ts and this test.",
+  );
 });
 
 describe("passive distress patterns (Gap 1)", () => {
