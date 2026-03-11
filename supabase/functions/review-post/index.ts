@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const CRISIS_PATTERNS = [
   /\b(suicid|self.harm|kill myself|end my life|want to die)\b/i,
   /\b(gusto ko nang mamatay|gusto ko nang mawala|wala na akong dahilan)\b/i,
@@ -23,18 +29,14 @@ function containsPattern(text: string, patterns: RegExp[]): boolean {
 }
 
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS_HEADERS });
+  }
+
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }
 
@@ -44,7 +46,7 @@ serve(async (req) => {
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }
 
@@ -53,26 +55,26 @@ serve(async (req) => {
   if (containsPattern(message, CRISIS_PATTERNS)) {
     return new Response(
       JSON.stringify({ allowed: false, reason: "crisis" }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
 
   if (containsPattern(message, VIOLENT_INTENT_PATTERNS)) {
     return new Response(
       JSON.stringify({ allowed: false, reason: "violent_intent" }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
 
   if (containsPattern(message, PROFANITY_PATTERNS)) {
     return new Response(
       JSON.stringify({ allowed: false, reason: "profanity" }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
     );
   }
 
   return new Response(
     JSON.stringify({ allowed: true }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
   );
 });
