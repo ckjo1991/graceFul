@@ -17,7 +17,6 @@ import ShareStepShell, {
   type ShareStepShellExitConfirmation,
 } from "@/components/ShareStepShell";
 import SupportStep from "@/components/SupportStep";
-import { analyzeIntent } from "@/lib/ai";
 import {
   completeSuccessfulPost,
   createInitialSelection,
@@ -30,8 +29,9 @@ import {
   submitMessage,
   type WarningReason,
 } from "@/lib/app-flow";
+import { reviewPostServerSide } from "@/lib/db";
 import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
-import { checkCrisis, checkSafety } from "@/lib/guardian";
+import { checkCrisis } from "@/lib/guardian";
 import {
   markNudgeShown,
   nudgeState,
@@ -377,20 +377,10 @@ export default function GracefulFlow() {
     setIsPosting(true);
 
     try {
-      const safety = await analyzeIntent(finalMessage);
+      const serverCheck = await reviewPostServerSide(finalMessage);
 
-      if (!safety.isSafe) {
-        console.error("Guardian intent analysis blocked a post at the final gate!", {
-          reason: safety.reason,
-        });
-        setWarningReason(
-          safety.reason === "profanity"
-            ? "profanity"
-            : safety.reason === "spam"
-              ? "spam"
-              : "malice",
-        );
-        setStep("warning");
+      if (!serverCheck.allowed) {
+        setStep(serverCheck.reason === "crisis" ? "crisis" : "warning");
         return;
       }
 
@@ -423,15 +413,7 @@ export default function GracefulFlow() {
       setLastPostTime(result.lastPostTime);
       setStep(result.nextStep);
     } catch (error) {
-      console.error("Guardian intent analysis failed at the final gate.", error);
-      const fallbackSafety = checkSafety(finalMessage);
-
-      if (!fallbackSafety.isSafe) {
-        setWarningReason(fallbackSafety.reason ?? "malice");
-        setStep("warning");
-        return;
-      }
-
+      console.error("Guardian server review failed at the final gate.", error);
       const postedAt = Date.now();
       const result = completeSuccessfulPost({
         posts,

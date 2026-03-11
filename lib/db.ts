@@ -619,3 +619,39 @@ export async function fetchAbuseEvents(
     createdAt: row.created_at,
   }));
 }
+
+export async function reviewPostServerSide(
+  message: string
+): Promise<{ allowed: boolean; reason?: string }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn("reviewPostServerSide: missing env vars, skipping server check");
+    return { allowed: true };
+  }
+
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/functions/v1/review-post`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ message }),
+      }
+    );
+
+    if (!res.ok) {
+      console.warn("reviewPostServerSide: edge function returned", res.status);
+      return { allowed: true };
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.warn("reviewPostServerSide: fetch failed, failing open", err);
+    return { allowed: true };
+  }
+}

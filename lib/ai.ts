@@ -81,6 +81,8 @@ function getPiiReviewReason(foundDetail: string | null): UnsafeReviewReason {
 
 // TODO: Replace simulated review with server-backed Guardian decision.
 // See planning.md Phase 2 — Guardian backend boundary.
+// DEPRECATED: Replaced by reviewPostServerSide in lib/db.ts via Edge Function.
+// Retained for reference only. Do not call from product code.
 export async function runGuardianReview(
   userMessage: string,
 ): Promise<GuardianAIResult> {
