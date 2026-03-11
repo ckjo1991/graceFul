@@ -380,7 +380,14 @@ export default function GracefulFlow() {
       const serverCheck = await reviewPostServerSide(finalMessage);
 
       if (!serverCheck.allowed) {
-        setStep(serverCheck.reason === "crisis" ? "crisis" : "warning");
+        if (serverCheck.reason === "crisis") {
+          setStep("crisis");
+        } else {
+          setWarningReason(
+            serverCheck.reason === "profanity" ? "profanity" : "malice",
+          );
+          setStep("warning");
+        }
         return;
       }
 
