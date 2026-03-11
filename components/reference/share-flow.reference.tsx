@@ -1,5 +1,7 @@
 "use client";
 
+// REFERENCE ONLY — predates Supabase persistence. Not mounted in product.
+
 import { useState } from "react";
 
 import { CATEGORIES, EMOTIONS, MAX_CHARS, MIN_CHARS, SUPPORTED_LANGUAGES } from "@/lib/constants";
@@ -26,11 +28,14 @@ const INITIAL_DRAFT: PrototypeShareDraft = {
 
 function nextStep(step: PrototypeShareStep): PrototypeShareStep {
   const order: PrototypeShareStep[] = [
+    // STALE STEP: welcome removed from active flow
     "welcome",
     "category",
     "message",
     "support",
+    // STALE STEP: translate_opt removed from active flow
     "translate_opt",
+    // STALE STEP: wording removed from active flow
     "wording",
     "done",
   ];
@@ -40,6 +45,7 @@ function nextStep(step: PrototypeShareStep): PrototypeShareStep {
 }
 
 export function ShareFlow() {
+  // STALE STEP: welcome removed from active flow
   const [step, setStep] = useState<PrototypeShareStep>("welcome");
   const [draft, setDraft] = useState<PrototypeShareDraft>(INITIAL_DRAFT);
   const [guardianNotes, setGuardianNotes] = useState<string[]>([]);
@@ -82,6 +88,7 @@ export function ShareFlow() {
     setDraft(INITIAL_DRAFT);
     setGuardianNotes([]);
     setGuardianOutcome(null);
+    // STALE STEP: welcome removed from active flow
     setStep("welcome");
   };
 
@@ -99,7 +106,7 @@ export function ShareFlow() {
         <CardDescription>{stepDescription(step)}</CardDescription>
       </div>
 
-      {step === "welcome" ? (
+      {step === "welcome" ? ( // STALE STEP: welcome removed from active flow
         <div className="grid gap-3 sm:grid-cols-2">
           {EMOTIONS.map((emotion) => (
             <Button key={emotion} className="justify-start rounded-[1.5rem]" onClick={() => handleEmotion(emotion)}>
@@ -187,7 +194,7 @@ export function ShareFlow() {
         </div>
       ) : null}
 
-      {step === "translate_opt" ? (
+      {step === "translate_opt" ? ( // STALE STEP: translate_opt removed from active flow
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             {Object.entries(SUPPORTED_LANGUAGES).map(([code, label]) => (
@@ -209,7 +216,7 @@ export function ShareFlow() {
         </div>
       ) : null}
 
-      {step === "wording" ? (
+      {step === "wording" ? ( // STALE STEP: wording removed from active flow
         <div className="space-y-4">
           <label className="flex items-center gap-3 rounded-[1.25rem] border border-[var(--border)] bg-white/70 p-4 text-sm">
             <input

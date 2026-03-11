@@ -1,3 +1,5 @@
+// REFERENCE ONLY — predates Supabase persistence. Not mounted in product.
+
 import { samplePosts } from "@/lib/sample-posts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
