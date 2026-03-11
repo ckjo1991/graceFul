@@ -319,8 +319,6 @@ export function PostsProvider({ children }: { children: ReactNode }) {
 
         setPosts(loadedPosts);
       } catch (error) {
-        console.error("[GraceFul] fetchPosts failed:", error);
-
         if (isActive) {
           setPosts([]);
         }
@@ -350,8 +348,6 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       pushPost(post);
       return { ok: true } as const;
     } catch (error) {
-      console.error("[GraceFul] Post save failed:", error);
-
       if (error instanceof GuardedWriteError) {
         const message =
           error.reason === "rate_limited"
@@ -387,8 +383,6 @@ export function PostsProvider({ children }: { children: ReactNode }) {
       attachPrayer({ ...prayer, postId });
       return { ok: true } as const;
     } catch (error) {
-      console.error("[GraceFul] Prayer save failed:", error);
-
       if (error instanceof GuardedWriteError) {
         const message =
           error.reason === "rate_limited"
