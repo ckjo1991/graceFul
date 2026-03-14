@@ -227,7 +227,7 @@ export default function PrayerListModal({
             <button
               disabled={newPrayer.trim().length === 0 || isSubmittingPrayer}
               onClick={() => void handleSubmitPrayer()}
-              className="min-h-[44px] rounded-lg bg-[#1C5C3A] px-4 py-2 text-[12px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+              className="min-h-[44px] rounded-lg bg-primary px-4 py-2 text-[12px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30 dark:bg-primary-dark"
             >
               Pray for this
             </button>
