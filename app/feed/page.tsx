@@ -48,6 +48,7 @@ import type {
   Emotion,
   FeedPost,
   LanguageCode,
+  SupportType,
 } from "@/types";
 
 type EmotionFilter = "all" | Emotion;
@@ -103,15 +104,22 @@ export default function GracefulFlow() {
   const [activePrayerListPostId, setActivePrayerListPostId] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [selection, setSelection] = useState<AppFlowSelection>(createInitialSelection);
+  const [composerText, setComposerText] = useState("");
+  const [composerMood, setComposerMood] = useState<Emotion | null>(null);
+  const [composerTopic, setComposerTopic] = useState<Category | null>(null);
+  const [composerNeed, setComposerNeed] = useState<SupportType>("both");
+  const [composerHasText, setComposerHasText] = useState(false);
   const [completionMessage, setCompletionMessage] = useState<ThankYouMessage | null>(null);
   const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
   const [warningReason, setWarningReason] = useState<WarningReason>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showNudge, setShowNudge] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const isModalOpen = useRef(false);
   const nudgeCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousActiveFlowRef = useRef(false);
+  const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const copy = getUiCopy(viewerLanguage);
 
   const emotionFilters: Array<{
@@ -277,6 +285,7 @@ export default function GracefulFlow() {
   const closeShareFlow = useCallback(() => {
     isModalOpen.current = false;
     setShowExitConfirm(false);
+    setShowToast(false);
     setCompletionMessage(null);
     setCooldownMessage(null);
     setSelection(createInitialSelection());
@@ -284,6 +293,14 @@ export default function GracefulFlow() {
     setStep(returnToFeed());
     syncCompactState();
   }, [syncCompactState]);
+
+  function resetComposer() {
+    setComposerText("");
+    setComposerMood(null);
+    setComposerTopic(null);
+    setComposerNeed("both");
+    setComposerHasText(false);
+  }
 
   const shouldConfirmShareExit =
     step !== "feed" &&
@@ -354,9 +371,43 @@ export default function GracefulFlow() {
     setStep(result.nextStep);
   };
 
+  async function handleComposerSubmit() {
+    if (!composerText.trim() || !composerMood || !composerTopic) {
+      return;
+    }
+
+    const afterEmotion = selectEmotion(selection, composerMood);
+    setSelection(afterEmotion.selection);
+
+    const afterCategory = selectCategory(afterEmotion.selection, composerTopic);
+    setSelection(afterCategory.selection);
+
+    const afterSupport = selectSupport(afterCategory.selection, composerNeed);
+    setSelection(afterSupport.selection);
+
+    const result = submitMessage(afterSupport.selection, composerText.trim());
+    setSelection(result.selection);
+    if (result.warningReason) {
+      setWarningReason(result.warningReason);
+    } else {
+      setWarningReason(null);
+    }
+    setStep(result.nextStep);
+
+    resetComposer();
+  }
+
   const handleViewerLanguageChange = (language: LanguageCode) => {
     setViewerLanguage(language);
   };
+
+  const focusComposer = useCallback(() => {
+    composerTextareaRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+    composerTextareaRef.current?.focus();
+  }, []);
 
   const handleFinalPost = async (finalMessage: string) => {
     if (!selection.emotion || !selection.category || !selection.support) {
@@ -498,6 +549,23 @@ export default function GracefulFlow() {
     nudgeState.prayerSubmittedThisSession = true;
   };
 
+  useEffect(() => {
+    if (step !== "done") {
+      return;
+    }
+
+    setShowToast(true);
+
+    const timeoutId = window.setTimeout(() => {
+      setShowToast(false);
+      closeShareFlow();
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [closeShareFlow, step]);
+
   const injectScenario = (scenario: TestScenario) => {
     const result = applyScenarioInjection(selection, scenario);
     setSelection(result.selection);
@@ -595,7 +663,7 @@ export default function GracefulFlow() {
                     </button>
                     <button
                       type="button"
-                      onClick={startFreshShare}
+                      onClick={focusComposer}
                       className="rounded-xl bg-[#4a7c59] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
                     >
                       {copy.feed.share}
@@ -654,6 +722,114 @@ export default function GracefulFlow() {
                     })}
                   </div>
                 </div>
+              </div>
+
+              <div className="mb-4 rounded-2xl border border-black/[0.12] bg-white px-4 py-3 dark:border-white/[0.12] dark:bg-[#1E1E1C]">
+                <textarea
+                  ref={composerTextareaRef}
+                  value={composerText}
+                  onChange={(event) => {
+                    setComposerText(event.target.value);
+                    setComposerHasText(event.target.value.trim().length > 0);
+                  }}
+                  placeholder="Share what's on your heart..."
+                  rows={2}
+                  className="min-h-[44px] w-full resize-none border-none bg-transparent font-[inherit] text-[14px] leading-relaxed text-gray-900 outline-none placeholder:text-gray-400 focus-visible:ring-0 dark:text-gray-100 dark:placeholder:text-gray-600"
+                />
+
+                {composerHasText ? (
+                  <div className="mt-3 flex flex-col gap-3 border-t border-black/[0.08] pt-3 dark:border-white/[0.08]">
+                    <div>
+                      <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
+                        I am...
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(["grateful", "struggling"] as Emotion[]).map((mood) => (
+                          <button
+                            key={mood}
+                            type="button"
+                            onClick={() => setComposerMood(mood)}
+                            className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] capitalize transition-all ${
+                              composerMood === mood
+                                ? mood === "grateful"
+                                  ? "border-transparent bg-[#C5E3D0] text-[#1A5E38] dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                                  : "border-transparent bg-[#F5C5B5] text-[#7A2E1A] dark:bg-[#46281E] dark:text-[#F0A090]"
+                                : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
+                            }`}
+                          >
+                            {mood === "grateful" ? "Grateful" : "Struggling"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
+                        About...
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {(["Financial", "Personal", "Family", "Health", "Work"] as Category[]).map((topic) => (
+                          <button
+                            key={topic}
+                            type="button"
+                            onClick={() => setComposerTopic(topic)}
+                            className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] transition-all ${
+                              composerTopic === topic
+                                ? "border-black/[0.15] bg-black/[0.08] text-gray-900 dark:border-white/[0.15] dark:bg-white/[0.10] dark:text-gray-100"
+                                : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
+                            }`}
+                          >
+                            {topic}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
+                        What would help you most?
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {([
+                          { value: "prayer", label: "Prayer" },
+                          { value: "just_sharing", label: "Encouragement" },
+                          { value: "both", label: "Both" },
+                        ] as { value: SupportType; label: string }[]).map(({ value, label }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setComposerNeed(value)}
+                            className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] transition-all ${
+                              composerNeed === value
+                                ? "border-transparent bg-[#DDD8F5] text-[#3D2FA0] dark:bg-[#22204A] dark:text-[#A0A0E8]"
+                                : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-1 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={resetComposer}
+                        className="min-h-[44px] rounded-xl border border-black/[0.12] px-4 py-2 text-[13px] text-gray-500 transition-colors hover:bg-gray-50 dark:border-white/[0.12] dark:text-gray-400 dark:hover:bg-white/[0.05]"
+                      >
+                        Never mind
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!composerText.trim() || !composerMood || !composerTopic}
+                        onClick={() => void handleComposerSubmit()}
+                        className="min-h-[44px] rounded-xl bg-[#1C5C3A] px-4 py-2 text-[13px] font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                      >
+                        Post anonymously
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-7 grid grid-cols-2 gap-2 items-start">
@@ -729,7 +905,7 @@ export default function GracefulFlow() {
             <div className="h-5 w-px bg-[#d4e4cc]" aria-hidden="true" />
             <button
               type="button"
-              onClick={startFreshShare}
+              onClick={focusComposer}
               className="bg-[#4a7c59] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#3d6b4a]"
             >
               {copy.feed.share}
@@ -944,6 +1120,12 @@ export default function GracefulFlow() {
       {content}
       {showNudge ? (
         <CommunityNudge onDismiss={() => setShowNudge(false)} />
+      ) : null}
+      {showToast ? (
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-[#1C5C3A] px-4 py-2.5 text-[13px] font-medium text-white pointer-events-none dark:bg-[#2A4632] dark:text-[#7EC8A0] sm:left-auto sm:right-6 sm:translate-x-0">
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          Your post is live.
+        </div>
       ) : null}
       {process.env.NEXT_PUBLIC_ENABLE_TEST_DASHBOARD === "true" ? (
         <TestDashboard onInject={injectScenario} />
