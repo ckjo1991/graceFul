@@ -392,7 +392,14 @@ export default function GracefulFlow() {
     } else {
       setWarningReason(null);
     }
-    setStep(result.nextStep);
+
+    if (result.nextStep === "support") {
+      const afterReview = selectSupport(result.selection, composerNeed);
+      setSelection(afterReview.selection);
+      setStep("review");
+    } else {
+      setStep(result.nextStep);
+    }
 
     resetComposer();
   }

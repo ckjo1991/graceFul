@@ -352,19 +352,21 @@ export default function PostCard(props: PostCardProps) {
                     <Heart size={14} aria-hidden="true" />
                     {heartCount}
                   </span>
-                  <div className="relative ml-auto group">
-                    <button
-                      type="button"
-                      disabled
-                      aria-label="You cannot pray for your own post"
-                      className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed dark:bg-white/[0.06] dark:text-gray-600"
-                    >
-                      {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
-                    </button>
-                    <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-gray-100 dark:text-gray-900">
-                      Can&apos;t pray for your own post
-                    </span>
-                  </div>
+                  {normalizedSupport !== "just_sharing" ? (
+                    <div className="relative ml-auto group">
+                      <button
+                        type="button"
+                        disabled
+                        aria-label="You cannot pray for your own post"
+                        className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed dark:bg-white/[0.06] dark:text-gray-600"
+                      >
+                        {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
+                      </button>
+                      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+                        Can&apos;t pray for your own post
+                      </span>
+                    </div>
+                  ) : null}
                 </>
               ) : null}
             </div>
