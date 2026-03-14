@@ -10,6 +10,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        card: {
+          grateful: "#EAF5EE",
+          "grateful-border": "#C5E3D0",
+          "grateful-dark": "#182A20",
+          "grateful-border-dark": "#2A4632",
+          struggling: "#FEF0EB",
+          "struggling-border": "#F5C5B5",
+          "struggling-dark": "#2A1810",
+          "struggling-border-dark": "#46281E",
+          owned: "#FEFAEC",
+          "owned-border": "#F0DFA0",
+          "owned-dark": "#26200E",
+          "owned-border-dark": "#463C16",
+        },
         primary: {
           DEFAULT: "#4a7c59",
           dark: "#2e5c3a",

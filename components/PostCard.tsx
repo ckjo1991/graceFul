@@ -2,15 +2,10 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { HandHeart, MoreHorizontal, Sparkles } from "lucide-react";
+import { Heart, MoreHorizontal } from "lucide-react";
 
 import { GuardedWriteError, insertReport, updateHearts } from "@/lib/db";
 import { REPORT_REASONS } from "@/lib/reporting";
-import {
-  getViewPrayerLabel,
-  getUiCopy,
-  localizeSupportType,
-} from "@/lib/translation";
 import { formatRelativeTime } from "@/lib/utils";
 import type { FeedPost, LanguageCode } from "@/types";
 
@@ -19,29 +14,6 @@ interface PostCardProps {
   onPray: (postId: string) => void;
   onViewPrayers: (postId: string) => void;
   viewerLanguage: LanguageCode;
-}
-
-const TOPIC_CARD_TINTS: Record<string, string> = {
-  financial: "bg-[#fdf6e3]",
-  family: "bg-[#f0f7f0]",
-  health: "bg-[#eef4fb]",
-  work: "bg-[#f5f0fd]",
-  personal: "bg-[#fdf0f8]",
-};
-
-function getPostLabel(emotion: string, category: string): string {
-  const categoryLabel: Record<string, string> = {
-    financial: "Financial",
-    family: "Family",
-    health: "Health",
-    work: "Work",
-    personal: "something personal",
-  };
-  const cat = categoryLabel[category.toLowerCase()] ?? category;
-
-  if (emotion === "grateful") return `Grateful for ${cat}`;
-  if (emotion === "struggling") return `Struggling with ${cat}`;
-  return cat;
 }
 
 function getHeartedPostIds(): Set<string> {
@@ -80,12 +52,8 @@ function unmarkPostHearted(postId: string): void {
   }
 }
 
-export default function PostCard({
-  post,
-  onPray,
-  onViewPrayers,
-  viewerLanguage,
-}: PostCardProps) {
+export default function PostCard(props: PostCardProps) {
+  const { post, onViewPrayers } = props;
   const [isReported, setIsReported] = React.useState(false);
   const [hasHearted, setHasHearted] = React.useState(false);
   const [heartCount, setHeartCount] = React.useState(post.hearts);
@@ -97,16 +65,6 @@ export default function PostCard({
     (typeof REPORT_REASONS)[number]
   >(REPORT_REASONS[0]);
   const reportMenuRef = React.useRef<HTMLDivElement | null>(null);
-  const copy = getUiCopy(viewerLanguage);
-  const isGrateful = post.emotion === "grateful";
-  const postLabel = getPostLabel(post.emotion, post.category);
-  const truncatedPostLabel =
-    postLabel.length > 40 ? `${postLabel.slice(0, 40)}…` : postLabel;
-  const postLabelClass = isGrateful ? "text-[#4a7c59]" : "text-[#4a6fa5]";
-  const railClass = isGrateful
-    ? "bg-[var(--grateful-rail)]"
-    : "bg-[var(--struggling-rail)]";
-  const cardBg = TOPIC_CARD_TINTS[post.category?.toLowerCase()] ?? "bg-white";
   const deviceId =
     typeof window !== "undefined"
       ? window.localStorage.getItem("graceful_device_id")
@@ -114,14 +72,21 @@ export default function PostCard({
   const isOwnPost = post.deviceId === deviceId;
   const normalizedSupport =
     post.support === "encouragement" ? "just_sharing" : post.support;
-  const showsPrayerButton =
-    !isOwnPost &&
-    (normalizedSupport === "prayer" || normalizedSupport === "both");
-  const showsHeartButton =
-    normalizedSupport === "just_sharing" || normalizedSupport === "both";
-  const showsViewPrayerButton = post.prayers.length > 0;
-  const heartLabel = heartCount === 0 ? "🤍" : `🤍 ${heartCount}`;
-  const activeHeartLabel = `🩷 ${heartCount}`;
+  const truncatedCategory =
+    post.category.length > 40 ? `${post.category.slice(0, 40)}…` : post.category;
+  const truncatedPostLabel =
+    post.message.length > 40 ? `${post.message.slice(0, 40)}…` : post.message;
+  const needLabel = {
+    prayer: "Open to prayer",
+    just_sharing: "Just sharing",
+    both: "Open to both",
+  }[normalizedSupport] ?? "Open to both";
+  const cardClass = post.emotion === "grateful"
+    ? "bg-card-grateful border-card-grateful-border dark:bg-card-grateful-dark dark:border-card-grateful-border-dark"
+    : "bg-card-struggling border-card-struggling-border dark:bg-card-struggling-dark dark:border-card-struggling-border-dark";
+  const ownedClass = isOwnPost
+    ? "bg-card-owned border-card-owned-border dark:bg-card-owned-dark dark:border-card-owned-border-dark"
+    : cardClass;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
   const displayMessage = post.message;
   const showReportModal =
@@ -234,11 +199,9 @@ export default function PostCard({
   return (
     <>
       <article
-        className={`mx-auto w-full max-w-[50rem] overflow-hidden rounded-[1.45rem] border border-[var(--card-border)] shadow-[0_8px_24px_rgba(57,84,61,0.04)] ${cardBg}`}
+        className={`w-full rounded-2xl border p-3 flex flex-col ${ownedClass}`}
       >
-        <div className="relative px-4 py-4 md:px-6 md:py-5">
-          <span className={`absolute inset-y-0 left-0 w-[7px] ${railClass}`} />
-
+        <div className="relative flex h-full flex-col">
           {!isOwnPost ? (
             <div ref={reportMenuRef} className="absolute right-3 top-3 z-10">
               {isReported ? (
@@ -275,69 +238,134 @@ export default function PostCard({
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <span className={`text-sm font-medium ${postLabelClass}`}>
-                {postLabel}
-                {isOwnPost ? (
-                  <span className="ml-2 text-xs font-normal text-[#9ca3af]">
-                    · Your post
-                  </span>
-                ) : null}
+          <div className="flex flex-col gap-2 h-full">
+            <div className="flex flex-wrap gap-1 mb-2 pr-8">
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                  post.emotion === "grateful"
+                    ? "bg-[#C5E3D0] text-[#1A5E38] dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                    : "bg-[#F5C5B5] text-[#7A2E1A] dark:bg-[#46281E] dark:text-[#F0A090]"
+                }`}
+              >
+                {post.emotion === "grateful" ? "Grateful" : "Struggling"}
               </span>
-              <span className="text-xs text-[#9ca3af]">
-                {formatRelativeTime(post.createdAt)}
+              <span className="rounded-full bg-black/[0.07] px-2 py-0.5 text-[10px] text-[#5A5A55] dark:bg-white/[0.08] dark:text-[#A0A09A]">
+                {post.category}
               </span>
+              {isOwnPost ? (
+                <span className="rounded-full bg-[#F0DFA0] px-2 py-0.5 text-[10px] font-medium text-[#6A4E00] dark:bg-[#463C16] dark:text-[#D4B060]">
+                  Your post
+                </span>
+              ) : null}
             </div>
 
-            <p className="max-w-3xl text-[1rem] leading-[1.8] tracking-[-0.01em] text-[var(--ink)] md:text-[1.08rem]">
-              {displayMessage}
+            <span className="text-xs text-[#9ca3af] dark:text-gray-500">
+              {formatRelativeTime(post.createdAt)}
+            </span>
+
+            <div className="relative mb-2 max-h-24 overflow-hidden">
+              <p className="text-[13px] leading-relaxed text-gray-900 dark:text-gray-100">
+                {displayMessage}
+              </p>
+              <div
+                className={`pointer-events-none absolute bottom-0 left-0 right-0 h-7 bg-gradient-to-t to-transparent ${
+                  isOwnPost
+                    ? "from-[#FEFAEC] dark:from-[#26200E]"
+                    : post.emotion === "grateful"
+                      ? "from-[#EAF5EE] dark:from-[#182A20]"
+                      : "from-[#FEF0EB] dark:from-[#2A1810]"
+                }`}
+              />
+            </div>
+
+            <p className="mb-2 text-[11px] italic text-gray-400 dark:text-gray-500">
+              {needLabel}
             </p>
 
-            <div className="inline-flex items-center gap-2 text-[0.94rem] italic text-[var(--support-text)]">
-              <Sparkles className="h-4 w-4 text-[var(--support-accent)]" />
-              <span>{localizeSupportType(post.support, viewerLanguage)}</span>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              {showsHeartButton ? (
+            <div className="mt-auto flex items-center gap-2 border-t border-black/[0.08] pt-2 dark:border-white/[0.08]">
+              {normalizedSupport === "just_sharing" && !isOwnPost ? (
                 <button
                   type="button"
+                  aria-label={`Encourage — ${heartCount} people encouraged this`}
                   onClick={handleHeartClick}
                   disabled={isHeartPending || hasHearted}
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                  className={`min-h-[44px] flex items-center gap-1 text-[12px] transition-colors ${
                     hasHearted
-                      ? "border-[#f9a8d4] bg-[#fce7f3] text-[#be185d]"
-                      : "border-[#d4e4cc] bg-white text-[#2c3a2e]"
+                      ? "text-red-500"
+                      : "text-gray-400 hover:text-red-500 dark:text-gray-500"
                   }`}
                 >
-                  {hasHearted ? activeHeartLabel : heartLabel}
+                  <Heart
+                    size={14}
+                    aria-hidden="true"
+                    className={hasHearted ? "fill-current" : undefined}
+                  />
+                  <span>{heartCount}</span>
                 </button>
               ) : null}
 
-              {showsPrayerButton || showsViewPrayerButton ? (
-                <div className="mt-3 flex flex-row flex-wrap gap-2">
-                  {showsPrayerButton ? (
-                    <button
-                      type="button"
-                      onClick={() => onPray(post.id)}
-                      className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2.5 text-[0.96rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
-                    >
-                      <HandHeart className="h-4 w-4" />
-                      {copy.postCard.pray}
-                    </button>
-                  ) : null}
+              {normalizedSupport === "prayer" && !isOwnPost ? (
+                <button
+                  type="button"
+                  aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
+                  onClick={() => onViewPrayers(post.id)}
+                  className="min-h-[44px] rounded-full bg-[#1C5C3A] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                >
+                  {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
+                </button>
+              ) : null}
 
-                  {showsViewPrayerButton ? (
+              {normalizedSupport === "both" && !isOwnPost ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label={`Encourage — ${heartCount} people encouraged this`}
+                    onClick={handleHeartClick}
+                    disabled={isHeartPending || hasHearted}
+                    className={`min-h-[44px] flex items-center gap-1 text-[12px] transition-colors ${
+                      hasHearted
+                        ? "text-red-500"
+                        : "text-gray-400 hover:text-red-500 dark:text-gray-500"
+                    }`}
+                  >
+                    <Heart
+                      size={14}
+                      aria-hidden="true"
+                      className={hasHearted ? "fill-current" : undefined}
+                    />
+                    <span>{heartCount}</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
+                    onClick={() => onViewPrayers(post.id)}
+                    className="min-h-[44px] rounded-full bg-[#1C5C3A] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                  >
+                    {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
+                  </button>
+                </>
+              ) : null}
+
+              {isOwnPost ? (
+                <>
+                  <span className="flex select-none items-center gap-1 text-[12px] text-gray-300 opacity-40 dark:text-gray-600">
+                    <Heart size={14} aria-hidden="true" />
+                    {heartCount}
+                  </span>
+                  <div className="relative ml-auto group">
                     <button
                       type="button"
-                      onClick={() => onViewPrayers(post.id)}
-                      className="inline-flex items-center rounded-full border border-[var(--chip-border)] bg-[var(--chip-bg)] px-4 py-2.5 text-[0.96rem] font-medium text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                      disabled
+                      aria-label="You cannot pray for your own post"
+                      className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed dark:bg-white/[0.06] dark:text-gray-600"
                     >
-                      {getViewPrayerLabel(post.prayers.length, viewerLanguage)}
+                      {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
                     </button>
-                  ) : null}
-                </div>
+                    <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+                      Can&apos;t pray for your own post
+                    </span>
+                  </div>
+                </>
               ) : null}
             </div>
           </div>
@@ -365,7 +393,7 @@ export default function PostCard({
                 </p>
                 <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] px-4 py-3 text-left">
                   <p className="text-sm font-medium text-[var(--brand-dark)]">
-                    {postLabel}
+                    {truncatedCategory}
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--text-body)]">
                     {displayMessage}

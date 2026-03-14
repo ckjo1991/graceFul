@@ -488,6 +488,16 @@ export default function GracefulFlow() {
     return true;
   };
 
+  const handlePrayerListSubmit = async (postId: string, text: string) => {
+    const saveResult = await addPrayer(postId, text);
+
+    if (!saveResult.ok) {
+      throw new Error("Could not save prayer.");
+    }
+
+    nudgeState.prayerSubmittedThisSession = true;
+  };
+
   const injectScenario = (scenario: TestScenario) => {
     const result = applyScenarioInjection(selection, scenario);
     setSelection(result.selection);
@@ -499,10 +509,6 @@ export default function GracefulFlow() {
     (typeof window !== "undefined"
       ? window.localStorage.getItem(DEVICE_ID_STORAGE_KEY)
       : null);
-  const hasMyPosts = !!currentDeviceId && posts.some(
-    (post) => post.deviceId === currentDeviceId,
-  );
-
   const filteredPosts = posts.filter((post) => {
     const emotionMatch =
       activeEmotion === "all" || post.emotion === activeEmotion;
@@ -650,11 +656,14 @@ export default function GracefulFlow() {
                 </div>
               </div>
 
-              <div className="mt-7 space-y-4">
+              <div className="mt-7 grid grid-cols-2 gap-2 items-start">
                 {isLoading ? (
-                  <p className="py-12 text-center text-[#6b7c6d]">
-                    Loading...
-                  </p>
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={`feed-skeleton-${index}`}
+                      className="h-36 rounded-2xl bg-gray-100 animate-pulse dark:bg-gray-800"
+                    />
+                  ))
                 ) : filteredPosts.length > 0 ? (
                   filteredPosts.map((post) => (
                     <PostCard
@@ -665,39 +674,13 @@ export default function GracefulFlow() {
                       viewerLanguage={viewerLanguage}
                     />
                   ))
-                ) : isMyPosts && !hasMyPosts ? (
-                  <div className="rounded-[1.85rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-10 text-center shadow-[0_10px_34px_rgba(57,84,61,0.05)]">
-                    <h2 className="text-3xl font-semibold text-[var(--ink)]">
-                      You haven&apos;t shared anything yet
-                    </h2>
-                    <p className="mt-3 text-lg leading-8 text-[var(--muted-ink)]">
-                      Your posts will appear here after you share something with the
-                      community.
-                    </p>
-                    <div className="mt-4 flex flex-col items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={startFreshShare}
-                        className="inline-flex h-12 items-center justify-center rounded-[0.95rem] bg-[var(--brand)] px-6 text-[0.98rem] font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
-                      >
-                        + Share something
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsMyPosts(false)}
-                        className="cursor-pointer text-sm text-[#4a7c59] underline"
-                      >
-                        Browse the feed
-                      </button>
-                    </div>
-                  </div>
                 ) : (
-                  <div className="rounded-[1.85rem] border border-[var(--card-border)] bg-[var(--card-bg)] px-6 py-10 text-center shadow-[0_10px_34px_rgba(57,84,61,0.05)]">
-                    <h2 className="text-3xl font-semibold text-[var(--ink)]">
-                      {copy.feed.noPostsTitle}
-                    </h2>
-                    <p className="mt-3 text-lg leading-8 text-[var(--muted-ink)]">
-                      {copy.feed.noPostsBody}
+                  <div className="col-span-2 py-12 text-center">
+                    <p className="text-[14px] text-gray-400 dark:text-gray-600">
+                      Nothing here yet.
+                    </p>
+                    <p className="mt-1 text-[13px] text-gray-400 dark:text-gray-600">
+                      Be the first to share.
                     </p>
                   </div>
                 )}
@@ -726,6 +709,7 @@ export default function GracefulFlow() {
             onClose={handleClosePrayerList}
             language={viewerLanguage}
             onModalVisibilityChange={handleModalVisibilityChange}
+            addPrayer={handlePrayerListSubmit}
           />
         </div>
 

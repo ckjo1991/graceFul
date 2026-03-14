@@ -20,6 +20,7 @@ interface PrayerListModalProps {
   postId: string | null;
   posts: FeedPost[];
   language: LanguageCode;
+  addPrayer?: (postId: string, message: string) => Promise<void>;
 }
 
 export default function PrayerListModal({
@@ -29,6 +30,7 @@ export default function PrayerListModal({
   postId,
   posts,
   language,
+  addPrayer,
 }: PrayerListModalProps) {
   const [confirmingPrayerId, setConfirmingPrayerId] = useState<string | null>(null);
   const [submittingPrayerId, setSubmittingPrayerId] = useState<string | null>(null);
@@ -37,6 +39,8 @@ export default function PrayerListModal({
   const [selectedReportReason, setSelectedReportReason] = useState<ReportReason>(
     REPORT_REASONS[0],
   );
+  const [newPrayer, setNewPrayer] = useState("");
+  const [isSubmittingPrayer, setIsSubmittingPrayer] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,6 +72,8 @@ export default function PrayerListModal({
     setSubmittingPrayerId(null);
     setPrayerReportError(null);
     setSelectedReportReason(REPORT_REASONS[0]);
+    setNewPrayer("");
+    setIsSubmittingPrayer(false);
   }, [isOpen]);
 
   const handlePrayerReport = async (prayerId: string) => {
@@ -103,6 +109,21 @@ export default function PrayerListModal({
     }
   };
 
+  async function handleSubmitPrayer() {
+    if (!newPrayer.trim() || !postId || !addPrayer) {
+      return;
+    }
+
+    setIsSubmittingPrayer(true);
+
+    try {
+      await addPrayer(postId, newPrayer.trim());
+      setNewPrayer("");
+    } finally {
+      setIsSubmittingPrayer(false);
+    }
+  }
+
   if (!isOpen || !currentPost) {
     return null;
   }
@@ -122,7 +143,7 @@ export default function PrayerListModal({
         }
       }}
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in zoom-in-95 duration-300 dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-bg-warm p-4">
           <div className="flex items-center gap-2 font-bold text-primary">
             <HandHeart className="h-5 w-5" />
@@ -149,7 +170,7 @@ export default function PrayerListModal({
           ) : null}
         </div>
 
-        <div className="max-h-[28rem] space-y-3 overflow-y-auto p-5">
+        <div className="max-h-[28rem] flex-1 space-y-3 overflow-y-auto p-5">
           {currentPost.prayers.length > 0 ? (
             currentPost.prayers.map((prayer) => (
               <article
@@ -192,6 +213,25 @@ export default function PrayerListModal({
               {copy.prayerList.empty}
             </div>
           )}
+        </div>
+
+        <div className="border-t border-black/[0.08] p-4 flex-shrink-0 dark:border-white/[0.08]">
+          <textarea
+            value={newPrayer}
+            onChange={(event) => setNewPrayer(event.target.value)}
+            placeholder="Write your prayer..."
+            rows={2}
+            className="min-h-[44px] w-full resize-none rounded-xl border border-black/[0.12] bg-gray-50 px-3 py-2.5 text-[13px] leading-relaxed text-gray-900 outline-none placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#1C5C3A] focus-visible:ring-offset-1 dark:border-white/[0.12] dark:bg-gray-800 dark:text-gray-100"
+          />
+          <div className="mt-2 flex justify-end">
+            <button
+              disabled={newPrayer.trim().length === 0 || isSubmittingPrayer}
+              onClick={() => void handleSubmitPrayer()}
+              className="min-h-[44px] rounded-lg bg-[#1C5C3A] px-4 py-2 text-[12px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+            >
+              Pray for this
+            </button>
+          </div>
         </div>
       </div>
 
