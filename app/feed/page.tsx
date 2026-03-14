@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Globe2, Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
 import CommunityNudge from "@/components/CommunityNudge";
@@ -587,6 +587,37 @@ export default function GracefulFlow() {
 
     return emotionMatch && topicMatch && myPostsMatch;
   });
+  const estimateCardHeight = (post: FeedPost): number => {
+    const badgeHeight = 28;
+    const timestampHeight = 20;
+    const messageHeight = Math.min(96, Math.ceil(post.message.length / 30) * 20);
+    const needHeight = 20;
+    const footerHeight = 44;
+    const padding = 26;
+
+    return badgeHeight + timestampHeight + messageHeight + needHeight + footerHeight + padding;
+  };
+
+  const [leftColumn, rightColumn] = useMemo(() => {
+    const left: FeedPost[] = [];
+    const right: FeedPost[] = [];
+    let leftHeight = 0;
+    let rightHeight = 0;
+
+    for (const post of filteredPosts) {
+      const estimatedHeight = estimateCardHeight(post);
+
+      if (leftHeight <= rightHeight) {
+        left.push(post);
+        leftHeight += estimatedHeight;
+      } else {
+        right.push(post);
+        rightHeight += estimatedHeight;
+      }
+    }
+
+    return [left, right];
+  }, [filteredPosts]);
   let content: React.ReactNode;
 
   if (step === "feed") {
@@ -661,70 +692,15 @@ export default function GracefulFlow() {
                     >
                       {copy.feed.myPosts}
                     </button>
-                    <button
-                      type="button"
-                      onClick={focusComposer}
-                      className="rounded-xl bg-[#4a7c59] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
-                    >
-                      {copy.feed.share}
-                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </header>
 
-          <section className="px-5 py-7 pb-24 sm:pb-0 md:px-7 lg:px-8 lg:py-8">
+          <section className="px-3 py-7 pb-24 sm:px-5 sm:pb-0 md:px-7 lg:px-8 lg:py-8">
             <div className="mx-auto max-w-[50rem]">
-              <div className="flex flex-col gap-4 bg-transparent transition-opacity duration-200">
-                <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
-                  <div className="flex flex-nowrap gap-3 sm:flex-wrap">
-                    {emotionFilters.map((filter) => {
-                      const isActive = activeEmotion === filter.value;
-
-                      return (
-                        <button
-                          key={filter.value}
-                          type="button"
-                          onClick={() => setActiveEmotion(filter.value)}
-                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
-                            isActive
-                              ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
-                              : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                          }`}
-                        >
-                          {filter.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
-                  <div className="flex flex-nowrap gap-3 sm:flex-wrap">
-                    {topicFilters.map((filter) => {
-                      const isActive = activeTopic === filter.value;
-
-                      return (
-                        <button
-                          key={filter.value}
-                          type="button"
-                          onClick={() => setActiveTopic(filter.value)}
-                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
-                            isActive
-                              ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
-                              : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
-                          }`}
-                        >
-                          {filter.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-4 rounded-2xl border border-black/[0.12] bg-white px-4 py-3 dark:border-white/[0.12] dark:bg-[#1E1E1C]">
+              <div className="mb-2 rounded-2xl border border-black/[0.12] bg-white px-2 py-3 dark:border-white/[0.12] dark:bg-[#1E1E1C] sm:px-4">
                 <textarea
                   ref={composerTextareaRef}
                   value={composerText}
@@ -832,32 +808,109 @@ export default function GracefulFlow() {
                 ) : null}
               </div>
 
-              <div className="mt-7 grid grid-cols-2 gap-2 items-start">
+              <div className="flex flex-col gap-4 bg-transparent transition-opacity duration-200">
+                <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
+                  <div className="flex flex-nowrap gap-3 sm:flex-wrap">
+                    {emotionFilters.map((filter) => {
+                      const isActive = activeEmotion === filter.value;
+
+                      return (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          onClick={() => setActiveEmotion(filter.value)}
+                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                            isActive
+                              ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
+                              : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                          }`}
+                        >
+                          {filter.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto whitespace-nowrap bg-transparent scrollbar-hide sm:overflow-visible sm:whitespace-normal">
+                  <div className="flex flex-nowrap gap-3 sm:flex-wrap">
+                    {topicFilters.map((filter) => {
+                      const isActive = activeTopic === filter.value;
+
+                      return (
+                        <button
+                          key={filter.value}
+                          type="button"
+                          onClick={() => setActiveTopic(filter.value)}
+                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                            isActive
+                              ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
+                              : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
+                          }`}
+                        >
+                          {filter.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-7">
                 {isLoading ? (
-                  Array.from({ length: 6 }).map((_, index) => (
-                    <div
-                      key={`feed-skeleton-${index}`}
-                      className="h-36 rounded-2xl bg-gray-100 animate-pulse dark:bg-gray-800"
-                    />
-                  ))
-                ) : filteredPosts.length > 0 ? (
-                  filteredPosts.map((post) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      onPray={handleOpenPrayer}
-                      onViewPrayers={handleOpenPrayerList}
-                      viewerLanguage={viewerLanguage}
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-2 py-12 text-center">
+                  <div className="flex items-start gap-1.5">
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      {[0, 1, 2].map((index) => (
+                        <div
+                          key={`left-skeleton-${index}`}
+                          className="rounded-2xl bg-gray-100 animate-pulse dark:bg-gray-800"
+                          style={{ height: index === 1 ? "160px" : "120px" }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-1 flex-col gap-1.5">
+                      {[0, 1, 2].map((index) => (
+                        <div
+                          key={`right-skeleton-${index}`}
+                          className="rounded-2xl bg-gray-100 animate-pulse dark:bg-gray-800"
+                          style={{ height: index === 0 ? "160px" : "120px" }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : filteredPosts.length === 0 ? (
+                  <div className="w-full py-12 text-center">
                     <p className="text-[14px] text-gray-400 dark:text-gray-600">
                       Nothing here yet.
                     </p>
                     <p className="mt-1 text-[13px] text-gray-400 dark:text-gray-600">
                       Be the first to share.
                     </p>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-1.5">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      {leftColumn.map((post) => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          onPray={handleOpenPrayer}
+                          onViewPrayers={handleOpenPrayerList}
+                          viewerLanguage={viewerLanguage}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      {rightColumn.map((post) => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          onPray={handleOpenPrayer}
+                          onViewPrayers={handleOpenPrayerList}
+                          viewerLanguage={viewerLanguage}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
