@@ -724,7 +724,7 @@ export default function GracefulFlow() {
                 </div>
               </div>
 
-              <div className="mb-4 rounded-2xl border border-[var(--shell-border)] bg-[var(--card-bg)] px-4 py-3">
+              <div className="mb-4 rounded-2xl border border-black/[0.12] bg-white px-4 py-3 dark:border-white/[0.12] dark:bg-[#1E1E1C]">
                 <textarea
                   ref={composerTextareaRef}
                   value={composerText}
@@ -734,7 +734,7 @@ export default function GracefulFlow() {
                   }}
                   placeholder="Share what's on your heart..."
                   rows={2}
-                  className="min-h-[44px] w-full resize-none border-none bg-transparent font-[inherit] text-[14px] leading-relaxed text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-600"
+                  className="min-h-[44px] w-full resize-none border-none bg-transparent font-[inherit] text-[14px] leading-relaxed text-gray-900 outline-none placeholder:text-gray-400 focus-visible:ring-0 dark:text-gray-100 dark:placeholder:text-gray-600"
                 />
 
                 {composerHasText ? (
@@ -751,20 +751,11 @@ export default function GracefulFlow() {
                             onClick={() => setComposerMood(mood)}
                             className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] capitalize transition-all ${
                               composerMood === mood
-                                ? "border-transparent"
+                                ? mood === "grateful"
+                                  ? "border-transparent bg-[#C5E3D0] text-[#1A5E38] dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                                  : "border-transparent bg-[#F5C5B5] text-[#7A2E1A] dark:bg-[#46281E] dark:text-[#F0A090]"
                                 : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
                             }`}
-                            style={composerMood === mood ? (
-                              mood === "grateful"
-                                ? {
-                                    background: "var(--chip-grateful-bg)",
-                                    color: "var(--chip-grateful-text)",
-                                  }
-                                : {
-                                    background: "var(--chip-struggling-bg)",
-                                    color: "var(--chip-struggling-text)",
-                                  }
-                            ) : undefined}
                           >
                             {mood === "grateful" ? "Grateful" : "Struggling"}
                           </button>
@@ -832,7 +823,7 @@ export default function GracefulFlow() {
                         type="button"
                         disabled={!composerText.trim() || !composerMood || !composerTopic}
                         onClick={() => void handleComposerSubmit()}
-                        className="min-h-[44px] rounded-xl bg-primary px-4 py-2 text-[13px] font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-30 dark:bg-primary-dark"
+                        className="min-h-[44px] rounded-xl bg-[#1C5C3A] px-4 py-2 text-[13px] font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
                       >
                         Post anonymously
                       </button>
