@@ -835,7 +835,7 @@ export default function GracefulFlow() {
                           key={filter.value}
                           type="button"
                           onClick={() => setActiveEmotion(filter.value)}
-                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                          className={`font-sans inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
                             isActive
                               ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
                               : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
@@ -858,7 +858,7 @@ export default function GracefulFlow() {
                           key={filter.value}
                           type="button"
                           onClick={() => setActiveTopic(filter.value)}
-                          className={`inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
+                          className={`font-sans inline-flex shrink-0 rounded-full border px-5 py-2.5 text-[0.95rem] font-medium transition-all md:text-[0.98rem] ${
                             isActive
                               ? "border-[var(--chip-active-border)] bg-[var(--chip-active-bg)] text-[var(--chip-active-text)] shadow-[0_12px_24px_rgba(79,132,92,0.16)]"
                               : "border-[var(--chip-border)] bg-[var(--chip-bg)] text-[var(--ink)] hover:border-[var(--brand)] hover:text-[var(--brand)]"
