@@ -294,16 +294,16 @@ export default function PostCard(props: PostCardProps) {
                   }`}
                 />
               ) : null}
-              {isTruncatable ? (
-                <button
-                  type="button"
-                  onClick={() => setExpanded((prev) => !prev)}
-                  className="mt-1 text-[11px] font-medium text-[var(--brand)] hover:opacity-75"
-                >
-                  {expanded ? "Read less" : "Read more"}
-                </button>
-              ) : null}
             </div>
+            {isTruncatable ? (
+              <button
+                type="button"
+                onClick={() => setExpanded((prev) => !prev)}
+                className="mt-1 text-[11px] font-medium text-[var(--brand)] hover:opacity-75"
+              >
+                {expanded ? "Read less" : "Read more"}
+              </button>
+            ) : null}
 
             <p className="mb-2 text-[11px] italic text-[var(--support-text)]">
               {needLabel}
