@@ -82,10 +82,10 @@ export default function PostCard(props: PostCardProps) {
     both: "Open to both",
   }[normalizedSupport] ?? "Open to both";
   const cardClass = post.emotion === "grateful"
-    ? "bg-card-grateful border-card-grateful-border dark:bg-card-grateful-dark dark:border-card-grateful-border-dark"
-    : "bg-card-struggling border-card-struggling-border dark:bg-card-struggling-dark dark:border-card-struggling-border-dark";
+    ? "bg-card-grateful border-card-grateful-border"
+    : "bg-card-struggling border-card-struggling-border";
   const ownedClass = isOwnPost
-    ? "bg-card-owned border-card-owned-border dark:bg-card-owned-dark dark:border-card-owned-border-dark"
+    ? "bg-card-owned border-card-owned-border"
     : cardClass;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
   const displayMessage = post.message;
@@ -243,46 +243,46 @@ export default function PostCard(props: PostCardProps) {
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                   post.emotion === "grateful"
-                    ? "bg-[#C5E3D0] text-[#1A5E38] dark:bg-[#2A4632] dark:text-[#7EC8A0]"
-                    : "bg-[#F5C5B5] text-[#7A2E1A] dark:bg-[#46281E] dark:text-[#F0A090]"
+                    ? "bg-[var(--chip-grateful-bg)] text-[var(--chip-grateful-text)]"
+                    : "bg-[var(--chip-struggling-bg)] text-[var(--chip-struggling-text)]"
                 }`}
               >
                 {post.emotion === "grateful" ? "Grateful" : "Struggling"}
               </span>
-              <span className="rounded-full bg-black/[0.07] px-2 py-0.5 text-[10px] text-[#5A5A55] dark:bg-white/[0.08] dark:text-[#A0A09A]">
+              <span className="rounded-full bg-[var(--chip-bg)] px-2 py-0.5 text-[10px] text-[var(--muted-ink)]">
                 {post.category}
               </span>
               {isOwnPost ? (
-                <span className="rounded-full bg-[#F0DFA0] px-2 py-0.5 text-[10px] font-medium text-[#6A4E00] dark:bg-[#463C16] dark:text-[#D4B060]">
+                <span className="rounded-full bg-[#F0DFA0] px-2 py-0.5 text-[10px] font-medium text-[#6A4E00]">
                   Your post
                 </span>
               ) : null}
             </div>
 
-            <span className="text-xs text-[#9ca3af] dark:text-gray-500">
+            <span className="text-xs text-[var(--timestamp)]">
               {formatRelativeTime(post.createdAt)}
             </span>
 
             <div className="relative mb-2 max-h-24 overflow-hidden">
-              <p className="text-[13px] leading-relaxed text-gray-900 dark:text-gray-100">
+              <p className="text-[13px] leading-relaxed text-[var(--ink)]">
                 {displayMessage}
               </p>
               <div
                 className={`pointer-events-none absolute bottom-0 left-0 right-0 h-7 bg-gradient-to-t to-transparent ${
                   isOwnPost
-                    ? "from-[#FEFAEC] dark:from-[#26200E]"
+                    ? "from-[#FEFAEC]"
                     : post.emotion === "grateful"
-                      ? "from-[#EAF5EE] dark:from-[#182A20]"
-                      : "from-[#FEF0EB] dark:from-[#2A1810]"
+                      ? "from-[#EAF5EE]"
+                      : "from-[#FEF0EB]"
                 }`}
               />
             </div>
 
-            <p className="mb-2 text-[11px] italic text-gray-400 dark:text-gray-500">
+            <p className="mb-2 text-[11px] italic text-[var(--support-text)]">
               {needLabel}
             </p>
 
-            <div className="mt-auto flex items-center gap-2 border-t border-black/[0.08] pt-2 dark:border-white/[0.08]">
+            <div className="mt-auto flex items-center gap-2 border-t border-black/[0.08] pt-2">
               {normalizedSupport === "just_sharing" && !isOwnPost ? (
                 <button
                   type="button"
@@ -292,7 +292,7 @@ export default function PostCard(props: PostCardProps) {
                   className={`min-h-[44px] flex items-center gap-1 text-[12px] transition-colors ${
                     hasHearted
                       ? "text-red-500"
-                      : "text-gray-400 hover:text-red-500 dark:text-gray-500"
+                      : "text-[var(--muted-ink)] hover:text-red-500"
                   }`}
                 >
                   <Heart
@@ -309,7 +309,7 @@ export default function PostCard(props: PostCardProps) {
                   type="button"
                   aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
                   onClick={() => onViewPrayers(post.id)}
-                  className="min-h-[44px] rounded-full bg-[#1C5C3A] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                  className="min-h-[44px] rounded-full bg-[var(--brand)] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85"
                 >
                   {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
                 </button>
@@ -325,7 +325,7 @@ export default function PostCard(props: PostCardProps) {
                     className={`min-h-[44px] flex items-center gap-1 text-[12px] transition-colors ${
                       hasHearted
                         ? "text-red-500"
-                        : "text-gray-400 hover:text-red-500 dark:text-gray-500"
+                        : "text-[var(--muted-ink)] hover:text-red-500"
                     }`}
                   >
                     <Heart
@@ -339,7 +339,7 @@ export default function PostCard(props: PostCardProps) {
                     type="button"
                     aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
                     onClick={() => onViewPrayers(post.id)}
-                    className="min-h-[44px] rounded-full bg-[#1C5C3A] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                    className="min-h-[44px] rounded-full bg-[var(--brand)] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85"
                   >
                     {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
                   </button>
@@ -348,7 +348,7 @@ export default function PostCard(props: PostCardProps) {
 
               {isOwnPost ? (
                 <>
-                  <span className="flex select-none items-center gap-1 text-[12px] text-gray-300 opacity-40 dark:text-gray-600">
+                  <span className="flex select-none items-center gap-1 text-[12px] text-[var(--muted-ink)] opacity-40">
                     <Heart size={14} aria-hidden="true" />
                     {heartCount}
                   </span>
@@ -358,11 +358,11 @@ export default function PostCard(props: PostCardProps) {
                         type="button"
                         disabled
                         aria-label="You cannot pray for your own post"
-                        className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed dark:bg-white/[0.06] dark:text-gray-600"
+                        className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed"
                       >
                         {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
                       </button>
-                      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-gray-100 dark:text-gray-900">
+                      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                         Can&apos;t pray for your own post
                       </span>
                     </div>
