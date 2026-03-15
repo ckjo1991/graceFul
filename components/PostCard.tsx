@@ -54,6 +54,7 @@ function unmarkPostHearted(postId: string): void {
 
 export default function PostCard(props: PostCardProps) {
   const { post, onViewPrayers } = props;
+  const [expanded, setExpanded] = React.useState(false);
   const [isReported, setIsReported] = React.useState(false);
   const [hasHearted, setHasHearted] = React.useState(false);
   const [heartCount, setHeartCount] = React.useState(post.hearts);
@@ -88,6 +89,7 @@ export default function PostCard(props: PostCardProps) {
     ? "bg-card-owned border-card-owned-border"
     : cardClass;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
+  const isTruncatable = post.message.length > 120;
   const displayMessage = post.message;
   const showReportModal =
     reportState === "confirming" || reportState === "submitting";
@@ -263,19 +265,34 @@ export default function PostCard(props: PostCardProps) {
               {formatRelativeTime(post.createdAt)}
             </span>
 
-            <div className="relative mb-2 max-h-24 overflow-hidden">
+            <div
+              className={`relative mb-2 ${
+                !expanded && isTruncatable ? "max-h-24 overflow-hidden" : ""
+              }`}
+            >
               <p className="text-[13px] leading-relaxed text-[var(--ink)]">
                 {displayMessage}
               </p>
-              <div
-                className={`pointer-events-none absolute bottom-0 left-0 right-0 h-7 bg-gradient-to-t to-transparent ${
-                  isOwnPost
-                    ? "from-[#FEFAEC]"
-                    : post.emotion === "grateful"
-                      ? "from-[#EAF5EE]"
-                      : "from-[#FEF0EB]"
-                }`}
-              />
+              {!expanded && isTruncatable ? (
+                <div
+                  className={`pointer-events-none absolute bottom-0 left-0 right-0 h-7 bg-gradient-to-t to-transparent ${
+                    isOwnPost
+                      ? "from-[#FEFAEC]"
+                      : post.emotion === "grateful"
+                        ? "from-[#EAF5EE]"
+                        : "from-[#FEF0EB]"
+                  }`}
+                />
+              ) : null}
+              {isTruncatable ? (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  className="mt-1 text-[11px] font-medium text-[var(--brand)] hover:opacity-75"
+                >
+                  {expanded ? "Read less" : "Read more"}
+                </button>
+              ) : null}
             </div>
 
             <p className="mb-2 text-[11px] italic text-[var(--support-text)]">
