@@ -86,7 +86,6 @@ function debounce<Args extends unknown[]>(fn: (...args: Args) => void, ms: numbe
   return debounced;
 }
 
-
 function estimateCardHeight(post: FeedPost): number {
   const BASE = 120;
   const CHARS_PER_LINE = 38;
@@ -120,6 +119,7 @@ function splitIntoColumns(posts: FeedPost[]): [FeedPost[], FeedPost[]] {
 
   return [left, right];
 }
+
 export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -143,6 +143,7 @@ export default function GracefulFlow() {
   const [composerTopic, setComposerTopic] = useState<Category | null>(null);
   const [composerNeed, setComposerNeed] = useState<SupportType>("both");
   const [composerHasText, setComposerHasText] = useState(false);
+  const [composerOrigin, setComposerOrigin] = useState(false);
   const [completionMessage, setCompletionMessage] = useState<ThankYouMessage | null>(null);
   const [cooldownMessage, setCooldownMessage] = useState<string | null>(null);
   const [lastPostTime, setLastPostTime] = useState<number | null>(null);
@@ -320,6 +321,7 @@ export default function GracefulFlow() {
     isModalOpen.current = false;
     setShowExitConfirm(false);
     setShowToast(false);
+    setComposerOrigin(false);
     setCompletionMessage(null);
     setCooldownMessage(null);
     setSelection(createInitialSelection());
@@ -409,6 +411,8 @@ export default function GracefulFlow() {
     if (!composerText.trim() || !composerMood || !composerTopic) {
       return;
     }
+
+    setComposerOrigin(true);
 
     const afterEmotion = selectEmotion(selection, composerMood);
     setSelection(afterEmotion.selection);
@@ -633,9 +637,7 @@ export default function GracefulFlow() {
     [filteredPosts],
   );
   let content: React.ReactNode;
-
-  if (step === "feed") {
-    content = (
+  const feedContent = (
       <main className="min-h-screen bg-[var(--page-bg)] px-3 py-3 md:px-4 md:py-4">
         <div className="mx-auto rounded-[2.1rem] border border-[var(--shell-border)] bg-[var(--shell-bg)] shadow-[0_16px_44px_rgba(57,84,61,0.06)]">
           <div ref={sentinelRef} className="h-0 w-full" />
@@ -980,7 +982,10 @@ export default function GracefulFlow() {
           </div>
         </div>
       </main>
-    );
+  );
+
+  if (step === "feed") {
+    content = feedContent;
   } else if (step === "emotion") {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6 text-center">
@@ -1108,51 +1113,55 @@ export default function GracefulFlow() {
       </main>
     );
   } else if (step === "done") {
-    content = (
-      <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6 text-center">
-        <ShareStepShell
-          onClose={closeShareFlow}
-          step={5}
-          title={completionMessage?.title ?? copy.feed.successTitle}
-          description={completionMessage?.body ?? copy.feed.successBody}
-        >
-          <div className="mb-5 flex justify-center text-5xl text-[var(--brand)]">
-            <Leaf className="h-12 w-12" />
-          </div>
+    if (composerOrigin) {
+      content = null;
+    } else {
+      content = (
+        <main className="min-h-screen bg-bg-warm flex flex-col items-center justify-center p-6 text-center">
+          <ShareStepShell
+            onClose={closeShareFlow}
+            step={5}
+            title={completionMessage?.title ?? copy.feed.successTitle}
+            description={completionMessage?.body ?? copy.feed.successBody}
+          >
+            <div className="mb-5 flex justify-center text-5xl text-[var(--brand)]">
+              <Leaf className="h-12 w-12" />
+            </div>
 
-          <div className="rounded-[0.75rem] border border-[var(--shell-border)] bg-[var(--brand-soft)]/35 px-4 py-3 text-left text-[0.84rem] italic leading-6 text-[var(--muted-ink)]">
-            {copy.categoryStep.note}
-          </div>
+            <div className="rounded-[0.75rem] border border-[var(--shell-border)] bg-[var(--brand-soft)]/35 px-4 py-3 text-left text-[0.84rem] italic leading-6 text-[var(--muted-ink)]">
+              {copy.categoryStep.note}
+            </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={closeShareFlow}
-              className="rounded-[0.55rem] bg-[var(--brand)] px-5 py-2.5 text-[0.92rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
-            >
-              {copy.feed.viewFeed}
-            </button>
-            <button
-              type="button"
-              onClick={startFreshShare}
-              className="rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-5 py-2.5 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
-            >
-              {copy.feed.shareAgain}
-            </button>
-            {cooldownMessage ? (
-              <p className="mt-3 text-center text-sm leading-6 text-[var(--muted-ink)] italic">
-                🌿 {cooldownMessage}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={closeShareFlow}
+                className="rounded-[0.55rem] bg-[var(--brand)] px-5 py-2.5 text-[0.92rem] font-medium text-white transition-colors hover:bg-[var(--brand-dark)]"
+              >
+                {copy.feed.viewFeed}
+              </button>
+              <button
+                type="button"
+                onClick={startFreshShare}
+                className="rounded-[0.55rem] border border-[var(--chip-border)] bg-[var(--chip-bg)] px-5 py-2.5 text-[0.92rem] text-[var(--muted-ink)] transition-colors hover:border-[var(--brand)] hover:text-[var(--brand)]"
+              >
+                {copy.feed.shareAgain}
+              </button>
+              {cooldownMessage ? (
+                <p className="mt-3 text-center text-sm leading-6 text-[var(--muted-ink)] italic">
+                  🌿 {cooldownMessage}
+                </p>
+              ) : null}
+            </div>
+            {postError ? (
+              <p className="mt-4 text-sm text-[#dc2626]">
+                {postError}
               </p>
             ) : null}
-          </div>
-          {postError ? (
-            <p className="mt-4 text-sm text-[#dc2626]">
-              {postError}
-            </p>
-          ) : null}
-        </ShareStepShell>
-      </main>
-    );
+          </ShareStepShell>
+        </main>
+      );
+    }
   } else {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6 text-center">
@@ -1184,7 +1193,7 @@ export default function GracefulFlow() {
           }}
         />
       ) : null}
-      {content}
+      {content ?? feedContent}
       {showNudge ? (
         <CommunityNudge onDismiss={() => setShowNudge(false)} />
       ) : null}
