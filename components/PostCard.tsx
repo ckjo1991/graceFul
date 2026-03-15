@@ -263,20 +263,9 @@ export default function PostCard(props: PostCardProps) {
               {formatRelativeTime(post.createdAt)}
             </span>
 
-            <div className="relative mb-2 max-h-24 overflow-hidden">
-              <p className="text-[13px] leading-relaxed text-[var(--ink)]">
-                {displayMessage}
-              </p>
-              <div
-                className={`pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t to-transparent ${
-                  isOwnPost
-                    ? "from-[#FEFAEC]"
-                    : post.emotion === "grateful"
-                      ? "from-[#EAF5EE]"
-                      : "from-[#FEF0EB]"
-                }`}
-              />
-            </div>
+            <p className="mb-2 text-[13px] leading-relaxed text-[var(--ink)]">
+              {displayMessage}
+            </p>
 
             <p className="mb-2 text-[11px] italic text-[var(--support-text)]">
               {needLabel}
