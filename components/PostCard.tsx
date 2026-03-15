@@ -55,6 +55,7 @@ function unmarkPostHearted(postId: string): void {
 export default function PostCard(props: PostCardProps) {
   const { post, onViewPrayers } = props;
   const [expanded, setExpanded] = React.useState(false);
+  const [isTruncatable, setIsTruncatable] = React.useState(false);
   const [isReported, setIsReported] = React.useState(false);
   const [hasHearted, setHasHearted] = React.useState(false);
   const [heartCount, setHeartCount] = React.useState(post.hearts);
@@ -65,6 +66,7 @@ export default function PostCard(props: PostCardProps) {
   const [selectedReportReason, setSelectedReportReason] = React.useState<
     (typeof REPORT_REASONS)[number]
   >(REPORT_REASONS[0]);
+  const messageRef = React.useRef<HTMLDivElement | null>(null);
   const reportMenuRef = React.useRef<HTMLDivElement | null>(null);
   const deviceId =
     typeof window !== "undefined"
@@ -89,7 +91,6 @@ export default function PostCard(props: PostCardProps) {
     ? "bg-card-owned border-card-owned-border"
     : cardClass;
   // TODO: Translation stays parked in feed cards until the language switcher returns.
-  const isTruncatable = post.message.length > 120;
   const displayMessage = post.message;
   const showReportModal =
     reportState === "confirming" || reportState === "submitting";
@@ -131,6 +132,16 @@ export default function PostCard(props: PostCardProps) {
       document.removeEventListener("click", handleDocumentClick);
     };
   }, [isReportMenuOpen]);
+
+  React.useEffect(() => {
+    const element = messageRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    setIsTruncatable(element.scrollHeight > element.clientHeight);
+  }, [post.message]);
 
   React.useEffect(() => {
     if (!showReportModal || typeof document === "undefined") {
@@ -266,9 +277,8 @@ export default function PostCard(props: PostCardProps) {
             </span>
 
             <div
-              className={`relative mb-2 ${
-                !expanded && isTruncatable ? "max-h-24 overflow-hidden" : ""
-              }`}
+              ref={messageRef}
+              className={`relative mb-2 ${!expanded ? "max-h-24 overflow-hidden" : ""}`}
             >
               <p className="text-[13px] leading-relaxed text-[var(--ink)]">
                 {displayMessage}
