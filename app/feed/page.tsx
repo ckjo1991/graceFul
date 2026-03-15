@@ -86,6 +86,40 @@ function debounce<Args extends unknown[]>(fn: (...args: Args) => void, ms: numbe
   return debounced;
 }
 
+
+function estimateCardHeight(post: FeedPost): number {
+  const BASE = 120;
+  const CHARS_PER_LINE = 38;
+  const LINE_HEIGHT = 22;
+  const MAX_LINES = 4;
+  const lines = Math.min(
+    Math.ceil(post.message.length / CHARS_PER_LINE),
+    MAX_LINES,
+  );
+
+  return BASE + lines * LINE_HEIGHT;
+}
+
+function splitIntoColumns(posts: FeedPost[]): [FeedPost[], FeedPost[]] {
+  const left: FeedPost[] = [];
+  const right: FeedPost[] = [];
+  let leftHeight = 0;
+  let rightHeight = 0;
+
+  for (const post of posts) {
+    const height = estimateCardHeight(post);
+
+    if (leftHeight <= rightHeight) {
+      left.push(post);
+      leftHeight += height;
+    } else {
+      right.push(post);
+      rightHeight += height;
+    }
+  }
+
+  return [left, right];
+}
 export default function GracefulFlow() {
   const [step, setStep] = useState<AppFlowStep>("feed");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -594,37 +628,10 @@ export default function GracefulFlow() {
 
     return emotionMatch && topicMatch && myPostsMatch;
   });
-  const estimateCardHeight = (post: FeedPost): number => {
-    const badgeHeight = 28;
-    const timestampHeight = 20;
-    const messageHeight = Math.min(96, Math.ceil(post.message.length / 30) * 20);
-    const needHeight = 20;
-    const footerHeight = 44;
-    const padding = 26;
-
-    return badgeHeight + timestampHeight + messageHeight + needHeight + footerHeight + padding;
-  };
-
-  const [leftColumn, rightColumn] = useMemo(() => {
-    const left: FeedPost[] = [];
-    const right: FeedPost[] = [];
-    let leftHeight = 0;
-    let rightHeight = 0;
-
-    for (const post of filteredPosts) {
-      const estimatedHeight = estimateCardHeight(post);
-
-      if (leftHeight <= rightHeight) {
-        left.push(post);
-        leftHeight += estimatedHeight;
-      } else {
-        right.push(post);
-        rightHeight += estimatedHeight;
-      }
-    }
-
-    return [left, right];
-  }, [filteredPosts]);
+  const [leftColumn, rightColumn] = useMemo(
+    () => splitIntoColumns(filteredPosts),
+    [filteredPosts],
+  );
   let content: React.ReactNode;
 
   if (step === "feed") {
