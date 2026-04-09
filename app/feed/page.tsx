@@ -18,9 +18,11 @@ import ShareStepShell, {
 } from "@/components/ShareStepShell";
 import SupportStep from "@/components/SupportStep";
 import {
+  countWords,
   completeSuccessfulPost,
   createInitialSelection,
   injectScenario as applyScenarioInjection,
+  MIN_FEED_POST_WORDS,
   returnToFeed,
   selectCategory,
   selectEmotion,
@@ -155,6 +157,12 @@ export default function GracefulFlow() {
   const nudgeCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousActiveFlowRef = useRef(false);
   const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const composerWordCount = countWords(composerText);
+  const canShowComposerTopic = Boolean(composerMood);
+  const canShowComposerSupport = Boolean(composerTopic);
+  const canShowComposerSubmit = Boolean(composerMood && composerTopic);
+  const canSubmitComposer =
+    canShowComposerSubmit && composerWordCount >= MIN_FEED_POST_WORDS;
   const copy = getUiCopy(viewerLanguage);
 
   const emotionFilters: Array<{
@@ -408,7 +416,14 @@ export default function GracefulFlow() {
   };
 
   async function handleComposerSubmit() {
-    if (!composerText.trim() || !composerMood || !composerTopic) {
+    console.log("handleComposerSubmit fired");
+
+    if (
+      !composerText.trim() ||
+      !composerMood ||
+      !composerTopic ||
+      composerWordCount < MIN_FEED_POST_WORDS
+    ) {
       return;
     }
 
@@ -435,8 +450,14 @@ export default function GracefulFlow() {
       const afterReview = selectSupport(result.selection, composerNeed);
       setSelection(afterReview.selection);
       setStep("review");
-    } else {
+      console.log("handleComposerSubmit reached review step");
+    } else if (result.nextStep !== "warning") {
       setStep(result.nextStep);
+    }
+
+    if (result.nextStep === "warning" && result.warningReason) {
+      setWarningReason(result.warningReason);
+      setStep("warning");
     }
 
     resetComposer();
@@ -755,53 +776,57 @@ export default function GracefulFlow() {
                       </div>
                     </div>
 
-                    <div>
-                      <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
-                        About...
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {(["Financial", "Personal", "Family", "Health", "Work"] as Category[]).map((topic) => (
-                          <button
-                            key={topic}
-                            type="button"
-                            onClick={() => setComposerTopic(topic)}
-                            className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] transition-all ${
-                              composerTopic === topic
-                                ? "border-black/[0.15] bg-black/[0.08] text-gray-900 dark:border-white/[0.15] dark:bg-white/[0.10] dark:text-gray-100"
-                                : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
-                            }`}
-                          >
-                            {topic}
-                          </button>
-                        ))}
+                    {canShowComposerTopic ? (
+                      <div>
+                        <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
+                          About...
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(["Financial", "Personal", "Family", "Health", "Work"] as Category[]).map((topic) => (
+                            <button
+                              key={topic}
+                              type="button"
+                              onClick={() => setComposerTopic(topic)}
+                              className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] transition-all ${
+                                composerTopic === topic
+                                  ? "border-black/[0.15] bg-black/[0.08] text-gray-900 dark:border-white/[0.15] dark:bg-white/[0.10] dark:text-gray-100"
+                                  : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
+                              }`}
+                            >
+                              {topic}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : null}
 
-                    <div>
-                      <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
-                        What would help you most?
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {([
-                          { value: "prayer", label: "Prayer" },
-                          { value: "just_sharing", label: "Encouragement" },
-                          { value: "both", label: "Both" },
-                        ] as { value: SupportType; label: string }[]).map(({ value, label }) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setComposerNeed(value)}
-                            className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] transition-all ${
-                              composerNeed === value
-                                ? "border-transparent bg-[#DDD8F5] text-[#3D2FA0] dark:bg-[#22204A] dark:text-[#A0A0E8]"
-                                : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
+                    {canShowComposerSupport ? (
+                      <div>
+                        <p className="mb-2 text-[12px] font-medium text-gray-500 dark:text-gray-400">
+                          What would help you most?
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {([
+                            { value: "prayer", label: "Prayer" },
+                            { value: "just_sharing", label: "Encouragement" },
+                            { value: "both", label: "Both" },
+                          ] as { value: SupportType; label: string }[]).map(({ value, label }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => setComposerNeed(value)}
+                              className={`min-h-[44px] rounded-full border px-3 py-1.5 text-[12px] transition-all ${
+                                composerNeed === value
+                                  ? "border-transparent bg-[#DDD8F5] text-[#3D2FA0] dark:bg-[#22204A] dark:text-[#A0A0E8]"
+                                  : "border-black/[0.12] text-gray-500 dark:border-white/[0.12] dark:text-gray-400"
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : null}
 
                     <div className="mt-1 flex justify-end gap-2">
                       <button
@@ -811,14 +836,16 @@ export default function GracefulFlow() {
                       >
                         Never mind
                       </button>
-                      <button
-                        type="button"
-                        disabled={!composerText.trim() || !composerMood || !composerTopic}
-                        onClick={() => void handleComposerSubmit()}
-                        className="min-h-[44px] rounded-xl bg-[#1C5C3A] px-4 py-2 text-[13px] font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
-                      >
-                        Post anonymously
-                      </button>
+                      {canShowComposerSubmit ? (
+                        <button
+                          type="button"
+                          disabled={!canSubmitComposer}
+                          onClick={() => void handleComposerSubmit()}
+                          className="min-h-[44px] rounded-xl bg-[#1C5C3A] px-4 py-2 text-[13px] font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#2A4632] dark:text-[#7EC8A0]"
+                        >
+                          Post anonymously
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}

@@ -13,6 +13,7 @@ import type {
 } from "@/types";
 
 export type WarningReason = "pii" | "malice" | "profanity" | "spam" | null;
+export const MIN_FEED_POST_WORDS = 10;
 
 export interface CreateFeedPostParams {
   selection: AppFlowSelection;
@@ -89,10 +90,21 @@ export function selectCategory(selection: AppFlowSelection, category: Category) 
   };
 }
 
-export function submitMessage(selection: AppFlowSelection, message: string) {
-  const nextSelection = { ...selection, message };
+export function countWords(message: string) {
+  const trimmedMessage = message.trim();
 
-  if (checkCrisis(message)) {
+  if (!trimmedMessage) {
+    return 0;
+  }
+
+  return trimmedMessage.split(/\s+/).length;
+}
+
+export function submitMessage(selection: AppFlowSelection, message: string) {
+  const trimmedMessage = message.trim();
+  const nextSelection = { ...selection, message: trimmedMessage };
+
+  if (checkCrisis(trimmedMessage)) {
     return {
       selection: nextSelection,
       nextStep: "crisis" as AppFlowStep,
@@ -100,12 +112,20 @@ export function submitMessage(selection: AppFlowSelection, message: string) {
     };
   }
 
-  const safety = checkSafety(message);
+  const safety = checkSafety(trimmedMessage);
   if (!safety.isSafe && safety.reason) {
     return {
       selection: nextSelection,
       nextStep: "warning" as AppFlowStep,
       warningReason: safety.reason as Exclude<WarningReason, null>,
+    };
+  }
+
+  if (countWords(trimmedMessage) < MIN_FEED_POST_WORDS) {
+    return {
+      selection: nextSelection,
+      nextStep: "message" as AppFlowStep,
+      warningReason: null as WarningReason,
     };
   }
 

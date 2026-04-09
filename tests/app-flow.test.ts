@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   addPrayerToPost,
+  MIN_FEED_POST_WORDS,
   completeSuccessfulPost,
   createInitialPosts,
   createInitialSelection,
@@ -107,6 +108,19 @@ test("message submission routes crisis content into the crisis step", () => {
   );
 
   assert.equal(result.nextStep, "crisis");
+  assert.equal(result.warningReason, null);
+});
+
+test("message submission keeps feed posts on the message step when fewer than ten words", () => {
+  const result = submitMessage(
+    createInitialSelection(),
+    "Please pray for me today because work feels heavy.",
+  );
+
+  assert.ok(
+    result.selection.message.split(/\s+/).length < MIN_FEED_POST_WORDS,
+  );
+  assert.equal(result.nextStep, "message");
   assert.equal(result.warningReason, null);
 });
 
