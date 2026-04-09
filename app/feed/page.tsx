@@ -922,14 +922,38 @@ export default function GracefulFlow() {
                     </div>
                   </div>
                 ) : filteredPosts.length === 0 ? (
-                  <div className="w-full py-12 text-center">
-                    <p className="text-[14px] text-gray-400 dark:text-gray-600">
-                      Nothing here yet.
-                    </p>
-                    <p className="mt-1 text-[13px] text-gray-400 dark:text-gray-600">
-                      Be the first to share.
-                    </p>
-                  </div>
+                  (() => {
+                    const hasActiveFilters =
+                      activeEmotion !== "all" ||
+                      activeTopic !== "all_topics" ||
+                      isMyPosts;
+                    return (
+                      <div className="w-full py-12 text-center">
+                        <p className="text-[14px] text-gray-400 dark:text-gray-600">
+                          {hasActiveFilters
+                            ? "No posts match this filter."
+                            : "Nothing here yet."}
+                        </p>
+                        <p className="mt-1 text-[13px] text-gray-400 dark:text-gray-600">
+                          {hasActiveFilters ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveEmotion("all");
+                                setActiveTopic("all_topics");
+                                setIsMyPosts(false);
+                              }}
+                              className="underline underline-offset-2 hover:text-gray-600 dark:hover:text-gray-400"
+                            >
+                              Clear filters
+                            </button>
+                          ) : (
+                            "Be the first to share."
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })()
                 ) : (
                   <div className="flex items-start gap-1.5">
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
