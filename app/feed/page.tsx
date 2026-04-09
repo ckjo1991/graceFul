@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Globe2, Heart, Leaf, Sun } from "lucide-react";
+import { Heart, Leaf, Sun } from "lucide-react";
 import CategoryStep from "@/components/CategoryStep";
 import CommunityNudge from "@/components/CommunityNudge";
 import CrisisScreen from "@/components/CrisisScreen";
@@ -32,7 +32,7 @@ import {
   type WarningReason,
 } from "@/lib/app-flow";
 import { reviewPostServerSide } from "@/lib/db";
-import { SUPPORT_OPTIONS, SUPPORTED_LANGUAGES } from "@/lib/constants";
+import { SUPPORT_OPTIONS } from "@/lib/constants";
 import { checkCrisis } from "@/lib/guardian";
 import {
   markNudgeShown,
@@ -49,7 +49,6 @@ import type {
   Category,
   Emotion,
   FeedPost,
-  LanguageCode,
   SupportType,
 } from "@/types";
 
@@ -132,7 +131,6 @@ export default function GracefulFlow() {
     useState<TopicFilter>(DEFAULT_TOPIC_FILTER);
   const [isMyPosts, setIsMyPosts] = useState(false);
   const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [viewerLanguage, setViewerLanguage] = useState<LanguageCode>("en");
   const [isCompact, setIsCompact] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isPrayerModalOpen, setIsPrayerModalOpen] = useState(false);
@@ -163,15 +161,15 @@ export default function GracefulFlow() {
   const canShowComposerSubmit = Boolean(composerMood && composerTopic);
   const canSubmitComposer =
     canShowComposerSubmit && composerWordCount >= MIN_FEED_POST_WORDS;
-  const copy = getUiCopy(viewerLanguage);
+  const copy = getUiCopy("en");
 
   const emotionFilters: Array<{
     label: string;
     value: EmotionFilter;
   }> = [
     { label: copy.feed.allEmotion, value: "all" },
-    { label: localizeEmotion("grateful", viewerLanguage), value: "grateful" },
-    { label: localizeEmotion("struggling", viewerLanguage), value: "struggling" },
+    { label: localizeEmotion("grateful", "en"), value: "grateful" },
+    { label: localizeEmotion("struggling", "en"), value: "struggling" },
   ];
 
   const topicFilters: Array<{
@@ -179,11 +177,11 @@ export default function GracefulFlow() {
     value: TopicFilter;
   }> = [
     { label: copy.feed.allTopics, value: "all_topics" },
-    { label: localizeCategory("Financial", viewerLanguage), value: "Financial" },
-    { label: localizeCategory("Family", viewerLanguage), value: "Family" },
-    { label: localizeCategory("Health", viewerLanguage), value: "Health" },
-    { label: localizeCategory("Work", viewerLanguage), value: "Work" },
-    { label: localizeCategory("Personal", viewerLanguage), value: "Personal" },
+    { label: localizeCategory("Financial", "en"), value: "Financial" },
+    { label: localizeCategory("Family", "en"), value: "Family" },
+    { label: localizeCategory("Health", "en"), value: "Health" },
+    { label: localizeCategory("Work", "en"), value: "Work" },
+    { label: localizeCategory("Personal", "en"), value: "Personal" },
   ];
 
   useEffect(() => {
@@ -463,10 +461,6 @@ export default function GracefulFlow() {
     resetComposer();
   }
 
-  const handleViewerLanguageChange = (language: LanguageCode) => {
-    setViewerLanguage(language);
-  };
-
   const focusComposer = useCallback(() => {
     composerTextareaRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -696,27 +690,6 @@ export default function GracefulFlow() {
                 </div>
 
                 <div className="hidden flex-col gap-3 self-start sm:flex">
-                  {/* TODO: Language switcher parked — re-enable with translation */}
-                  <div className="relative ml-3 hidden min-w-[11rem]">
-                    <div className="flex items-center gap-2 rounded-xl border border-[#d4e4cc] bg-white px-4 py-2 hover:border-[#4a7c59]">
-                      <Globe2 className="h-4 w-4 shrink-0 text-[#2c3a2e]" />
-                      <select
-                        aria-label="Language"
-                        value={viewerLanguage}
-                        onChange={(event) =>
-                          handleViewerLanguageChange(event.target.value as LanguageCode)
-                        }
-                        className="min-w-0 flex-1 cursor-pointer appearance-none border-none bg-transparent text-sm font-semibold text-[#2c3a2e] outline-none"
-                      >
-                        {Object.entries(SUPPORTED_LANGUAGES).map(([code, label]) => (
-                          <option key={code} value={code}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="pointer-events-none h-3.5 w-3.5 shrink-0 text-[#6b7c6d]" />
-                    </div>
-                  </div>
                   <div className="hidden items-center gap-3 sm:flex">
                     <button
                       type="button"
@@ -963,7 +936,7 @@ export default function GracefulFlow() {
                           post={post}
                           onPray={handleOpenPrayer}
                           onViewPrayers={handleOpenPrayerList}
-                          viewerLanguage={viewerLanguage}
+                          viewerLanguage={"en"}
                         />
                       ))}
                     </div>
@@ -974,7 +947,7 @@ export default function GracefulFlow() {
                           post={post}
                           onPray={handleOpenPrayer}
                           onViewPrayers={handleOpenPrayerList}
-                          viewerLanguage={viewerLanguage}
+                          viewerLanguage={"en"}
                         />
                       ))}
                     </div>
@@ -989,7 +962,7 @@ export default function GracefulFlow() {
             isOpen={isPrayerModalOpen}
             onClose={handleClosePrayer}
             onSubmit={handlePrayerSubmit}
-            language={viewerLanguage}
+            language={"en"}
             submissionError={postError}
             onModalVisibilityChange={handleModalVisibilityChange}
             postTranslations={
@@ -1003,7 +976,7 @@ export default function GracefulFlow() {
             posts={posts}
             isOpen={Boolean(activePrayerListPostId)}
             onClose={handleClosePrayerList}
-            language={viewerLanguage}
+            language={"en"}
             onModalVisibilityChange={handleModalVisibilityChange}
             addPrayer={handlePrayerListSubmit}
           />
@@ -1095,7 +1068,7 @@ export default function GracefulFlow() {
           selectedEmotion={selection.emotion as Emotion}
           onSelect={handleCategorySelect}
           onBack={() => setStep("emotion")}
-          language={viewerLanguage}
+          language={"en"}
         />
       </main>
     );
@@ -1111,14 +1084,14 @@ export default function GracefulFlow() {
           selectedEmotion={selection.emotion as Emotion}
           onNext={handleMessageSubmit}
           onBack={() => setStep("category")}
-          language={viewerLanguage}
+          language={"en"}
         />
       </main>
     );
   } else if (step === "crisis") {
     content = (
       <main className="flex min-h-screen flex-col items-center justify-center bg-bg-warm p-6">
-        <CrisisScreen onBack={() => setStep("message")} language={viewerLanguage} />
+        <CrisisScreen onBack={() => setStep("message")} language={"en"} />
       </main>
     );
   } else if (step === "warning" && warningReason) {
@@ -1126,7 +1099,7 @@ export default function GracefulFlow() {
       <main className="flex min-h-screen items-center justify-center bg-bg-warm p-6">
         <GuardianWarning
           reason={warningReason}
-          language={viewerLanguage}
+          language={"en"}
           onRedo={() => {
             setWarningReason(null);
             setStep("message");
@@ -1143,7 +1116,7 @@ export default function GracefulFlow() {
           supportOptions={SUPPORT_OPTIONS}
           onSelect={handleSupportSelect}
           onBack={() => setStep("message")}
-          language={viewerLanguage}
+          language={"en"}
         />
       </main>
     );
@@ -1159,7 +1132,7 @@ export default function GracefulFlow() {
           onBack={() => setStep("support")}
           onCrisisDetected={() => setStep("crisis")}
           onPost={handleFinalPost}
-          language={viewerLanguage}
+          language={"en"}
         />
       </main>
     );
