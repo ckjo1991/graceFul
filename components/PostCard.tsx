@@ -259,10 +259,6 @@ export default function PostCard(props: PostCardProps) {
               ) : null}
             </div>
 
-            <span className="text-xs text-[var(--timestamp)]">
-              {formatRelativeTime(post.createdAt)}
-            </span>
-
             <p className="mb-2 text-[13px] leading-relaxed text-[var(--ink)]">
               {displayMessage}
             </p>
@@ -271,41 +267,12 @@ export default function PostCard(props: PostCardProps) {
               {needLabel}
             </p>
 
-            <div className="mt-auto flex items-center gap-2 border-t border-black/[0.08] pt-2">
-              {normalizedSupport === "just_sharing" && !isOwnPost ? (
-                <button
-                  type="button"
-                  aria-label={`Encourage — ${heartCount} people encouraged this`}
-                  onClick={handleHeartClick}
-                  disabled={isHeartPending || hasHearted}
-                  className={`min-h-[44px] flex items-center gap-1 text-[12px] transition-colors ${
-                    hasHearted
-                      ? "text-red-500"
-                      : "text-[var(--muted-ink)] hover:text-red-500"
-                  }`}
-                >
-                  <Heart
-                    size={14}
-                    aria-hidden="true"
-                    className={hasHearted ? "fill-current" : undefined}
-                  />
-                  <span>{heartCount}</span>
-                </button>
-              ) : null}
-
-              {normalizedSupport === "prayer" && !isOwnPost ? (
-                <button
-                  type="button"
-                  aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
-                  onClick={() => onViewPrayers(post.id)}
-                  className="min-h-[44px] rounded-full bg-[var(--brand)] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85"
-                >
-                  {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
-                </button>
-              ) : null}
-
-              {normalizedSupport === "both" && !isOwnPost ? (
-                <>
+            <div className="mt-auto flex items-center justify-between border-t border-black/[0.08] pt-2">
+              <span className="text-xs text-[var(--timestamp)]">
+                {formatRelativeTime(post.createdAt)}
+              </span>
+              <div className="flex items-center gap-2">
+                {normalizedSupport === "just_sharing" && !isOwnPost ? (
                   <button
                     type="button"
                     aria-label={`Encourage — ${heartCount} people encouraged this`}
@@ -324,6 +291,9 @@ export default function PostCard(props: PostCardProps) {
                     />
                     <span>{heartCount}</span>
                   </button>
+                ) : null}
+
+                {normalizedSupport === "prayer" && !isOwnPost ? (
                   <button
                     type="button"
                     aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
@@ -332,32 +302,63 @@ export default function PostCard(props: PostCardProps) {
                   >
                     {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
                   </button>
-                </>
-              ) : null}
+                ) : null}
 
-              {isOwnPost ? (
-                <>
-                  <span className="flex select-none items-center gap-1 text-[12px] text-[var(--muted-ink)] opacity-40">
-                    <Heart size={14} aria-hidden="true" />
-                    {heartCount}
-                  </span>
-                  {normalizedSupport !== "just_sharing" ? (
-                    <div className="relative ml-auto group">
-                      <button
-                        type="button"
-                        disabled
-                        aria-label="You cannot pray for your own post"
-                        className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed"
-                      >
-                        {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
-                      </button>
-                      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                        Can&apos;t pray for your own post
-                      </span>
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
+                {normalizedSupport === "both" && !isOwnPost ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label={`Encourage — ${heartCount} people encouraged this`}
+                      onClick={handleHeartClick}
+                      disabled={isHeartPending || hasHearted}
+                      className={`min-h-[44px] flex items-center gap-1 text-[12px] transition-colors ${
+                        hasHearted
+                          ? "text-red-500"
+                          : "text-[var(--muted-ink)] hover:text-red-500"
+                      }`}
+                    >
+                      <Heart
+                        size={14}
+                        aria-hidden="true"
+                        className={hasHearted ? "fill-current" : undefined}
+                      />
+                      <span>{heartCount}</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${post.prayers.length} prayers — tap to view and add yours`}
+                      onClick={() => onViewPrayers(post.id)}
+                      className="min-h-[44px] rounded-full bg-[var(--brand)] px-3 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-85"
+                    >
+                      {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
+                    </button>
+                  </>
+                ) : null}
+
+                {isOwnPost ? (
+                  <>
+                    <span className="flex select-none items-center gap-1 text-[12px] text-[var(--muted-ink)] opacity-40">
+                      <Heart size={14} aria-hidden="true" />
+                      {heartCount}
+                    </span>
+                    {normalizedSupport !== "just_sharing" ? (
+                      <div className="relative ml-auto group">
+                        <button
+                          type="button"
+                          disabled
+                          aria-label="You cannot pray for your own post"
+                          className="min-h-[44px] rounded-full bg-black/[0.06] px-3 py-1 text-[11px] font-medium text-gray-400 cursor-not-allowed"
+                        >
+                          {post.prayers.length} {post.prayers.length === 1 ? "prayer" : "prayers"}
+                        </button>
+                        <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                          Can&apos;t pray for your own post
+                        </span>
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
